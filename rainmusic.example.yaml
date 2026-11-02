@@ -9,6 +9,15 @@ tools:
 playback:
   default_volume: 30
   queue_limit: 500
+sources:
+  niconico:
+    auth:
+      method: none
+      # cookies: set method to cookies and specify only cookies_file.
+      # cookies_file: "${NICONICO_COOKIES_FILE}"
+      # password: set method to password and specify username/password only.
+      # username: "${NICONICO_USERNAME}"
+      # password: "${NICONICO_PASSWORD}"
 bots:
   main:
     # Optional: application_id: "YOUR_APPLICATION_ID"

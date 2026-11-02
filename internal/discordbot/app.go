@@ -57,6 +57,9 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	if err := a.source.ConfigureAuth(c.NiconicoAuth); err != nil {
+		return nil, err
+	}
 	opts := []bot.ConfigOpt{
 		// Voice Open waits for subsequent Gateway events; listeners must not
 		// block the Gateway event dispatcher while resolving or connecting.

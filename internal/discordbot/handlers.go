@@ -59,11 +59,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		result, err := a.source.Inspect(a.ctx, url)
 		if front && (err != nil || len(result.Tracks) != 1) {
-			reply("曲を取得できませんでした。キューは変更していません。")
+			reply(source.AuthMessage(err, "曲を取得できませんでした。キューは変更していません。"))
 			return
 		}
 		if len(result.Tracks) == 0 {
-			reply("曲を取得できませんでした。公開状態とURLを確認してください。")
+			reply(source.AuthMessage(err, "曲を取得できませんでした。公開状態とURLを確認してください。"))
 			return
 		}
 		playlist := ""

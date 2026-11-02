@@ -19,6 +19,7 @@ const PlaylistLimit = 100
 type Runner func(context.Context, string, []string, io.Reader, io.Writer) error
 
 type Client struct {
+	auth       *nicoAuth
 	Executable string
 	Run        Runner
 	Timeout    time.Duration
@@ -76,7 +77,7 @@ func (c *Client) inspect(ctx context.Context, input Input) (Result, error) {
 	}
 	args = append(args, "--", input.URL)
 	var out bytes.Buffer
-	err := c.Run(ctx, c.Executable, args, nil, &process.LimitedWriter{Writer: &out, Remaining: 16 << 20})
+	err := c.runSource(ctx, input, args, &process.LimitedWriter{Writer: &out, Remaining: 16 << 20})
 	if ctx.Err() != nil {
 		return result, ctx.Err()
 	}
@@ -137,7 +138,7 @@ func (c *Client) Stream(ctx context.Context, raw string, output io.Writer) error
 	args := append([]string(nil), baseArgs...)
 	args = append(args, "--no-playlist", "--match-filters", "!is_live & live_status !=? is_upcoming", "-f", "bestaudio", "-o", "-", "--", input.URL)
 	count := &countingWriter{Writer: output}
-	err = c.Run(ctx, c.Executable, args, nil, count)
+	err = c.runSource(ctx, input, args, count)
 	if err == nil && count.n == 0 {
 		return errors.New("no audio received (video may have been filtered)")
 	}

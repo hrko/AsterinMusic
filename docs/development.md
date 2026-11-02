@@ -1,5 +1,7 @@
 # 開発・運用手順
 
+ニコニコ認証の設定・ChromeでのCookie保存は[ニコニコ動画の認証](niconico-auth.md)を参照。`mise run source-check -- URL`はYAMLの認証設定と選択済みyt-dlpで単曲のメタデータ・音声取得を検証する。Discordへ接続せず、音声は最大256MiB・5分で取得・破棄する。実際の認証情報はテストに埋め込まない。
+
 接続・動作設定は[設定ファイル](configuration.md)に記述します。Botプロフィールの曲名表示は既定で有効です。無効にする場合はYAMLの`bots.<name>.activity.enabled`を`false`にして、`mise run bot-restart`で反映します。追加権限やPresence Intentの有効化は不要です。設定外のサーバーへの参加を検出した場合は、表示設定に関係なくアクティビティを消去します。
 
 セットアップは[README](../README.md)、利用者向けの動作は[現行仕様](specification.md)、エージェントの操作規則は[AGENTS.md](../AGENTS.md)を参照。

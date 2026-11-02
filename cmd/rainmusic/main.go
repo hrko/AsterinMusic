@@ -60,6 +60,40 @@ func run(ctx context.Context, args []string) error {
 		return errors.New("usage: rainmusic doctor | inspect URL | capture URL OUTPUT | render INPUT OUTPUT.ogg")
 	}
 	switch args[0] {
+	case "source-check":
+		if len(args) != 2 {
+			return errors.New("usage: source-check URL")
+		}
+		cfg, err := config.Load(opts)
+		if err != nil {
+			return err
+		}
+		executable := cfg.YTDLP
+		if executable == "yt-dlp" {
+			executable, err = updater.New().Executable()
+			if err != nil {
+				return errors.New("cannot select yt-dlp executable")
+			}
+		}
+		c := source.New(executable)
+		if err = c.ConfigureAuth(cfg.NiconicoAuth); err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		defer cancel()
+		r, err := c.Inspect(ctx, args[1])
+		if err != nil {
+			return err
+		}
+		if len(r.Tracks) != 1 || r.Input.Playlist {
+			return errors.New("source-check requires one track")
+		}
+		fmt.Println("source-check: metadata OK; checking full audio acquisition (maximum 256 MiB / 5 minutes)")
+		if err = c.BufferedStream(ctx, r.Tracks[0].URL, io.Discard); err != nil {
+			return err
+		}
+		fmt.Println("source-check: metadata and audio OK")
+		return nil
 	case "stream-check":
 		if len(args) != 2 {
 			return errors.New("usage: stream-check URL")

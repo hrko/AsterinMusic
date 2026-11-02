@@ -10,6 +10,7 @@ import (
 	"github.com/knadh/koanf/v2"
 	"os"
 	"path/filepath"
+	"rainmusic/internal/source"
 	"reflect"
 	"regexp"
 	"strings"
@@ -17,6 +18,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	NiconicoAuth                                          source.AuthConfig
 	Token                                                 string
 	ApplicationID, GuildID, TextChannelID, VoiceChannelID snowflake.ID
 	ActivityEnabled                                       bool
@@ -24,6 +26,16 @@ type Config struct {
 	DefaultVolume, QueueLimit                             int
 }
 type Document struct {
+	Sources struct {
+		Niconico struct {
+			Auth struct {
+				Method      string  `koanf:"method"`
+				CookiesFile *string `koanf:"cookies_file"`
+				Username    *string `koanf:"username"`
+				Password    *string `koanf:"password"`
+			} `koanf:"auth"`
+		} `koanf:"niconico"`
+	} `koanf:"sources"`
 	Version int `koanf:"version"`
 	Runtime struct {
 		StateDir string `koanf:"state_dir"`
@@ -130,6 +142,23 @@ func (d Document) resolve(base string) (Config, error) {
 		return fail("runtime/tool paths must not be empty")
 	}
 	c := Config{StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
+	a := d.Sources.Niconico.Auth
+	c.NiconicoAuth.Method = a.Method
+	if (a.Method != "cookies" && a.CookiesFile != nil) || (a.Method != "password" && (a.Username != nil || a.Password != nil)) {
+		return fail("niconico authentication methods cannot be mixed")
+	}
+	if a.CookiesFile != nil && *a.CookiesFile != "" {
+		c.NiconicoAuth.CookiesFile = resolvePath(base, *a.CookiesFile)
+	}
+	if a.Username != nil {
+		c.NiconicoAuth.Username = *a.Username
+	}
+	if a.Password != nil {
+		c.NiconicoAuth.Password = *a.Password
+	}
+	if err := source.ValidateAuth(c.NiconicoAuth); err != nil {
+		return Config{}, err
+	}
 	for name, b := range d.Bots {
 		if !namePattern.MatchString(name) {
 			return fail("invalid bot name")

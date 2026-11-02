@@ -95,6 +95,10 @@ run = "go run ./cmd/quality summarize"
 [tasks.config-check]
 run = "go run ./cmd/rainmusic config-check"
 
+[tasks.source-check]
+description = "Check one source with configured authentication, without Discord"
+run = "go run ./cmd/rainmusic source-check"
+
 [tasks.discord-check]
 run = "go run ./cmd/rainmusic discord-check"
 

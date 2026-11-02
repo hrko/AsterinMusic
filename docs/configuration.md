@@ -14,6 +14,9 @@ RainMusicはkoanf v2でYAMLを読み込み、文字列値を展開してから�
 | `tools.ffmpeg.path` | `ffmpeg` |
 | `playback.default_volume` | `30`、0〜100 |
 | `playback.queue_limit` | `500`、正の整数 |
+| `sources.niconico.auth.method` | `none`（省略時）、`cookies`、`password` |
+| `sources.niconico.auth.cookies_file` | `cookies`時のみ必須。設定ファイル基準のパス |
+| `sources.niconico.auth.username` / `password` | `password`時のみ両方必須。文字列・変数参照 |
 | `bots.<name>.application_id` | 任意。認証結果と照合し、省略時は認証したIDを使用 |
 | `bots.<name>.token` | 必須。直接記述または変数参照 |
 | `bots.<name>.activity.enabled` | `true`。共有・設定外参加・参加状況未確定では表示不可 |
@@ -34,6 +37,10 @@ dotenv内部の引用符・展開はkoanfのdotenvパーサー（godotenv）の�
 直接トークンを書いてもよいが、設定ファイルも秘密情報として扱う。設定全体・解析エラー原文・値はログに出さない。配布例にはトークンを含めない。`rainmusic.yaml`と`.env`はGit管理外。別名ファイルを使う場合も利用者が管理対象外とアクセス権を設定する。
 
 ## パスと実行状態
+
+ニコニコ動画の認証方式は排他的に指定する。他方式の項目は空文字でも拒否する。Cookieファイルの読み取り・Netscape形式は設定検証時に確認し、オンライン認証は取得時に行う。ID・パスワードは空値と改行・NULを拒否する。Cookieの用意と設定例は[ニコニコ動画の認証](niconico-auth.md)を参照。
+
+Cookieファイルの内容は各取得時に読み直すため、同じパスへの差し替えは再起動不要。ファイルパスや認証方式の変更には再起動が必要。
 
 CLIのファイル指定は起動時のカレントディレクトリ、YAML内の相対パスは設定ファイルのディレクトリを基準にする。変数展開後に解決する。実行ファイル名だけならPATH検索、パスを含むならファイルとして解決する。`~`は展開しない。
 

@@ -7,6 +7,7 @@
 | [README](../README.md) | プロジェクト概要、セットアップ、最初の起動 |
 | [現行仕様・要件](specification.md) | 対応範囲、コマンド、公平キュー、音量、リスト、自動再生、保存と制限 |
 | [設定ファイル](configuration.md) | YAML構造、変数展開、dotenv、認証情報、設定移行 |
+| [ニコニコ動画の認証](niconico-auth.md) | Cookieの準備、ID・パスワード設定、セッション、失効時の操作 |
 | [リスト追加の詳細](playlist-button.md) | 通常プレイリスト・Mixの追加ボタン、認可、期限、重複の扱い |
 | [現行アーキテクチャ](architecture.md) | 音声処理、Pure Goと外部依存の境界、実装の担当箇所 |
 | [開発・運用手順](development.md) | miseタスク、起動管理、検証、yt-dlp更新 |

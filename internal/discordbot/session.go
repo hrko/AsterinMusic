@@ -15,6 +15,7 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 	"rainmusic/internal/audio"
 	"rainmusic/internal/music"
+	"rainmusic/internal/source"
 )
 
 type session struct {
@@ -236,7 +237,7 @@ func (s *session) loop(done chan struct{}) {
 		}
 		s.mu.Unlock()
 		if err != nil && !skipped {
-			s.app.notify(text, "曲の取得または再生に失敗したため、次の曲へ進みます。")
+			s.app.notify(text, source.AuthMessage(err, "曲の取得または再生に失敗したため、次の曲へ進みます。"))
 		}
 	}
 }
