@@ -19,16 +19,16 @@ func nativeTarget(action, target string) error {
 		return pureDave(action, target)
 	}
 	if action == "build-voice" || action == "bot-start" || action == "bot-restart" || action == "voice-check" || action == "dave-check" {
-		backend := os.Getenv("RAINMUSIC_DAVE_BACKEND")
+		backend := os.Getenv("ASTERINMUSIC_DAVE_BACKEND")
 		if backend == "" || backend == "go" {
 			return pureDave(action, target)
 		}
 		if backend != "native" {
-			return fmt.Errorf("RAINMUSIC_DAVE_BACKEND must be go or native")
+			return fmt.Errorf("ASTERINMUSIC_DAVE_BACKEND must be go or native")
 		}
 	}
 	if action == "native-audio-check" {
-		return command([]string{"CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3", "RAINMUSIC_AUDIO_TEST=1"}, "go", "test", "-tags", "opus", "./internal/audio", "-count=1", "-v")
+		return command([]string{"CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3", "ASTERINMUSIC_AUDIO_TEST=1"}, "go", "test", "-tags", "opus", "./internal/audio", "-count=1", "-v")
 	}
 	out, err := exec.Command("mise", "where", "github:discord/libdave").Output()
 	if err != nil {
@@ -54,7 +54,7 @@ func nativeTarget(action, target string) error {
 	if err = os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	helper := filepath.Join(dir, "rainmusic-pkgconfig"+ext)
+	helper := filepath.Join(dir, "asterinmusic-pkgconfig"+ext)
 	if err = command([]string{"CGO_ENABLED=0"}, "go", "build", "-o", helper, "./cmd/pkgconfig"); err != nil {
 		return err
 	}
@@ -65,9 +65,9 @@ func nativeTarget(action, target string) error {
 		return err
 	}
 	signature := sha256.Sum256(append(helperBytes, []byte(root+opusRoot)...))
-	env := []string{"CGO_ENABLED=1", "CC=zig cc", "CXX=zig c++", "PKG_CONFIG=" + helper, "RAINMUSIC_DAVE_ROOT=" + root, "PATH=" + filepath.Join(root, "bin") + string(os.PathListSeparator) + os.Getenv("PATH"), "LD_LIBRARY_PATH=" + filepath.Join(root, "lib") + string(os.PathListSeparator) + os.Getenv("LD_LIBRARY_PATH")}
-	env = append(env, fmt.Sprintf("CGO_CFLAGS=-O2 -DRAINMUSIC_PKGCONFIG_%x=1", signature[:8]))
-	env = append(env, "RAINMUSIC_OPUS_ROOT="+opusRoot,
+	env := []string{"CGO_ENABLED=1", "CC=zig cc", "CXX=zig c++", "PKG_CONFIG=" + helper, "ASTERINMUSIC_DAVE_ROOT=" + root, "PATH=" + filepath.Join(root, "bin") + string(os.PathListSeparator) + os.Getenv("PATH"), "LD_LIBRARY_PATH=" + filepath.Join(root, "lib") + string(os.PathListSeparator) + os.Getenv("LD_LIBRARY_PATH")}
+	env = append(env, fmt.Sprintf("CGO_CFLAGS=-O2 -DASTERINMUSIC_PKGCONFIG_%x=1", signature[:8]))
+	env = append(env, "ASTERINMUSIC_OPUS_ROOT="+opusRoot,
 		"PATH="+filepath.Join(opusRoot, "bin")+string(os.PathListSeparator)+filepath.Join(root, "bin")+string(os.PathListSeparator)+os.Getenv("PATH"),
 		"LD_LIBRARY_PATH="+filepath.Join(opusRoot, "lib")+string(os.PathListSeparator)+filepath.Join(root, "lib")+string(os.PathListSeparator)+os.Getenv("LD_LIBRARY_PATH"))
 	if action == "opus-simd-compare" {
@@ -85,7 +85,7 @@ func nativeTarget(action, target string) error {
 			return err
 		}
 		args := []string{"-C", "experiments/opusbench", "run", ".", "-out", output}
-		if input := os.Getenv("RAINMUSIC_OPUS_PCM"); input != "" {
+		if input := os.Getenv("ASTERINMUSIC_OPUS_PCM"); input != "" {
 			input, err = filepath.Abs(input)
 			if err != nil {
 				return err
@@ -101,12 +101,12 @@ func nativeTarget(action, target string) error {
 		}
 		return command(env, "go", "test", "-tags", "davego,opus", "-race", "./...")
 	}
-	binary := filepath.Join(dir, "rainmusic-voice"+ext)
+	binary := filepath.Join(dir, "asterinmusic-voice"+ext)
 	if target != "" {
 		binary = target
 	}
 	env = append(env, "GOEXPERIMENT=simd", "GOAMD64=v3")
-	if err = command(env, "go", "build", "-tags", "dave,opus", "-o", binary, "./cmd/rainmusic"); err != nil {
+	if err = command(env, "go", "build", "-tags", "dave,opus", "-o", binary, "./cmd/asterinmusic"); err != nil {
 		return err
 	}
 	if action == "build-voice" {
@@ -120,12 +120,15 @@ func nativeTarget(action, target string) error {
 		if err != nil {
 			return err
 		}
+		if err = waitRestartBoundary(root); err != nil {
+			return err
+		}
 		if err = stopBot(root); err != nil {
 			return err
 		}
 	}
 	if action == "bot-start" || action == "bot-restart" {
-		env = append(env, fmt.Sprintf("RAINMUSIC_RESUME=%t", action == "bot-restart"))
+		env = append(env, fmt.Sprintf("ASTERINMUSIC_RESUME=%t", action == "bot-restart"))
 		return launchBot(env, binary)
 	}
 	return command(env, binary, append([]string{action}, launchArgs...)...)

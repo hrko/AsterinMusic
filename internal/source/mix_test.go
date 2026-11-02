@@ -1,10 +1,10 @@
 package source
 
 import (
+	"asterinmusic/internal/music"
 	"context"
 	"errors"
 	"io"
-	"rainmusic/internal/music"
 	"strings"
 	"testing"
 )

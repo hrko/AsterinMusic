@@ -1,13 +1,13 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/source"
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"math"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 	"strconv"
 	"strings"
 )
@@ -90,7 +90,7 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 	}
 	pages := max(1, (len(entries)+9)/10)
 	page = min(max(1, page), pages)
-	embed := discord.Embed{Author: &discord.EmbedAuthor{Name: "♫ RainMusic"}, Title: "再生キュー", Color: 0x527DA8}
+	embed := discord.Embed{Author: &discord.EmbedAuthor{Name: "♫ AsterinMusic"}, Title: "再生キュー", Color: 0x527DA8}
 	current := "再生中の曲はありません。"
 	label := "再生中"
 	if s.current != nil {

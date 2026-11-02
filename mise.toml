@@ -47,19 +47,19 @@ run = "go mod tidy"
 run = "go run ./cmd/dev build"
 
 [tasks.doctor]
-run = "go run ./cmd/rainmusic doctor"
+run = "go run ./cmd/asterinmusic doctor"
 
 [tasks.inspect]
 description = "Inspect a supported URL: mise run inspect -- URL"
-run = "go run ./cmd/rainmusic inspect"
+run = "go run ./cmd/asterinmusic inspect"
 
 [tasks.capture]
 description = "Bounded source acquisition: mise run capture -- URL OUTPUT"
-run = "go run ./cmd/rainmusic capture"
+run = "go run ./cmd/asterinmusic capture"
 
 [tasks.render]
 description = "Convert a local audio file at BGM volume: mise run render -- INPUT OUTPUT.ogg"
-run = "go run ./cmd/rainmusic render"
+run = "go run ./cmd/asterinmusic render"
 
 [tasks.audio-check]
 description = "Verify local FFmpeg conversion without Discord or network"
@@ -93,17 +93,17 @@ run = "go run ./cmd/quality score"
 run = "go run ./cmd/quality summarize"
 
 [tasks.config-check]
-run = "go run ./cmd/rainmusic config-check"
+run = "go run ./cmd/asterinmusic config-check"
 
 [tasks.source-check]
 description = "Check one source with configured authentication, without Discord"
-run = "go run ./cmd/rainmusic source-check"
+run = "go run ./cmd/asterinmusic source-check"
 
 [tasks.discord-check]
-run = "go run ./cmd/rainmusic discord-check"
+run = "go run ./cmd/asterinmusic discord-check"
 
 [tasks.register]
-run = "go run ./cmd/rainmusic register"
+run = "go run ./cmd/asterinmusic register"
 
 [tasks.serve]
 run = "go run ./cmd/dev serve"
@@ -130,15 +130,15 @@ run = "go run ./cmd/dev dave-check"
 run = "go run ./cmd/dev dave-interop"
 
 [tasks.bot-restart-go]
-env = { RAINMUSIC_DAVE_BACKEND = "go" }
+env = { ASTERINMUSIC_DAVE_BACKEND = "go" }
 run = "go run ./cmd/dev bot-restart"
 
 [tasks.bot-restart-native]
-env = { RAINMUSIC_DAVE_BACKEND = "native" }
+env = { ASTERINMUSIC_DAVE_BACKEND = "native" }
 run = "go run ./cmd/dev bot-restart"
 
 [tasks.build-voice-native]
-env = { RAINMUSIC_DAVE_BACKEND = "native" }
+env = { ASTERINMUSIC_DAVE_BACKEND = "native" }
 run = "go run ./cmd/dev build-voice"
 
 [tasks.voice-check]
@@ -148,19 +148,19 @@ run = "go run ./cmd/dev voice-check"
 run = "go run ./cmd/dev build-voice"
 
 [tasks.update-check]
-run = "go run ./cmd/rainmusic update-check"
+run = "go run ./cmd/asterinmusic update-check"
 
 [tasks.update-apply]
-run = "go run ./cmd/rainmusic update-apply"
+run = "go run ./cmd/asterinmusic update-apply"
 
 [tasks.update-rollback]
-run = "go run ./cmd/rainmusic update-rollback"
+run = "go run ./cmd/asterinmusic update-rollback"
 
 [tasks.race-test]
 run = "go run ./cmd/dev race-test"
 
 [tasks.stream-check]
-run = "go run ./cmd/rainmusic stream-check"
+run = "go run ./cmd/asterinmusic stream-check"
 
 [tasks.inspect-mix]
-run = "go run ./cmd/rainmusic inspect-mix"
+run = "go run ./cmd/asterinmusic inspect-mix"

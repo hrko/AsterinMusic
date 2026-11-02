@@ -1,11 +1,11 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/source"
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 	"strings"
 	"time"
 )

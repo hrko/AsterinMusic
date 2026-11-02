@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"rainmusic/internal/process"
+	"asterinmusic/internal/process"
 )
 
 func TestOpusLiveBitrateChanges(t *testing.T) {
@@ -82,7 +82,7 @@ func TestNativePacingStallAndLatestVolume(t *testing.T) {
 }
 
 func TestIntegrationNativeVolumeLatency(t *testing.T) {
-	if os.Getenv("RAINMUSIC_AUDIO_TEST") != "1" {
+	if os.Getenv("ASTERINMUSIC_AUDIO_TEST") != "1" {
 		t.Skip("mise run native-audio-check")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -172,7 +172,7 @@ func TestIntegrationNativeVolumeLatency(t *testing.T) {
 }
 
 func TestIntegrationNativeCancelAtSink(t *testing.T) {
-	if os.Getenv("RAINMUSIC_AUDIO_TEST") != "1" {
+	if os.Getenv("ASTERINMUSIC_AUDIO_TEST") != "1" {
 		t.Skip("mise run native-audio-check")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

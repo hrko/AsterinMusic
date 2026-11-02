@@ -21,7 +21,7 @@ func pureDave(action, target string) error {
 			ext = ".exe"
 		}
 		var err error
-		target, err = filepath.Abs(filepath.Join("bin", "rainmusic-voice"+ext))
+		target, err = filepath.Abs(filepath.Join("bin", "asterinmusic-voice"+ext))
 		if err != nil {
 			return err
 		}
@@ -30,7 +30,7 @@ func pureDave(action, target string) error {
 		return err
 	}
 	fmt.Println("DAVE backend: pure Go (CGO disabled)")
-	if err := command(env, "go", "build", "-tags", "davego,opus", "-o", target, "./cmd/rainmusic"); err != nil {
+	if err := command(env, "go", "build", "-tags", "davego,opus", "-o", target, "./cmd/asterinmusic"); err != nil {
 		return err
 	}
 	if action == "build-voice" {
@@ -44,12 +44,15 @@ func pureDave(action, target string) error {
 		if err != nil {
 			return err
 		}
+		if err = waitRestartBoundary(root); err != nil {
+			return err
+		}
 		if err = stopBot(root); err != nil {
 			return err
 		}
 	}
 	if action == "bot-start" || action == "bot-restart" {
-		env = append(env, fmt.Sprintf("RAINMUSIC_RESUME=%t", action == "bot-restart"))
+		env = append(env, fmt.Sprintf("ASTERINMUSIC_RESUME=%t", action == "bot-restart"))
 		return launchBot(env, target)
 	}
 	return command(env, target, append([]string{action}, launchArgs...)...)

@@ -1,10 +1,10 @@
 package source
 
 import (
+	"asterinmusic/internal/music"
 	"context"
 	"errors"
 	"net/url"
-	"rainmusic/internal/music"
 )
 
 const DefaultMixCount = 20

@@ -14,7 +14,7 @@ import (
 // The test binary doubles as a native fixture, so tests require no shell,
 // yt-dlp installation, network, or Discord credentials.
 func TestHelper(t *testing.T) {
-	if os.Getenv("RAINMUSIC_HELPER") != "1" {
+	if os.Getenv("ASTERINMUSIC_HELPER") != "1" {
 		return
 	}
 	switch os.Args[len(os.Args)-1] {
@@ -32,7 +32,7 @@ func TestHelper(t *testing.T) {
 }
 
 func TestLiteralArgument(t *testing.T) {
-	t.Setenv("RAINMUSIC_HELPER", "1")
+	t.Setenv("ASTERINMUSIC_HELPER", "1")
 	var out bytes.Buffer
 	arg := "spaces & $() ; 日本語"
 	err := Run(context.Background(), os.Args[0], []string{"-test.run=^TestHelper$", "--", arg}, nil, &out)
@@ -42,7 +42,7 @@ func TestLiteralArgument(t *testing.T) {
 }
 
 func TestCancellation(t *testing.T) {
-	t.Setenv("RAINMUSIC_HELPER", "1")
+	t.Setenv("ASTERINMUSIC_HELPER", "1")
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 	defer cancel()
 	start := time.Now()
@@ -56,7 +56,7 @@ func TestCancellation(t *testing.T) {
 }
 
 func TestOutputAndErrorBounds(t *testing.T) {
-	t.Setenv("RAINMUSIC_HELPER", "1")
+	t.Setenv("ASTERINMUSIC_HELPER", "1")
 	err := Run(context.Background(), os.Args[0], []string{"-test.run=^TestHelper$", "--", "fail"}, nil, &bytes.Buffer{})
 	if err == nil || len(err.Error()) > 18*1024 {
 		t.Fatalf("error not bounded: %v", err)

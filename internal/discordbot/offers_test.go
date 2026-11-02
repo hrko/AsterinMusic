@@ -1,7 +1,7 @@
 package discordbot
 
 import (
-	"rainmusic/internal/music"
+	"asterinmusic/internal/music"
 	"sync"
 	"sync/atomic"
 	"testing"

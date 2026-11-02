@@ -1,8 +1,8 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
 	"github.com/disgoorg/disgo/discord"
-	"rainmusic/internal/music"
 	"testing"
 	"time"
 )

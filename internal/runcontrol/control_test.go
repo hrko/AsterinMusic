@@ -43,6 +43,34 @@ func TestFailedCheckpointRejectsStop(t *testing.T) {
 	}
 }
 
+func TestPlaybackStatusIsAuthenticatedAndOptional(t *testing.T) {
+	root := t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ctx, c, err := Start(ctx, root, cancel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	s, err := Request(root, "status")
+	if err != nil || s.Playback != nil {
+		t.Fatal("unexpected playback capability")
+	}
+	ObservePlayback(ctx, func() Playback { return Playback{Active: true, Started: true, Sequence: 9} })
+	s, err = Request(root, "status")
+	if err != nil || s.Playback == nil || s.Playback.Sequence != 9 || s.Token != "" {
+		t.Fatal("invalid status")
+	}
+	response, err := http.Get("http://" + Address(root, false) + "/status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 403 {
+		t.Fatal("playback state exposed without authentication")
+	}
+}
+
 func TestSingleInstanceReadyAndGracefulStop(t *testing.T) {
 	root := t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())

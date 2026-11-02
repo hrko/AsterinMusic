@@ -1,4 +1,4 @@
-// rainmusic exposes Discord playback, local diagnostics, and updater commands.
+// asterinmusic exposes Discord playback, local diagnostics, and updater commands.
 package main
 
 import (
@@ -12,13 +12,13 @@ import (
 	"os/signal"
 	"time"
 
-	"rainmusic/internal/audio"
-	"rainmusic/internal/config"
-	"rainmusic/internal/discordbot"
-	"rainmusic/internal/process"
-	"rainmusic/internal/runcontrol"
-	"rainmusic/internal/source"
-	"rainmusic/internal/updater"
+	"asterinmusic/internal/audio"
+	"asterinmusic/internal/config"
+	"asterinmusic/internal/discordbot"
+	"asterinmusic/internal/process"
+	"asterinmusic/internal/runcontrol"
+	"asterinmusic/internal/source"
+	"asterinmusic/internal/updater"
 )
 
 func main() {
@@ -57,7 +57,7 @@ func run(ctx context.Context, args []string) error {
 	}
 	args = remaining
 	if len(args) == 0 {
-		return errors.New("usage: rainmusic doctor | inspect URL | capture URL OUTPUT | render INPUT OUTPUT.ogg")
+		return errors.New("usage: asterinmusic doctor | inspect URL | capture URL OUTPUT | render INPUT OUTPUT.ogg")
 	}
 	switch args[0] {
 	case "source-check":
@@ -76,6 +76,7 @@ func run(ctx context.Context, args []string) error {
 			}
 		}
 		c := source.New(executable)
+		c.MetadataLanguage = cfg.YouTubeMetadataLanguage
 		if err = c.ConfigureAuth(cfg.NiconicoAuth); err != nil {
 			return err
 		}
@@ -192,7 +193,7 @@ func run(ctx context.Context, args []string) error {
 		return err
 	case "render":
 		if len(args) != 3 {
-			return errors.New("usage: rainmusic render INPUT OUTPUT.ogg")
+			return errors.New("usage: asterinmusic render INPUT OUTPUT.ogg")
 		}
 		input, err := os.Open(args[1])
 		if err != nil {
@@ -220,7 +221,7 @@ func run(ctx context.Context, args []string) error {
 		return nil
 	case "inspect", "inspect-mix":
 		if len(args) != 2 {
-			return errors.New("usage: rainmusic inspect URL")
+			return errors.New("usage: asterinmusic inspect URL")
 		}
 		client := source.New("yt-dlp")
 		var r source.Result
@@ -238,7 +239,7 @@ func run(ctx context.Context, args []string) error {
 		return err
 	case "capture":
 		if len(args) != 3 {
-			return errors.New("usage: rainmusic capture URL OUTPUT (10-second acquisition check)")
+			return errors.New("usage: asterinmusic capture URL OUTPUT (10-second acquisition check)")
 		}
 		if _, err := source.Parse(args[1]); err != nil {
 			return err

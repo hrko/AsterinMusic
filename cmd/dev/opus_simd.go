@@ -53,7 +53,7 @@ func compareSIMD(nativeEnv []string, binDir, ext string) error {
 		}
 	}
 	inputs := []string{""}
-	if input := os.Getenv("RAINMUSIC_OPUS_PCM"); input != "" {
+	if input := os.Getenv("ASTERINMUSIC_OPUS_PCM"); input != "" {
 		input, err = filepath.Abs(input)
 		if err != nil {
 			return err

@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"rainmusic/internal/process"
+	"asterinmusic/internal/process"
 )
 
 func TestIntegrationPacedOpus(t *testing.T) {
-	if os.Getenv("RAINMUSIC_AUDIO_TEST") != "1" {
+	if os.Getenv("ASTERINMUSIC_AUDIO_TEST") != "1" {
 		t.Skip("mise run audio-check")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -39,7 +39,7 @@ func TestIntegrationPacedOpus(t *testing.T) {
 }
 
 func TestIntegrationGainAndOpus(t *testing.T) {
-	if os.Getenv("RAINMUSIC_AUDIO_TEST") != "1" {
+	if os.Getenv("ASTERINMUSIC_AUDIO_TEST") != "1" {
 		t.Skip("mise run audio-check enables FFmpeg integration")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -92,7 +92,7 @@ func TestIntegrationGainAndOpus(t *testing.T) {
 }
 
 func TestIntegrationCancellation(t *testing.T) {
-	if os.Getenv("RAINMUSIC_AUDIO_TEST") != "1" {
+	if os.Getenv("ASTERINMUSIC_AUDIO_TEST") != "1" {
 		t.Skip("mise run audio-check enables FFmpeg integration")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 800*time.Millisecond)

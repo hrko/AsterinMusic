@@ -1,19 +1,22 @@
 # 設定ファイル
 
-RainMusicはkoanf v2でYAMLを読み込み、文字列値を展開してから型付き設定へ変換・検証する。初期版は1Bot・1サーバーのみ実行可能。複数指定は未対応エラーとなり、一部だけを使用することはない。
+AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してから型付き設定へ変換・検証する。初期版は1Bot・1サーバーのみ実行可能。複数指定は未対応エラーとなり、一部だけを使用することはない。
 
-`rainmusic.example.yaml`を`rainmusic.yaml`へコピーして編集する。指定がなければカレントディレクトリの`rainmusic.yaml`を読む。別の場所は`--config PATH`で指定する。欠落・構文不正はエラーで、自動探索や旧環境変数へのフォールバックは行わない。
+`asterinmusic.example.yaml`を`asterinmusic.yaml`へコピーして編集する。指定がなければカレントディレクトリの`asterinmusic.yaml`を読む。別の場所は`--config PATH`で指定する。欠落・構文不正はエラーで、自動探索や旧環境変数へのフォールバックは行わない。
 
 ## 構造
+
+名称変更前の`rainmusic.yaml`を使っている場合は、`asterinmusic.yaml`へ改名するか、`--config`で明示する。既定の状態保存先も`.rainmusic/state`から`.asterinmusic/state`へ変更したため、既存のキューを引き継ぐ場合は`runtime.state_dir`に従来の保存先を指定する。開発環境の`.dev/state`はそのまま使用できる。開発用の`RAINMUSIC_*`環境変数は`ASTERINMUSIC_*`へ改名する。YAML内の`${DISCORD_TOKEN}`など、利用者が指定する認証情報の変数名は変更不要。
 
 | 項目 | 必須・既定値 |
 | --- | --- |
 | `version` | 必須、`1` |
-| `runtime.state_dir` | `./.rainmusic/state` |
+| `runtime.state_dir` | `./.asterinmusic/state` |
 | `tools.yt_dlp.path` | `yt-dlp` |
 | `tools.ffmpeg.path` | `ffmpeg` |
 | `playback.default_volume` | `30`、0〜100 |
 | `playback.queue_limit` | `500`、正の整数 |
+| `sources.youtube.metadata_language` | `ja`。YouTube / YouTube Musicのメタデータ優先言語。`provider_default`または`auto`でyt-dlpの既定動作 |
 | `sources.niconico.auth.method` | `none`（省略時）、`cookies`、`password` |
 | `sources.niconico.auth.cookies_file` | `cookies`時のみ必須。設定ファイル基準のパス |
 | `sources.niconico.auth.username` / `password` | `password`時のみ両方必須。文字列・変数参照 |
@@ -28,15 +31,17 @@ RainMusicはkoanf v2でYAMLを読み込み、文字列値を展開してから�
 
 ## 変数と認証情報
 
-`token: "${RAINMUSIC_BOT_MAIN_TOKEN}"`のように参照する。`--env-file PATH`を指定した場合だけdotenvを追加で読む。優先順位はプロセス環境変数、dotenvの順。環境変数が明示的に空の場合も優先し、必須トークンならエラーにする。dotenvは内部マップへ読み、`os.Setenv`は呼ばない。
+`token: "${ASTERINMUSIC_BOT_MAIN_TOKEN}"`のように参照する。`--env-file PATH`を指定した場合だけdotenvを追加で読む。優先順位はプロセス環境変数、dotenvの順。環境変数が明示的に空の場合も優先し、必須トークンならエラーにする。dotenvは内部マップへ読み、`os.Setenv`は呼ばない。
 
 YAML解析後、文字列値（配列内を含む）で`${NAME}`を1回だけ展開する。キーは展開せず、展開結果を再解析・再展開しない。`$$`はリテラルの`$`。変数名は`[A-Za-z_][A-Za-z0-9_]*`。未定義、不正な構文、`$VAR`、既定値構文、コマンド置換はエラー。数値や真偽値への暗黙変換は行わない。
 
 dotenv内部の引用符・展開はkoanfのdotenvパーサー（godotenv）の規則に従う。YAML側の展開とは別段階であり、dotenvで得た値を挿入後に再展開しない。値をそのまま保持したい場合はdotenv内でシングルクォートを使う。
 
-直接トークンを書いてもよいが、設定ファイルも秘密情報として扱う。設定全体・解析エラー原文・値はログに出さない。配布例にはトークンを含めない。`rainmusic.yaml`と`.env`はGit管理外。別名ファイルを使う場合も利用者が管理対象外とアクセス権を設定する。
+直接トークンを書いてもよいが、設定ファイルも秘密情報として扱う。設定全体・解析エラー原文・値はログに出さない。配布例にはトークンを含めない。`asterinmusic.yaml`と`.env`はGit管理外。別名ファイルを使う場合も利用者が管理対象外とアクセス権を設定する。
 
 ## パスと実行状態
+
+`sources.youtube.metadata_language`は単曲・プレイリスト・Mix・自動再生候補の新しいメタデータ取得に適用する。`ja`、`en`、`zh-TW`など、yt-dlpが対応するコードを指定する。設定時にコードの構文を検証し、対応していないコードは取得時にyt-dlpがエラーにする。`provider_default`とその別名`auto`は言語オプションを省略する（動画の原語やDiscord利用者の言語を自動選択する意味ではない）。日本語が提供されない場合も翻訳は行わず、取得できたタイトルを使う。Botの応答・音声・字幕の言語は変更しない。変更にはBot再起動が必要で、保存済みキューの曲名は自動更新しない。
 
 ニコニコ動画の認証方式は排他的に指定する。他方式の項目は空文字でも拒否する。Cookieファイルの読み取り・Netscape形式は設定検証時に確認し、オンライン認証は取得時に行う。ID・パスワードは空値と改行・NULを拒否する。Cookieの用意と設定例は[ニコニコ動画の認証](niconico-auth.md)を参照。
 
@@ -50,12 +55,12 @@ yt-dlpが既定の`yt-dlp`の場合、従来の更新管理で選択済みのバ
 
 ## 開発環境の移行
 
-ローカルの`rainmusic.yaml`は`${DISCORD_BOT_TOKEN}`など既存のmise環境変数を明示参照し、`runtime.state_dir: ./.dev/state`として既存キューを維持する。環境変数名からの自動設定は廃止。miseは開発用の環境変数供給・タスクランナーであり、配布バイナリの必須依存ではない。
+ローカルの`asterinmusic.yaml`は`${DISCORD_BOT_TOKEN}`など既存のmise環境変数を明示参照し、`runtime.state_dir: ./.dev/state`として既存キューを維持する。環境変数名からの自動設定は廃止。miseは開発用の環境変数供給・タスクランナーであり、配布バイナリの必須依存ではない。
 
 ```text
-mise run config-check -- --config rainmusic.yaml
-mise run discord-check -- --config rainmusic.yaml
-mise run bot-restart -- --config rainmusic.yaml --env-file .env
+mise run config-check -- --config asterinmusic.yaml
+mise run discord-check -- --config asterinmusic.yaml
+mise run bot-restart -- --config asterinmusic.yaml --env-file .env
 ```
 
 `config-check`はオフラインの解析・検証、`discord-check`は認証・サーバーアクセス・ツール存在・保存済み状態の読み込み検証を行う。認証中はGatewayへ接続しない。

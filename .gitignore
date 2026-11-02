@@ -1,6 +1,8 @@
 /.dev/
+/.asterinmusic/
 /.rainmusic/
 /rainmusic.yaml
+/asterinmusic.yaml
 .env
 .env.*
 !.env.example

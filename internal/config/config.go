@@ -1,6 +1,7 @@
 package config
 
 import (
+	"asterinmusic/internal/source"
 	"errors"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/go-viper/mapstructure/v2"
@@ -10,7 +11,6 @@ import (
 	"github.com/knadh/koanf/v2"
 	"os"
 	"path/filepath"
-	"rainmusic/internal/source"
 	"reflect"
 	"regexp"
 	"strings"
@@ -18,6 +18,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	YouTubeMetadataLanguage                               string
 	NiconicoAuth                                          source.AuthConfig
 	Token                                                 string
 	ApplicationID, GuildID, TextChannelID, VoiceChannelID snowflake.ID
@@ -27,6 +28,9 @@ type Config struct {
 }
 type Document struct {
 	Sources struct {
+		YouTube struct {
+			MetadataLanguage *string `koanf:"metadata_language"`
+		} `koanf:"youtube"`
 		Niconico struct {
 			Auth struct {
 				Method      string  `koanf:"method"`
@@ -71,7 +75,7 @@ type Options struct{ ConfigFile, EnvFile string }
 func Load(o Options) (Config, error) { return Read(o, os.LookupEnv) }
 func Read(o Options, lookup func(string) (string, bool)) (Config, error) {
 	if o.ConfigFile == "" {
-		o.ConfigFile = "rainmusic.yaml"
+		o.ConfigFile = "asterinmusic.yaml"
 	}
 	path, err := filepath.Abs(o.ConfigFile)
 	if err != nil {
@@ -93,7 +97,7 @@ func Read(o Options, lookup func(string) (string, bool)) (Config, error) {
 		return "", false
 	}
 	k := koanf.New(".")
-	defaults := map[string]any{"runtime.state_dir": "./.rainmusic/state", "tools.yt_dlp.path": "yt-dlp", "tools.ffmpeg.path": "ffmpeg", "playback.default_volume": 30, "playback.queue_limit": 500}
+	defaults := map[string]any{"runtime.state_dir": "./.asterinmusic/state", "tools.yt_dlp.path": "yt-dlp", "tools.ffmpeg.path": "ffmpeg", "playback.default_volume": 30, "playback.queue_limit": 500}
 	if err := k.Load(confmap.Provider(defaults, "."), nil); err != nil {
 		return Config{}, errors.New("cannot load defaults")
 	}
@@ -142,6 +146,13 @@ func (d Document) resolve(base string) (Config, error) {
 		return fail("runtime/tool paths must not be empty")
 	}
 	c := Config{StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
+	c.YouTubeMetadataLanguage = "ja"
+	if value := d.Sources.YouTube.MetadataLanguage; value != nil {
+		c.YouTubeMetadataLanguage = *value
+	}
+	if value := c.YouTubeMetadataLanguage; value != "auto" && value != "provider_default" && !regexp.MustCompile(`^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$`).MatchString(value) {
+		return fail("invalid YouTube metadata language code")
+	}
 	a := d.Sources.Niconico.Auth
 	c.NiconicoAuth.Method = a.Method
 	if (a.Method != "cookies" && a.CookiesFile != nil) || (a.Method != "password" && (a.Username != nil || a.Password != nil)) {

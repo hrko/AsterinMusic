@@ -2,6 +2,8 @@
 package updater
 
 import (
+	"asterinmusic/internal/process"
+	"asterinmusic/internal/source"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -13,8 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"rainmusic/internal/process"
-	"rainmusic/internal/source"
 	"regexp"
 	"runtime"
 	"strings"
@@ -33,7 +33,7 @@ type Manager struct {
 }
 
 func New() *Manager {
-	root := os.Getenv("RAINMUSIC_UPDATE_DIR")
+	root := os.Getenv("ASTERINMUSIC_UPDATE_DIR")
 	if root == "" {
 		root = filepath.Join(".dev", "yt-dlp")
 	}
@@ -97,7 +97,7 @@ func (m *Manager) get(ctx context.Context, url string, w io.Writer, limit int64)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "RainMusic-updater")
+	req.Header.Set("User-Agent", "AsterinMusic-updater")
 	resp, err := m.HTTP.Do(req)
 	if err != nil {
 		return errors.New("update download failed")

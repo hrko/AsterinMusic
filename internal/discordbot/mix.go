@@ -1,11 +1,11 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/source"
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 )
 
 const mixNotice = "Mixの候補を取得して追加しました。YouTubeで表示される曲目・曲順とは異なる場合があります。自動補充は行いません。"

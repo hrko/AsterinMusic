@@ -24,7 +24,7 @@ func runningBots(root string) ([]int, error) {
 	var pids []int
 	for err = windows.Process32First(h, &entry); err == nil; err = windows.Process32Next(h, &entry) {
 		name := strings.ToLower(windows.UTF16ToString(entry.ExeFile[:]))
-		if !strings.HasPrefix(name, "rainmusic-voice") {
+		if !strings.HasPrefix(name, "asterinmusic-voice") && !strings.HasPrefix(name, "rainmusic-voice") {
 			continue
 		}
 		process, e := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, entry.ProcessID)

@@ -12,6 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"asterinmusic/internal/config"
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/runcontrol"
+	"asterinmusic/internal/source"
+	"asterinmusic/internal/updater"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
@@ -20,11 +25,6 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
-	"rainmusic/internal/config"
-	"rainmusic/internal/music"
-	"rainmusic/internal/runcontrol"
-	"rainmusic/internal/source"
-	"rainmusic/internal/updater"
 )
 
 type App struct {
@@ -57,6 +57,9 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	if c.YouTubeMetadataLanguage != "" {
+		a.source.MetadataLanguage = c.YouTubeMetadataLanguage
+	}
 	if err := a.source.ConfigureAuth(c.NiconicoAuth); err != nil {
 		return nil, err
 	}
@@ -177,7 +180,7 @@ func (a *App) Register() error {
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, time.Minute)
 	defer cancel()
-	// Upsert only RainMusic's commands; do not delete unrelated registrations.
+	// Upsert only AsterinMusic's commands; do not delete unrelated registrations.
 	for _, cmd := range Commands() {
 		if _, err := a.client.Rest.CreateGuildCommand(a.config.ApplicationID, a.config.GuildID, cmd, rest.WithCtx(ctx)); err != nil {
 			return fmt.Errorf("could not register /%s: %s", cmd.CommandName(), a.safeError(err))
@@ -219,6 +222,7 @@ func (a *App) Serve() error {
 	if restored != nil {
 		s.restoreSettings(restored)
 	}
+	runcontrol.ObservePlayback(a.ctx, s.playbackStatus)
 	runcontrol.BeforeStop(a.ctx, func() error {
 		err := s.checkpoint(checkpointPath)
 		if err != nil {
@@ -238,7 +242,7 @@ func (a *App) Serve() error {
 		if err := os.Remove(checkpointPath); err != nil {
 			return fmt.Errorf("consume playback checkpoint: %w", err)
 		}
-		if os.Getenv("RAINMUSIC_RESUME") == "true" {
+		if os.Getenv("ASTERINMUSIC_RESUME") == "true" {
 			if err := s.resumeCheckpoint(restored); err != nil {
 				slog.Warn("playback restore could not reconnect; queue retained", "error", a.safeError(err))
 			} else {
@@ -246,7 +250,7 @@ func (a *App) Serve() error {
 			}
 		}
 	}
-	slog.Info("RainMusic connected; waiting for commands", "dave", daveBackend)
+	slog.Info("AsterinMusic connected; waiting for commands", "dave", daveBackend)
 	runcontrol.Ready(a.ctx)
 	go a.checkUpdates()
 	go a.runPresence()

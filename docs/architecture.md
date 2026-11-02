@@ -2,6 +2,8 @@
 
 ## 設定ロード
 
+YouTubeメタデータ言語は型付きConfigから`source.Client.MetadataLanguage`へ渡し、メタデータ取得時だけ`--extractor-args youtube:lang=CODE`を追加する。ニコニコ認証・音声形式の選択とは独立している。独立診断用Clientも既定は`ja`で、設定ファイルを読む`source-check`は設定値を使用する。
+
 `internal/config`がkoanf v2、file/confmap Provider、dotenv Parser、厳密なYAML Parserを使って読み込む。dotenvは別のkoanfインスタンスへ保持し、プロセス環境変数優先の参照関数を構成する。YAML解析後に文字列のみ1回展開し、既定値とマージしてmapstructureの厳密なデコードと意味検証を行う。認証でApplication IDを確認してから、単一Bot用の型付きConfigをAppへ渡す。koanfや未展開の値を再生処理へ渡さない。[設定仕様](configuration.md)を参照。
 
 2026-11-02時点。利用者向けの要件は[現行仕様](specification.md)、操作方法は[開発・運用手順](development.md)を参照。
@@ -32,7 +34,7 @@ flowchart LR
 
 `serve`と`build-voice`は既定で`davego,opus`タグ、`CGO_ENABLED=0`、`GOEXPERIMENT=simd`、`GOAMD64=v3`でビルドします。実行にはamd64 v3対応CPUが必要です。gopusは96kbpsでViSQOL検証済みのコミットに固定し、48kHzステレオ・20ms・チャンネル設定のビットレート・complexity 9・CVBRを指定します。DAVEには`dave-go v0.5.1`を使います。Bot本体のビルドからC/C++依存がなくなりました。音声取得・デコードには引き続きyt-dlp・FFmpegなどの外部コマンドを使います。
 
-`RAINMUSIC_DAVE_BACKEND=native`または`bot-restart-native`で従来のlibdave版（`dave,opus`・CGOあり）へ切り戻せます。鍵交換中は送信を保留し、15秒以内に完了しない場合は再生エラーにします。接続破棄時にはDAVEの監視処理も終了させます。[DAVE移行の検証記録](dave-go-migration.md)を参照してください。libopusとlibdaveは比較・切り戻し用の開発依存として残しています。
+`ASTERINMUSIC_DAVE_BACKEND=native`または`bot-restart-native`で従来のlibdave版（`dave,opus`・CGOあり）へ切り戻せます。鍵交換中は送信を保留し、15秒以内に完了しない場合は再生エラーにします。接続破棄時にはDAVEの監視処理も終了させます。[DAVE移行の検証記録](dave-go-migration.md)を参照してください。libopusとlibdaveは比較・切り戻し用の開発依存として残しています。
 
 通常ビルドの`render`・`stream-check`は従来のFFmpeg変換経路を使う診断用です。ライブ経路の検証には`native-audio-check`を使ってください。停止時には取得・変換・送信をキャンセルし、遅れたフレームを取り戻すための連続送信はしません。曲の終了時に`audio pacing`ログへ送信数、20msを超える遅延の件数と最大値を出力します。
 
@@ -41,6 +43,8 @@ flowchart LR
 各BotのAppがPresence更新処理を1つ所有する。再生セッションからは現在曲・送信開始済み状態をスナップショットとして読み、ネットワークを含まない表示方針の関数で曲名または空表示に変換する。設定対象と参加サーバー一覧が同じ単一サーバーの場合だけ公開する。更新処理は1秒周期で最新状態を確認し、5秒以上の送信間隔、重複抑止、失敗後の最新状態による再試行、READY/RESUMED後の再送を担当する。音声ループはPresence更新を待たない。将来は各Botの対象サーバー一覧を同じ方針関数へ渡す。
 
 ## 管理タスクによる状態復元
+
+認証付き管理ステータスは、再生処理の稼働・音声送信開始・送信開始回数だけを追加公開する。曲名・URLは含めない。送信開始回数は各曲の最初の音声パケット送信後に増加する。`bot-restart --after-track`はビルド・事前検証後に回数を記録し、次曲の送信開始または再生停止を待って既存のチェックポイント付き停止・起動を実行する。待機中も読み取り専用の管理タスクを許可し、変更操作は排他制御する。
 
 手動キューは変更ごとに`*-queue.json`へ保存する。管理APIの停止処理では、キャンセル前にsessionの再生状態・音量・自動再生設定を同じ状態ディレクトリの`*-playback.json`へ同期・置換して保存する。保存完了後に選曲と追加を止めるため、保存失敗なら旧プロセスは再生を継続できる。
 

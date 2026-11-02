@@ -10,7 +10,7 @@ import (
 	"os"
 	"sync"
 
-	"rainmusic/internal/process"
+	"asterinmusic/internal/process"
 )
 
 // Producer writes an encoded audio container and must honor context cancellation.

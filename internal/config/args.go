@@ -46,7 +46,7 @@ func ExtractOptions(args []string) (Options, []string, error) {
 func (o Options) Args() []string {
 	path := o.ConfigFile
 	if path == "" {
-		path, _ = filepath.Abs("rainmusic.yaml")
+		path, _ = filepath.Abs("asterinmusic.yaml")
 	}
 	args := []string{"--config", path}
 	if o.EnvFile != "" {

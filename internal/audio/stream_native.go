@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"rainmusic/internal/process"
+	"asterinmusic/internal/process"
 )
 
 const StreamPaced = true

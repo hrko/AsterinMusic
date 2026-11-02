@@ -1,11 +1,11 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/process"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"rainmusic/internal/process"
 	"time"
 )
 

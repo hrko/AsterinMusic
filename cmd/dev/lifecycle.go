@@ -1,14 +1,16 @@
 package main
 
 import (
+	"asterinmusic/internal/config"
+	"asterinmusic/internal/runcontrol"
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
-	"rainmusic/internal/config"
-	"rainmusic/internal/runcontrol"
 	"runtime"
 	"time"
 )
@@ -18,26 +20,35 @@ func manage(action string) error {
 	if err != nil {
 		return err
 	}
+	// Read-only diagnostics remain available while a restart owns the guard.
+	if action == "logs" {
+		return showLogs(root)
+	}
+	if action == "status" {
+		state, running, err := botState(root)
+		if err != nil {
+			return err
+		}
+		if running {
+			fmt.Printf("running PID=%d ready=%t executable=%s\n", state.PID, state.Ready, state.Executable)
+			if state.Playback != nil {
+				fmt.Printf("playback active=%t started=%t sequence=%d\n", state.Playback.Active, state.Playback.Started, state.Playback.Sequence)
+			}
+		} else {
+			fmt.Println("stopped")
+		}
+		return nil
+	}
 	guard, err := net.Listen("tcp", runcontrol.Address(root, true))
 	if err != nil {
 		return fmt.Errorf("another lifecycle operation is running (or control port conflict): %w", err)
 	}
 	defer guard.Close()
-	if action == "logs" {
-		return showLogs(root)
-	}
 	state, running, err := botState(root)
 	if err != nil {
 		return err
 	}
 	switch action {
-	case "status":
-		if running {
-			fmt.Printf("running PID=%d ready=%t executable=%s\n", state.PID, state.Ready, state.Executable)
-		} else {
-			fmt.Println("stopped")
-		}
-		return nil
 	case "stop":
 		return stopBot(root)
 	case "start":
@@ -60,8 +71,55 @@ func manage(action string) error {
 	if runtime.GOOS == "windows" {
 		suffix = ".exe"
 	}
-	target := filepath.Join(root, "bin", fmt.Sprintf("rainmusic-voice-%d%s", time.Now().UnixNano(), suffix))
+	target := filepath.Join(root, "bin", fmt.Sprintf("asterinmusic-voice-%d%s", time.Now().UnixNano(), suffix))
 	return nativeTarget("bot-"+action, target)
+}
+
+func waitRestartBoundary(root string) error {
+	if !restartAfterTrack {
+		return nil
+	}
+	state, running, err := botState(root)
+	if err != nil {
+		return err
+	}
+	if !running {
+		return nil
+	}
+	if state.Playback == nil {
+		return errors.New("running Bot does not support --after-track; perform a normal restart to upgrade first")
+	}
+	if !state.Playback.Active {
+		fmt.Println("no active playback; restarting now")
+		return nil
+	}
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	fmt.Println("build and preflight complete; waiting for next track's first audio packet (Ctrl+C cancels without stopping Bot)")
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.New("restart cancelled; current Bot retained")
+		case <-ticker.C:
+			next, err := runcontrol.Request(root, "status")
+			if err != nil {
+				return fmt.Errorf("cannot observe playback; refusing restart: %w", err)
+			}
+			if next.PID != state.PID || next.Executable != state.Executable || next.Playback == nil {
+				return errors.New("Bot identity or playback protocol changed; refusing restart")
+			}
+			if boundaryReached(*state.Playback, *next.Playback) {
+				fmt.Println("track boundary or playback stop observed; restarting")
+				return nil
+			}
+		}
+	}
+}
+
+func boundaryReached(before, after runcontrol.Playback) bool {
+	return !after.Active || (after.Started && after.Sequence > before.Sequence)
 }
 
 func exclusiveVoiceCheck() error {

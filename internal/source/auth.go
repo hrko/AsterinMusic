@@ -137,7 +137,7 @@ func hasSession(b []byte) bool {
 	return false
 }
 func privateFiles(cookies []byte) (dir, jar string, err error) {
-	dir, err = os.MkdirTemp("", "rainmusic-auth-")
+	dir, err = os.MkdirTemp("", "asterinmusic-auth-")
 	if err != nil {
 		return "", "", errors.New("cannot create private authentication directory")
 	}

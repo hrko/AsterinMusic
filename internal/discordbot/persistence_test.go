@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"asterinmusic/internal/audio"
+	"asterinmusic/internal/music"
 	"github.com/disgoorg/disgo/voice"
-	"rainmusic/internal/audio"
-	"rainmusic/internal/music"
 )
 
 func TestShutdownRetainsManualTrackButStopConsumesIt(t *testing.T) {

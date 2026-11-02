@@ -21,12 +21,18 @@ import (
 )
 
 type State struct {
-	Arguments  []string `json:"arguments,omitempty"`
-	PID        int      `json:"pid"`
-	Executable string   `json:"executable"`
-	Token      string   `json:"token"`
-	Address    string   `json:"address"`
-	Ready      bool     `json:"ready"`
+	Playback   *Playback `json:"playback,omitempty"`
+	Arguments  []string  `json:"arguments,omitempty"`
+	PID        int       `json:"pid"`
+	Executable string    `json:"executable"`
+	Token      string    `json:"token"`
+	Address    string    `json:"address"`
+	Ready      bool      `json:"ready"`
+}
+type Playback struct {
+	Active   bool   `json:"active"`
+	Started  bool   `json:"started"`
+	Sequence uint64 `json:"sequence"`
 }
 type Control struct {
 	server      *http.Server
@@ -36,6 +42,7 @@ type Control struct {
 	path        string
 	stopMu      sync.Mutex
 	prepareStop func() error
+	playback    func() Playback
 }
 type key struct{}
 
@@ -72,6 +79,13 @@ func Start(ctx context.Context, root string, cancel context.CancelFunc) (context
 		s := c.state
 		s.Ready = c.ready.Load()
 		s.Token = ""
+		c.stopMu.Lock()
+		readPlayback := c.playback
+		c.stopMu.Unlock()
+		if readPlayback != nil {
+			p := readPlayback()
+			s.Playback = &p
+		}
 		json.NewEncoder(w).Encode(s)
 	})
 	mux.HandleFunc("/stop", func(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +142,15 @@ func BeforeStop(ctx context.Context, fn func() error) {
 		c.stopMu.Lock()
 		defer c.stopMu.Unlock()
 		c.prepareStop = fn
+	}
+}
+
+// ObservePlayback exposes only playback lifecycle state, never titles or URLs.
+func ObservePlayback(ctx context.Context, fn func() Playback) {
+	if c, ok := ctx.Value(key{}).(*Control); ok {
+		c.stopMu.Lock()
+		c.playback = fn
+		c.stopMu.Unlock()
 	}
 }
 func Request(root, action string) (State, error) {

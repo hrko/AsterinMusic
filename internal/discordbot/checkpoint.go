@@ -1,13 +1,13 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/disgoorg/snowflake/v2"
 	"os"
 	"path/filepath"
-	"rainmusic/internal/music"
 )
 
 type playbackCheckpoint struct {

@@ -1,13 +1,13 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/audio"
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/source"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/disgoorg/disgo/voice"
-	"rainmusic/internal/audio"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 	"testing"
 	"time"
 )

@@ -6,7 +6,7 @@ import (
 )
 
 // Volume is applied before each encode, with the same 10ms linear-gain ramp as
-// RainMusic. Decode through the reference implementation, not each candidate.
+// AsterinMusic. Decode through the reference implementation, not each candidate.
 func TestVolumeSteps(t *testing.T) {
 	if nativeVersion() == "disabled" {
 		t.Skip("native decoder required")

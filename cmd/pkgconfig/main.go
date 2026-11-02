@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	root := os.Getenv("RAINMUSIC_DAVE_ROOT")
+	root := os.Getenv("ASTERINMUSIC_DAVE_ROOT")
 	lib := "dave"
 	include := "dave"
 	if runtime.GOOS == "windows" {
@@ -18,7 +18,7 @@ func main() {
 	}
 	for _, arg := range os.Args[1:] {
 		if arg == "opus" {
-			root = os.Getenv("RAINMUSIC_OPUS_ROOT")
+			root = os.Getenv("ASTERINMUSIC_OPUS_ROOT")
 			lib = "opus"
 			include = "opus"
 		}

@@ -34,13 +34,14 @@ func runningBots(root string) ([]int, error) {
 				}
 				return nil, ne
 			}
-			if strings.HasPrefix(string(name), "rainmusic-voice") {
+			// Linux comm is limited to 15 bytes, including the new longer name.
+			if strings.HasPrefix(string(name), "asterinmusic-vo") || strings.HasPrefix(string(name), "rainmusic-voice") {
 				return nil, fmt.Errorf("cannot inspect Bot PID %d: %w", pid, e)
 			}
 			continue
 		}
 		exe = strings.TrimSuffix(exe, " (deleted)")
-		if filepath.Dir(exe) == filepath.Join(root, "bin") && strings.HasPrefix(filepath.Base(exe), "rainmusic-voice") {
+		if filepath.Dir(exe) == filepath.Join(root, "bin") && (strings.HasPrefix(filepath.Base(exe), "asterinmusic-voice") || strings.HasPrefix(filepath.Base(exe), "rainmusic-voice")) {
 			pids = append(pids, pid)
 		}
 	}

@@ -1,4 +1,4 @@
-module rainmusic/opusbench
+module asterinmusic/opusbench
 
 go 1.27.2
 

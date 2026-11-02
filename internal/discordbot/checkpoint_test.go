@@ -1,10 +1,10 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
 	"context"
 	"os"
 	"path/filepath"
-	"rainmusic/internal/music"
 	"testing"
 )
 

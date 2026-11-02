@@ -10,8 +10,8 @@ import (
 	"io"
 	"time"
 
-	"rainmusic/internal/music"
-	"rainmusic/internal/process"
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/process"
 )
 
 const PlaylistLimit = 100
@@ -19,15 +19,16 @@ const PlaylistLimit = 100
 type Runner func(context.Context, string, []string, io.Reader, io.Writer) error
 
 type Client struct {
-	auth       *nicoAuth
-	Executable string
-	Run        Runner
-	Timeout    time.Duration
-	semaphore  chan struct{}
+	MetadataLanguage string
+	auth             *nicoAuth
+	Executable       string
+	Run              Runner
+	Timeout          time.Duration
+	semaphore        chan struct{}
 }
 
 func New(executable string) *Client {
-	return &Client{Executable: executable, Run: process.Run, Timeout: 45 * time.Second, semaphore: make(chan struct{}, 2)}
+	return &Client{MetadataLanguage: "ja", Executable: executable, Run: process.Run, Timeout: 45 * time.Second, semaphore: make(chan struct{}, 2)}
 }
 
 type Result struct {
@@ -70,6 +71,9 @@ func (c *Client) inspect(ctx context.Context, input Input) (Result, error) {
 		return result, ctx.Err()
 	}
 	args := append([]string(nil), baseArgs...)
+	if (input.Site == "youtube" || input.Site == "youtube_music") && c.MetadataLanguage != "" && c.MetadataLanguage != "auto" && c.MetadataLanguage != "provider_default" {
+		args = append(args, "--extractor-args", "youtube:lang="+c.MetadataLanguage)
+	}
 	if input.Playlist {
 		args = append(args, "--yes-playlist", "--flat-playlist", "--dump-json", "--skip-download", "--ignore-errors", "--playlist-end", "100")
 	} else {

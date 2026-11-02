@@ -1,4 +1,4 @@
-module rainmusic
+module asterinmusic
 
 go 1.27.2
 

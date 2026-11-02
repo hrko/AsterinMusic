@@ -13,10 +13,10 @@ import (
 )
 
 func score() error {
-	binary := os.Getenv("RAINMUSIC_VISQOL")
+	binary := os.Getenv("ASTERINMUSIC_VISQOL")
 	if binary == "" {
 		if runtime.GOOS == "windows" {
-			return fmt.Errorf("run quality-score in WSL/Linux, or set RAINMUSIC_VISQOL to a native Windows ViSQOL executable")
+			return fmt.Errorf("run quality-score in WSL/Linux, or set ASTERINMUSIC_VISQOL to a native Windows ViSQOL executable")
 		}
 		binary = ".dev/visqol/source/bazel-bin/visqol"
 	}

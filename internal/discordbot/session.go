@@ -11,14 +11,16 @@ import (
 	"sync"
 	"time"
 
+	"asterinmusic/internal/audio"
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/runcontrol"
+	"asterinmusic/internal/source"
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
-	"rainmusic/internal/audio"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 )
 
 type session struct {
+	playbackSequence                   uint64
 	queueViewMu                        sync.Mutex
 	mu                                 sync.Mutex
 	app                                *App
@@ -287,6 +289,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			}
 			if s.current != nil && !s.started {
 				s.started = true
+				s.playbackSequence++
 				s.auto.started(s.current.Track, s.currentAuto)
 				s.prefetchLocked()
 			}
@@ -315,6 +318,12 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 	}
 	_ = conn.SetSpeaking(stopCtx, voice.SpeakingFlagNone)
 	return err
+}
+
+func (s *session) playbackStatus() runcontrol.Playback {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return runcontrol.Playback{Active: !s.stopped && (s.running || s.current != nil), Started: s.started, Sequence: s.playbackSequence}
 }
 
 var diagnosticURL = regexp.MustCompile(`https?://[^\s]+`)

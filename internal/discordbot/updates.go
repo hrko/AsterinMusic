@@ -1,8 +1,8 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/updater"
 	"log/slog"
-	"rainmusic/internal/updater"
 	"time"
 )
 

@@ -1,4 +1,4 @@
-# RainMusic
+# AsterinMusic
 
 Go製のDiscord音楽Bot。YouTube / YouTube Music / ニコニコ動画の公開音声を再生します。追加者ごとの公平なキュー、プレイリスト・Mixの取り込み、自動再生、BGM向けの音量調整を備えています。
 
@@ -36,11 +36,11 @@ mise 2026.10.3で動作確認しています。タスク本体はGoで実装し�
 
 ## 接続を設定する
 
-Botをサーバーへインストールし、`rainmusic.example.yaml`をGit管理外の`rainmusic.yaml`へコピーして編集します。TokenはDiscord開発者ポータルのBot画面、Application IDはGeneral Information、サーバーIDはDiscordの開発者モードから取得します。[設定ファイルの仕様](docs/configuration.md)を参照してください。
+Botをサーバーへインストールし、`asterinmusic.example.yaml`をGit管理外の`asterinmusic.yaml`へコピーして編集します。TokenはDiscord開発者ポータルのBot画面、Application IDはGeneral Information、サーバーIDはDiscordの開発者モードから取得します。[設定ファイルの仕様](docs/configuration.md)を参照してください。
 
 ```toml
 [env]
-RAINMUSIC_BOT_MAIN_TOKEN = ""
+ASTERINMUSIC_BOT_MAIN_TOKEN = ""
 ```
 
 上記は開発用`mise.local.toml`の例です。配布時はプロセス環境変数、または明示指定したdotenvからトークンを供給できます。YAMLに直接記述することも可能です。設定した1サーバーでコマンドを受け付けます。インストール時のスコープと権限は[リスト追加の詳細](docs/playlist-button.md#discord権限)に記載しています。

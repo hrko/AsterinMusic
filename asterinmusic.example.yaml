@@ -1,6 +1,6 @@
 version: 1
 runtime:
-  state_dir: ./.rainmusic/state
+  state_dir: ./.asterinmusic/state
 tools:
   yt_dlp:
     path: yt-dlp
@@ -10,6 +10,8 @@ playback:
   default_volume: 30
   queue_limit: 500
 sources:
+  youtube:
+    metadata_language: ja
   niconico:
     auth:
       method: none
@@ -21,7 +23,7 @@ sources:
 bots:
   main:
     # Optional: application_id: "YOUR_APPLICATION_ID"
-    token: "${RAINMUSIC_BOT_MAIN_TOKEN}"
+    token: "${ASTERINMUSIC_BOT_MAIN_TOKEN}"
     activity:
       enabled: true
 servers:

@@ -2,6 +2,7 @@
 package main
 
 import (
+	"asterinmusic/internal/config"
 	"bytes"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"rainmusic/internal/config"
 	"runtime"
 	"strings"
 )
@@ -32,16 +32,28 @@ func command(env []string, name string, args ...string) error {
 
 var launchArgs []string
 var explicitConfig bool
+var restartAfterTrack bool
 
 func run() error {
 	if len(os.Args) < 2 {
 		return errors.New("usage: dev check|fmt|build|audio-check")
 	}
-	o, rest, err := config.ExtractOptions(os.Args[2:])
+	var taskArgs []string
+	for _, arg := range os.Args[2:] {
+		if arg == "--after-track" {
+			if os.Args[1] != "bot-restart" || restartAfterTrack {
+				return errors.New("--after-track is only valid once for bot-restart")
+			}
+			restartAfterTrack = true
+		} else {
+			taskArgs = append(taskArgs, arg)
+		}
+	}
+	o, rest, err := config.ExtractOptions(taskArgs)
 	if err != nil {
 		return err
 	}
-	explicitConfig = len(os.Args) > 2
+	explicitConfig = len(taskArgs) > 0
 	launchArgs = append(rest, o.Args()...)
 	if len(rest) > 0 && os.Args[1] != "voice-check" {
 		return errors.New("unexpected task argument")
@@ -111,13 +123,13 @@ func run() error {
 		if err := os.MkdirAll("bin", 0755); err != nil {
 			return err
 		}
-		name := "rainmusic"
+		name := "asterinmusic"
 		if runtime.GOOS == "windows" {
 			name += ".exe"
 		}
-		return command(nil, "go", "build", "-o", filepath.Join("bin", name), "./cmd/rainmusic")
+		return command(nil, "go", "build", "-o", filepath.Join("bin", name), "./cmd/asterinmusic")
 	case "audio-check":
-		return command([]string{"RAINMUSIC_AUDIO_TEST=1"}, "go", "test", "./internal/audio", "-run", "Integration", "-count=1", "-v")
+		return command([]string{"ASTERINMUSIC_AUDIO_TEST=1"}, "go", "test", "./internal/audio", "-run", "Integration", "-count=1", "-v")
 	default:
 		return errors.New("unknown task")
 	}

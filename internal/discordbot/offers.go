@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"asterinmusic/internal/music"
 	"github.com/disgoorg/snowflake/v2"
-	"rainmusic/internal/music"
 )
 
 type offer struct {

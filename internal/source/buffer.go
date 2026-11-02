@@ -16,7 +16,7 @@ const MaxBufferedAudio = 256 << 20
 func (c *Client) BufferedStream(parent context.Context, raw string, output io.Writer) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
-	file, err := os.CreateTemp("", "rainmusic-audio-*")
+	file, err := os.CreateTemp("", "asterinmusic-audio-*")
 	if err != nil {
 		return err
 	}

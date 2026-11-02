@@ -1,11 +1,11 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
+	"asterinmusic/internal/source"
 	"context"
 	"errors"
 	"fmt"
-	"rainmusic/internal/music"
-	"rainmusic/internal/source"
 	"strings"
 	"sync/atomic"
 	"testing"
