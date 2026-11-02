@@ -1,0 +1,2 @@
+# Build-time dependency of official ViSQOL / TensorFlow workspace only.
+numpy==1.26.4

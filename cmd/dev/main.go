@@ -1,0 +1,124 @@
+// dev is the cross-platform implementation of mise tasks. No shell scripts.
+package main
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"rainmusic/internal/config"
+	"runtime"
+	"strings"
+)
+
+func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func command(env []string, name string, args ...string) error {
+	fmt.Println(name, strings.Join(args, " "))
+	cmd := exec.Command(name, args...)
+	cmd.Env = append(os.Environ(), env...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+var launchArgs []string
+var explicitConfig bool
+
+func run() error {
+	if len(os.Args) < 2 {
+		return errors.New("usage: dev check|fmt|build|audio-check")
+	}
+	o, rest, err := config.ExtractOptions(os.Args[2:])
+	if err != nil {
+		return err
+	}
+	explicitConfig = len(os.Args) > 2
+	launchArgs = append(rest, o.Args()...)
+	if len(rest) > 0 && os.Args[1] != "voice-check" {
+		return errors.New("unexpected task argument")
+	}
+	switch os.Args[1] {
+	case "serve":
+		return manage("start")
+	case "bot-start", "bot-stop", "bot-restart", "bot-status", "bot-logs":
+		return manage(strings.TrimPrefix(os.Args[1], "bot-"))
+	case "voice-check":
+		return exclusiveVoiceCheck()
+	case "opus-pure-check":
+		if err := command([]string{"CGO_ENABLED=0"}, "go", "-C", "experiments/opusbench", "test", "./..."); err != nil {
+			return err
+		}
+		output, err := filepath.Abs(filepath.Join(".dev", "opusbench", runtime.GOOS+"-pure"))
+		if err != nil {
+			return err
+		}
+		return command([]string{"CGO_ENABLED=0"}, "go", "-C", "experiments/opusbench", "run", ".", "-pure", "-out", output)
+	case "build-voice", "race-test", "native-audio-check", "opus-compare", "opus-simd-compare", "dave-check", "dave-interop":
+		return native(os.Args[1])
+	case "fmt", "check":
+		var files []string
+		err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() && (d.Name() == ".git" || d.Name() == ".dev" || d.Name() == "bin") {
+				return filepath.SkipDir
+			}
+			if !d.IsDir() && strings.HasSuffix(path, ".go") {
+				files = append(files, path)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		if os.Args[1] == "fmt" {
+			return command(nil, "gofmt", append([]string{"-w"}, files...)...)
+		}
+		cmd := exec.Command("gofmt", append([]string{"-l"}, files...)...)
+		out, err := cmd.Output()
+		if err != nil {
+			return err
+		}
+		if len(bytes.TrimSpace(out)) > 0 {
+			return fmt.Errorf("run mise run fmt:\n%s", out)
+		}
+		if err := command(nil, "go", "vet", "./..."); err != nil {
+			return err
+		}
+		if err := command(nil, "go", "test", "./..."); err != nil {
+			return err
+		}
+		for _, target := range []string{"linux", "windows"} {
+			if err := command([]string{"GOOS=" + target, "GOARCH=amd64", "CGO_ENABLED=0"}, "go", "build", "./..."); err != nil {
+				return err
+			}
+			if err := command([]string{"GOOS=" + target, "GOARCH=amd64", "CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3"}, "go", "build", "-tags", "davego,opus", "./..."); err != nil {
+				return err
+			}
+		}
+		return nil
+	case "build":
+		if err := os.MkdirAll("bin", 0755); err != nil {
+			return err
+		}
+		name := "rainmusic"
+		if runtime.GOOS == "windows" {
+			name += ".exe"
+		}
+		return command(nil, "go", "build", "-o", filepath.Join("bin", name), "./cmd/rainmusic")
+	case "audio-check":
+		return command([]string{"RAINMUSIC_AUDIO_TEST=1"}, "go", "test", "./internal/audio", "-run", "Integration", "-count=1", "-v")
+	default:
+		return errors.New("unknown task")
+	}
+}

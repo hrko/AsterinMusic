@@ -1,0 +1,172 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.26.1",
+  "Libopus": "libopus 1.6.1 ",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.26.1",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.1.2",
+        "Sum": "h1:owP6CIQ+RvoFDVwKkedHIGb77gnnCbH50d9oBOTxs7M="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "1"
+      },
+      {
+        "Key": "CGO_CFLAGS",
+        "Value": "-O2 -DRAINMUSIC_PKGCONFIG_796b763019b6e5b5=1"
+      },
+      {
+        "Key": "CGO_CPPFLAGS"
+      },
+      {
+        "Key": "CGO_CXXFLAGS"
+      },
+      {
+        "Key": "CGO_LDFLAGS"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v1"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "libopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 94.7743894958496,
+      "P50US": 96.99996948242188,
+      "P95US": 115.300048828125,
+      "P99US": 125.79998779296875,
+      "MaxUS": 147.89996337890625,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.452,
+      "DelaySamples": 312,
+      "SNRdB": 18.249479960915977,
+      "GainRatio": 0.9995277751100288
+    },
+    {
+      "Codec": "libopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 105.70272277832031,
+      "P50US": 103.50003051757812,
+      "P95US": 132.10000610351562,
+      "P99US": 168,
+      "MaxUS": 261.7000427246094,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0005555555555555556,
+      "BytesPerFrame": 0.008888888888888889,
+      "Kbps": 96.45244444444444,
+      "DelaySamples": 312,
+      "SNRdB": 18.02013252383807,
+      "GainRatio": 0.997678353683174
+    },
+    {
+      "Codec": "pion",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 192.07827792697483,
+      "P50US": 186.50006103515625,
+      "P95US": 247.79998779296875,
+      "P99US": 364,
+      "MaxUS": 593.7000427246094,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.43266666666666,
+      "DelaySamples": 120,
+      "SNRdB": 18.13356538129194,
+      "GainRatio": 1.0001671637729677
+    },
+    {
+      "Codec": "pion",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 189.26894483778213,
+      "P50US": 185,
+      "P95US": 242.79995727539062,
+      "P99US": 301.89996337890625,
+      "MaxUS": 1857.7000122070312,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0005555555555555556,
+      "BytesPerFrame": 0.008888888888888889,
+      "Kbps": 96.43311111111112,
+      "DelaySamples": 120,
+      "SNRdB": 18.1093088424293,
+      "GainRatio": 1.0013171450572989
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 168.72938903808594,
+      "P50US": 155.70001220703125,
+      "P95US": 229.30001831054688,
+      "P99US": 408.8999938964844,
+      "MaxUS": 526.0000305175781,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.452,
+      "DelaySamples": 312,
+      "SNRdB": 18.24909792204284,
+      "GainRatio": 0.9995892652343339
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 175.1607778930664,
+      "P50US": 167.79995727539062,
+      "P95US": 268.39996337890625,
+      "P99US": 404.70001220703125,
+      "MaxUS": 828.5999755859375,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.45244444444444,
+      "DelaySamples": 312,
+      "SNRdB": 18.02112630963397,
+      "GainRatio": 0.9976985417175769
+    }
+  ],
+  "FixtureSHA256": "959ff8fb81a23ea4b790ce98806279392dbef5472b8d6dd96272dbbf4aaa23de",
+  "EncodeOnly": false
+}

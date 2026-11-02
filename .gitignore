@@ -1,0 +1,11 @@
+/.dev/
+/.rainmusic/
+/rainmusic.yaml
+.env
+.env.*
+!.env.example
+/bin/
+/mise.local.toml
+/mise.local.lock
+*.test
+*.test.exe

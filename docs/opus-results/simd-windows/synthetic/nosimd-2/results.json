@@ -1,0 +1,157 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.27.2",
+  "Libopus": "libopus 1.6.1 ",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.27.2",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.2.3-0.20261023192543-88e87250952e",
+        "Sum": "h1:4/xZhc7BeZpRRAdbmQaorERAJCS+LdXaGGpss5pAL2k="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "1"
+      },
+      {
+        "Key": "CGO_CFLAGS",
+        "Value": "-O2 -DRAINMUSIC_PKGCONFIG_09dc4d463f799ef8=1"
+      },
+      {
+        "Key": "CGO_CPPFLAGS"
+      },
+      {
+        "Key": "CGO_CXXFLAGS"
+      },
+      {
+        "Key": "CGO_LDFLAGS"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOEXPERIMENT",
+        "Value": "nosimd"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v3"
+      },
+      {
+        "Key": "vcs",
+        "Value": "git"
+      },
+      {
+        "Key": "vcs.modified",
+        "Value": "true"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "libopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 90.60166668362088,
+      "P50US": 87.80001831054688,
+      "P95US": 122.39996337890625,
+      "P99US": 162.89999389648438,
+      "MaxUS": 601.9999694824219,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 93.2208888888889,
+      "DelaySamples": 312,
+      "SNRdB": 22.6777211561917,
+      "GainRatio": 1.000064782416577,
+      "PacketSHA256": "3a6a122118359da7163e829c1610b6f216b1fdbf3495ca229ee58fdbaf3b027e"
+    },
+    {
+      "Codec": "libopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 98.27266662597657,
+      "P50US": 94.00003051757812,
+      "P95US": 144.20001220703125,
+      "P99US": 220.5,
+      "MaxUS": 526.1000061035156,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0033333333333333335,
+      "BytesPerFrame": 2.831111111111111,
+      "Kbps": 91.85333333333334,
+      "DelaySamples": 312,
+      "SNRdB": 22.218322200959044,
+      "GainRatio": 1.0007529289997592,
+      "PacketSHA256": "c65e9c25a355e0ee74a097f2806c525c7e2cd977edc614097042b2196b3623d2"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 117.297111714681,
+      "P50US": 112.4000244140625,
+      "P95US": 163.39999389648438,
+      "P99US": 230.79995727539062,
+      "MaxUS": 383.3000183105469,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 93.22,
+      "DelaySamples": 312,
+      "SNRdB": 22.688146097966026,
+      "GainRatio": 1.0001786544987616,
+      "PacketSHA256": "fde051c9e6468a6e8e470e9897c95c7142e675fb3ae7fb076684abcc32e44b7c"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 112.63910973442925,
+      "P50US": 110.99996948242188,
+      "P95US": 160.89999389648438,
+      "P99US": 234.60003662109375,
+      "MaxUS": 365.8999938964844,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 91.87177777777778,
+      "DelaySamples": 312,
+      "SNRdB": 22.21218711082107,
+      "GainRatio": 1.0005638821653542,
+      "PacketSHA256": "31ee91b324549bfc5d659ba9994af68d4956fefb41cba12c76f2f4affafd23bb"
+    }
+  ],
+  "FixtureSHA256": "9b44becf6ebb2e86c7d57eb0e0394b669f4ffe18b0cfea8b2b19944ece4e949b",
+  "EncodeOnly": false,
+  "SIMD": {
+    "experiment": false
+  }
+}

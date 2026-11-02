@@ -1,0 +1,6502 @@
+[
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.07330105
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.07335622
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.07330105
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.37597947
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.37580459
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.37597947
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.31602707
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.31700132
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.31602707
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.07593228
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.07899807
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.07593267
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.3818412
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.38369955
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.38184573
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.31686122
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.31856865
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.31689254
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam08/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam08/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 1.82045462
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.91786865
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.91782331
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.91761237
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.38876061
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.38809123
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.38860642
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.38488085
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.38487078
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.38486972
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.91406918
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.91379629
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.91333642
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.38132792
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.38007113
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.38146074
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.38600541
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.38503968
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.38583235
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam11/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam11/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.4159297
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.54675077
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.5474121
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.54706582
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64985292
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64777095
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64763873
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.64391993
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.64528325
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.64503008
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55339295
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55370144
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55341498
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.64558789
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.64732015
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.64558727
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64925017
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64982359
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64925177
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam13/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam13/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.29376807
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.02333413
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.02341899
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.02333456
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.66316943
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.66216187
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.6633573
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.679296
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.67926681
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.67922035
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.03596151
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.03623947
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.03596151
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.66164576
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.66155657
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.66164576
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68028402
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.67969651
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68028402
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam21/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam21/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.3232741
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.51569078
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.51433592
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.51569078
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68828907
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68821146
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68828907
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.69682465
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.69687379
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.69682465
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52645919
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52668648
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52645919
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.68423202
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.684202
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.68423202
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.6947466
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.69436517
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.6947466
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam27/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam27/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.87068031
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70148846
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70168182
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70149731
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.72530979
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.72523838
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.72531004
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.725155
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.72502776
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.72516655
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70143541
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70139987
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70143541
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.72562793
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.72580539
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.72562793
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.72539547
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.7253459
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.72539547
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam28/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam28/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 4.53336809
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52323317
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52228992
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52323794
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69397042
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.6941579
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69396906
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68900167
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68892894
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68900164
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52466027
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52398987
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.5246793
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69438715
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69431662
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69438397
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68602565
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68601072
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68602569
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam31/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam31/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.36593018
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.60386869
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.60346018
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.6038781
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.6979393
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69762358
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69794011
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.6855138
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68477339
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68546177
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.60511042
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.60542959
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.60507501
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.70041671
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.70038148
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.70040141
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68554519
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68527967
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68556455
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam35/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam35/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.82435343
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70462125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70554027
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70462133
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71441456
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71380814
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71441422
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70942334
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70981221
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70942334
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70770465
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70760643
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70792624
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71171699
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71200059
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71170341
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70690825
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70761105
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70690825
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam39/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam39/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 4.44213725
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.34504577
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.34542161
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.34504621
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.46952332
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.47204914
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.46952277
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.47250125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.47250267
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.47250267
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.35481499
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.35460676
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.35481499
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.48117001
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.48193653
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.48117001
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47991624
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.48058226
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47991624
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam40/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam40/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.05390838
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.21862329
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.21955817
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.21854204
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53882437
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53921318
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53882872
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.52993431
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.52995144
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.52992166
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.21330466
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.21395913
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.21330466
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.54197796
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.54180501
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.54197796
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51998873
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51940387
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51998873
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam42/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam42/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.18003511
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.58170174
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.58413589
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.58173827
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.46850096
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.46809737
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.4685084
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40170547
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40117843
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40170833
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.58004745
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.5756892
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.58005261
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.46381808
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.465712
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.4638412
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40132645
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40222945
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40145211
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam44/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam44/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.26351343
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.60030296
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.60093478
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 3.6002008
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.39948152
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.39901772
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.39947576
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40093674
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40075453
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.40135154
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.60068292
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.60387928
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 3.60069252
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.40616288
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.40611953
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.40620019
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40971732
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40940828
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.40959136
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam48/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam48/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.01898245
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.64244443
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.64250379
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.64243408
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64552713
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64592802
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64551686
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63477222
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63504732
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63475171
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64289322
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64318219
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64285168
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.6474212
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.64739713
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.64737459
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.6372336
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.63717714
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.63718642
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam49/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam49/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.71271376
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.6412826
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.64071677
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.64111815
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.64008176
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.63996511
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.63986272
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63260763
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63209231
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.63235009
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64107915
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64071725
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.64127435
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.63918407
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.63927173
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.63942366
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.63298255
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.63304583
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.63322655
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam50/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam50/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.50159878
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.59350403
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.59291327
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.59350365
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.62850937
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.62848918
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.62851077
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.64171162
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.64181734
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.6417121
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.58959852
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.58944224
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.58959852
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.62990048
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.62989863
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.62990048
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64171629
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64179503
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.64171629
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam58/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam58/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.11355382
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.56928707
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.56957139
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.56928707
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.61822232
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.6190171
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.61822232
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.62946363
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.62972001
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.62946363
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.56207252
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.56270094
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.56207252
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.61505099
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.614909
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.61505099
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.62954374
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.62962255
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.62954374
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam64/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam64/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.41795387
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.15535322
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.15528139
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.15528791
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.3542166
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.35342007
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.354132
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.48677186
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.48663016
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.4868343
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.12809982
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.12943886
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.12810848
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.34266147
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.34271586
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.3426622
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.4770898
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47735435
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47709688
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam65/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam65/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.28090915
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.09260407
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.09242944
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.09260418
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.1911976
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.19212435
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.19120283
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.2122695
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.214725
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.21226933
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.09954855
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.09853304
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.0995474
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.19560525
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.19575723
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.19559961
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.20787661
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.20783977
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.20786057
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam69/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam69/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 1.98327685
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.68484523
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.6847678
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.68486037
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69312203
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69320988
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.69318078
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.6886156
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68835965
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68859698
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.68396798
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.6840168
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.68396773
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69150326
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69145435
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69150424
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68813839
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68802556
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68813842
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sqam70/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sqam70/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.36490128
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52414399
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52242017
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.52248279
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.51652938
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.51493446
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.51528048
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.45033586
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.44928106
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.44939527
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55021807
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55007688
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.54997918
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.52956879
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.52977681
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.52938236
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47976207
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.479611
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.47965427
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/choice/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/choice/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/choice/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 1.87364947
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.55566812
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.55591049
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.55566812
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.59713624
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.59732483
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.59713624
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.58192831
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.5818722
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.58192831
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.5575788
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.55753749
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.5575788
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.6001225
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.60018856
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.6001225
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.58144026
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.58133594
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.58144026
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/fishin/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/fishin/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 2.29390151
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69453952
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69474185
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69457918
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68250873
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68204894
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68216518
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68773891
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68913401
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.68823323
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.68676506
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.68571131
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.68640641
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.68649556
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.68602642
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.68612443
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68975739
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68728947
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.68945199
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/pistachio/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/pistachio/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.56207327
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.53084417
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.53086885
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.53079185
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53486434
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53505701
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.53487697
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.51849947
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.51917864
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.5184318
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52560049
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52630526
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.52547245
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.53736409
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.5363562
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.5374996
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51585666
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51602317
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.51585959
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/sweetwaltz/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/sweetwaltz/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 3.60753344
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70448519
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.7013933
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.70191794
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71605474
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71558016
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.71480934
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70243148
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70135851
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70154124
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70596172
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.7073066
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.70623413
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71583969
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71531938
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.71603221
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70293112
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70379568
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70391018
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/nutcracker/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/nutcracker/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 4.13782801
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69066766
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69100608
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.69172904
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68975288
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-100-left.wav",
+    "Volume": 100,
+    "Score": 4.68948654
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-100-left.wav",
+    "Volume": 100,
+    "Score": 4.6895718
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-100-left.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70411956
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-100-right.wav",
+    "Volume": 100,
+    "Score": 4.7038553
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-100-right.wav",
+    "Volume": 100,
+    "Score": 4.70415592
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-100-right.wav",
+    "Volume": 100,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.69200581
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.69164338
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.69194875
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-30-mix.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69555588
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69541146
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-30-left.wav",
+    "Volume": 30,
+    "Score": 4.69544814
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "left",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-left.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-30-left.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "libopus",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/libopus-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70249911
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-scalar",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-scalar-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70300105
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "gopus-simd",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/gopus-simd-30-right.wav",
+    "Volume": 30,
+    "Score": 4.70252461
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "identity",
+    "Channel": "right",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-30-right.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/reference-30-right.wav",
+    "Volume": 30,
+    "Score": 4.73210125
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Codec": "anchor-lowpass",
+    "Channel": "mix",
+    "Reference": ".dev/visqol/evaluation/vibeace/reference-100-mix.wav",
+    "Degraded": ".dev/visqol/evaluation/vibeace/anchor-lowpass.wav",
+    "Volume": 100,
+    "Score": 4.22656676
+  }
+]

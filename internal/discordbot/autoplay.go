@@ -1,0 +1,235 @@
+package discordbot
+
+import (
+	"context"
+	"fmt"
+	"github.com/disgoorg/disgo/events"
+	"rainmusic/internal/music"
+	"rainmusic/internal/source"
+	"time"
+)
+
+// All autoplay state is protected by session.mu. History survives off/on.
+type autoplay struct {
+	enabled    bool
+	owner      music.Requester
+	seed       *music.Track
+	candidates []music.Track
+	history    []string
+	revision   uint64
+	fetching   bool
+	cancel     context.CancelFunc
+	failures   int
+}
+
+func (a *autoplay) invalidate() {
+	a.revision++
+	if a.cancel != nil {
+		a.cancel()
+		a.cancel = nil
+	}
+	a.fetching = false
+}
+func (a *autoplay) off() {
+	a.invalidate()
+	a.enabled = false
+	a.seed = nil
+	a.candidates = nil
+	a.failures = 0
+}
+func (a *autoplay) on(owner music.Requester, current *music.Entry, automatic, started bool) {
+	if a.enabled {
+		return
+	}
+	a.enabled = true
+	a.owner = owner
+	a.failures = 0
+	if current != nil && !automatic && started {
+		a.setSeed(current.Track)
+	}
+}
+func (a *autoplay) setSeed(t music.Track) {
+	if t.Site != "youtube" && t.Site != "youtube_music" {
+		return
+	}
+	a.invalidate()
+	a.candidates = nil
+	copy := t
+	a.seed = &copy
+}
+func (a *autoplay) started(t music.Track, automatic bool) {
+	a.history = append(a.history, trackIdentity(t.URL))
+	if len(a.history) > 50 {
+		a.history = append([]string(nil), a.history[len(a.history)-50:]...)
+	}
+	if a.enabled && !automatic {
+		a.setSeed(t)
+	}
+}
+func (a *autoplay) take(pending []music.Entry) (music.Track, bool) {
+	blocked := make(map[string]bool)
+	for _, id := range a.history {
+		blocked[id] = true
+	}
+	for _, e := range pending {
+		blocked[trackIdentity(e.Track.URL)] = true
+	}
+	for len(a.candidates) > 0 {
+		t := a.candidates[0]
+		a.candidates = a.candidates[1:]
+		if !blocked[trackIdentity(t.URL)] {
+			return t, true
+		}
+	}
+	return music.Track{}, false
+}
+func (a *autoplay) store(tracks []music.Track) {
+	seen := make(map[string]bool)
+	for _, t := range tracks {
+		key := trackIdentity(t.URL)
+		if !seen[key] {
+			seen[key] = true
+			a.candidates = append(a.candidates, t)
+		}
+	}
+}
+func (a *autoplay) status() string {
+	if !a.enabled {
+		return "自動再生：OFF"
+	}
+	state := "待機中"
+	if a.seed == nil {
+		state = "起点待ち"
+	} else if a.fetching {
+		state = "候補取得中"
+	}
+	seed := "未設定"
+	if a.seed != nil {
+		seed = truncate(a.seed.Title, 180) + "\n" + a.seed.URL
+	}
+	return fmt.Sprintf("自動再生：ON（%s）\n起点：%s\n有効化：%s\n手動キューを優先します。曲数・時間の上限はありません。", state, seed, a.owner.Name)
+}
+
+func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *session) {
+	action := "status"
+	if sub := e.SlashCommandInteractionData().SubCommandName; sub != nil {
+		action = *sub
+	}
+	if action != "status" {
+		if _, err := s.authorize(e.User().ID); err != nil {
+			a.edit(e.Token(), err.Error(), nil)
+			return
+		}
+	}
+	s.mu.Lock()
+	switch action {
+	case "on":
+		s.auto.on(music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, s.current, s.currentAuto, s.started)
+	case "off":
+		s.auto.off()
+		s.resumeAuto = nil
+		if s.currentAuto && !s.started && s.trackCancel != nil {
+			s.trackCancel()
+		}
+	}
+	text := s.auto.status()
+	s.mu.Unlock()
+	a.edit(e.Token(), text, nil)
+}
+
+// nextEntry is the sole scheduler. It releases the lock during network work,
+// then rechecks manual priority and the generation before using any result.
+func (s *session) nextEntry() (music.Entry, bool, bool) {
+	attempts := 0
+	for {
+		s.mu.Lock()
+		if s.stopped || s.app.ctx.Err() != nil {
+			s.running = false
+			s.mu.Unlock()
+			return music.Entry{}, false, false
+		}
+		if entry, ok := s.queue.Start(); ok {
+			s.resumeAuto = nil
+			s.mu.Unlock()
+			return entry, false, true
+		}
+		if s.resumeAuto != nil && s.auto.enabled {
+			entry := *s.resumeAuto
+			s.resumeAuto = nil
+			s.selectionRevision = s.auto.revision
+			s.mu.Unlock()
+			return entry, true, true
+		}
+		if !s.auto.enabled || s.auto.seed == nil {
+			s.running = false
+			s.idleSince = time.Now()
+			s.mu.Unlock()
+			return music.Entry{}, false, false
+		}
+		_, pending := s.queue.Snapshot()
+		if t, ok := s.auto.take(pending); ok {
+			s.selectionRevision = s.auto.revision
+			e := music.Entry{Track: t, Requester: s.auto.owner, AddedAt: time.Now()}
+			s.mu.Unlock()
+			return e, true, true
+		}
+		if attempts >= 2 {
+			s.auto.off()
+			s.running = false
+			s.idleSince = time.Now()
+			text := s.text
+			s.mu.Unlock()
+			s.app.notify(text, "自動再生の候補を取得できなかったためOFFにしました。")
+			return music.Entry{}, false, false
+		}
+		ctx, cancel := context.WithTimeout(s.app.ctx, 45*time.Second)
+		s.auto.fetching = true
+		s.auto.cancel = cancel
+		revision := s.auto.revision
+		url := s.auto.seed.URL
+		s.idleSince = time.Time{}
+		s.mu.Unlock()
+		fetch := s.fetchMix
+		if fetch == nil {
+			fetch = s.app.source.InspectMix
+		}
+		result, _ := fetch(ctx, url)
+		cancel()
+		s.mu.Lock()
+		if s.auto.revision != revision || !s.auto.enabled {
+			s.mu.Unlock()
+			attempts = 0
+			continue
+		}
+		s.auto.cancel = nil
+		s.auto.fetching = false
+		s.auto.store(result.Tracks)
+		s.mu.Unlock()
+		attempts++
+	}
+}
+
+// Keeps the network boundary injectable for scheduling/cancellation tests.
+type mixFetcher func(context.Context, string) (source.Result, error)
+
+func (a *App) onVoiceState(e *events.GuildVoiceStateUpdate) {
+	if e.VoiceState.UserID != a.client.ID() {
+		return
+	}
+	a.mu.Lock()
+	s := a.sessions[e.VoiceState.GuildID]
+	a.mu.Unlock()
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.channel == 0 {
+		return
+	}
+	// Read the latest cache: asynchronous event listeners may arrive out of order.
+	state, ok := a.client.Caches.VoiceState(s.guild, a.client.ID())
+	if !ok || state.ChannelID == nil || *state.ChannelID != s.channel {
+		s.stopLocked()
+	}
+}

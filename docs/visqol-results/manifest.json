@@ -1,0 +1,236 @@
+[
+  {
+    "ID": "sqam08",
+    "Group": "lossless",
+    "Title": "Violin",
+    "Path": ".dev/visqol/sqam/08.flac",
+    "SourceSHA256": "e7e1a464f8b468cfff8ca2cfbf0e950db9ead9f59fb580afb87a5e8bc350fc42",
+    "StartSeconds": 0.51,
+    "InputScale": 1.7376456121698878
+  },
+  {
+    "ID": "sqam11",
+    "Group": "lossless",
+    "Title": "Double bass",
+    "Path": ".dev/visqol/sqam/11.flac",
+    "SourceSHA256": "f1952113ed84a52640c21093f83cb7bb65c5c42638ce33479a18e71574ed61f2",
+    "StartSeconds": 0.52,
+    "InputScale": 1.2048865971737024
+  },
+  {
+    "ID": "sqam13",
+    "Group": "lossless",
+    "Title": "Flute",
+    "Path": ".dev/visqol/sqam/13.flac",
+    "SourceSHA256": "ca54ec7155f7d509c08a319786bb98abdddb626b8c040202489b9ec25d3f576b",
+    "StartSeconds": 0.53,
+    "InputScale": 1.2721830412532855
+  },
+  {
+    "ID": "sqam21",
+    "Group": "lossless",
+    "Title": "Trumpet",
+    "Path": ".dev/visqol/sqam/21.flac",
+    "SourceSHA256": "8722c2047b3bb6daa114b308aec61b145562b09009e6b87966a0c89c97b8a2b3",
+    "StartSeconds": 0.55,
+    "InputScale": 1.6355979005450196
+  },
+  {
+    "ID": "sqam27",
+    "Group": "lossless",
+    "Title": "Castanets",
+    "Path": ".dev/visqol/sqam/27.flac",
+    "SourceSHA256": "59896d7540eede365428c5158ca5c9796f135eb53a18e052d99db58a4b90839d",
+    "StartSeconds": 0.52,
+    "InputScale": 0.6955673234746493
+  },
+  {
+    "ID": "sqam28",
+    "Group": "lossless",
+    "Title": "Side drum",
+    "Path": ".dev/visqol/sqam/28.flac",
+    "SourceSHA256": "0b021f2e8e8e70276b19e9d5435d2ee0856002d1fd92628ec7b5f9d8b5ce5f0a",
+    "StartSeconds": 0.52,
+    "InputScale": 1.7240708748735218
+  },
+  {
+    "ID": "sqam31",
+    "Group": "lossless",
+    "Title": "Cymbal",
+    "Path": ".dev/visqol/sqam/31.flac",
+    "SourceSHA256": "e90309f1c60f76d6b0a05fe273c2be88b449bebaa2ec3fa91aa4edcefb256575",
+    "StartSeconds": 0.52,
+    "InputScale": 2.1158296515482338
+  },
+  {
+    "ID": "sqam35",
+    "Group": "lossless",
+    "Title": "Glockenspiel",
+    "Path": ".dev/visqol/sqam/35.flac",
+    "SourceSHA256": "cbc9d0280f446dbe89c809bf402dcb88e0be18436d3d968e1266e613e38075f0",
+    "StartSeconds": 0.52,
+    "InputScale": 1.1024674513193897
+  },
+  {
+    "ID": "sqam39",
+    "Group": "lossless",
+    "Title": "Grand piano",
+    "Path": ".dev/visqol/sqam/39.flac",
+    "SourceSHA256": "8d6b40ad1d1d76da20b4706c949fb020df8eec3cc466dc46465341d037e18fd8",
+    "StartSeconds": 0.52,
+    "InputScale": 2.0718829593232106
+  },
+  {
+    "ID": "sqam40",
+    "Group": "lossless",
+    "Title": "Harpsichord",
+    "Path": ".dev/visqol/sqam/40.flac",
+    "SourceSHA256": "776de68b7c4c56c04cfd3e6a30cae73816cc351834826fc67c0c47d3c94dfc6c",
+    "StartSeconds": 0.52,
+    "InputScale": 2.9412881381486513
+  },
+  {
+    "ID": "sqam42",
+    "Group": "lossless",
+    "Title": "Accordion",
+    "Path": ".dev/visqol/sqam/42.flac",
+    "SourceSHA256": "3f96eccabb9afdeedb1b77fd5fa5f7b65a06f0a5b546df12c74e990674901307",
+    "StartSeconds": 0.53,
+    "InputScale": 2.6237726979142395
+  },
+  {
+    "ID": "sqam44",
+    "Group": "lossless",
+    "Title": "Soprano",
+    "Path": ".dev/visqol/sqam/44.flac",
+    "SourceSHA256": "7fc632e21c41ae1a941ecaf46c44dbd1a9813a4317ccfd5eee06027d33d5ffab",
+    "StartSeconds": 0.52,
+    "InputScale": 1.7764100609352584
+  },
+  {
+    "ID": "sqam48",
+    "Group": "lossless",
+    "Title": "Vocal quartet",
+    "Path": ".dev/visqol/sqam/48.flac",
+    "SourceSHA256": "1f6de2a672373d967ad0bbd4a84a061d4b3f082c0082489cdbe788c03ec81d43",
+    "StartSeconds": 0.53,
+    "InputScale": 1.249809601478864
+  },
+  {
+    "ID": "sqam49",
+    "Group": "speech",
+    "Title": "English female speech",
+    "Path": ".dev/visqol/sqam/49.flac",
+    "SourceSHA256": "c5bfb443cb6b08d0e5664a52aa2ffb7d290cf3f4362e7c00065d67d5e1211c36",
+    "StartSeconds": 0.51,
+    "InputScale": 1.3601241177334935
+  },
+  {
+    "ID": "sqam50",
+    "Group": "speech",
+    "Title": "English male speech",
+    "Path": ".dev/visqol/sqam/50.flac",
+    "SourceSHA256": "6ac03efb51b6941d338fac56a2b322c36e8b52bb14dfe766c81e2253f2830fc9",
+    "StartSeconds": 0.52,
+    "InputScale": 1.3119971472229999
+  },
+  {
+    "ID": "sqam58",
+    "Group": "lossless",
+    "Title": "Guitar / Sarasate",
+    "Path": ".dev/visqol/sqam/58.flac",
+    "SourceSHA256": "0496f7fd3e1e3fec76030c957adb6a2623cb4b71b655beeab8725765d7db824c",
+    "StartSeconds": 0.52,
+    "InputScale": 2.169727871719094
+  },
+  {
+    "ID": "sqam64",
+    "Group": "lossless",
+    "Title": "Choir / Orff",
+    "Path": ".dev/visqol/sqam/64.flac",
+    "SourceSHA256": "8ce7036a4d3a794faf9f4d36ac0c1282795a38646f9e60d688723d2a08c46cc4",
+    "StartSeconds": 0.48,
+    "InputScale": 1.1218851466729591
+  },
+  {
+    "ID": "sqam65",
+    "Group": "lossless",
+    "Title": "Orchestra / R. Strauss",
+    "Path": ".dev/visqol/sqam/65.flac",
+    "SourceSHA256": "33513932ad1f196dae7ed316faf8d0d907c38a716f704936a9a0137314544f1a",
+    "StartSeconds": 0.5,
+    "InputScale": 34.234159255652045
+  },
+  {
+    "ID": "sqam69",
+    "Group": "lossless",
+    "Title": "Pop / ABBA",
+    "Path": ".dev/visqol/sqam/69.flac",
+    "SourceSHA256": "35d3a289e00ffba0533acaa7d62b5af669b5a029bf071bc075fe5a434856d4f0",
+    "StartSeconds": 0.47,
+    "InputScale": 2.0607868402207545
+  },
+  {
+    "ID": "sqam70",
+    "Group": "lossless",
+    "Title": "Country / Eddie Rabbitt",
+    "Path": ".dev/visqol/sqam/70.flac",
+    "SourceSHA256": "06ea54c4444ee2836939199e306fd37277be4c66bf6cedd40dfc420858b669fd",
+    "StartSeconds": 0.55,
+    "InputScale": 1.2700972300396802
+  },
+  {
+    "ID": "choice",
+    "Group": "lossy-source",
+    "Title": "Admiral Bob / Choice (drum and bass)",
+    "Path": ".dev/visqol/audio-source/audio/admiralbob77_-_Choice_-_Drum-bass.hq.ogg",
+    "SourceSHA256": "57b4d95473b92a8441c1d3ab20f836a3e0cbf501bf3afe1ce7a5d0d98d7d4576",
+    "StartSeconds": 0,
+    "InputScale": 2.115468319687318
+  },
+  {
+    "ID": "fishin",
+    "Group": "lossy-source",
+    "Title": "Karissa Hobbs / Let's Go Fishin' (folk/pop vocal)",
+    "Path": ".dev/visqol/audio-source/audio/Karissa_Hobbs_-_Lets_Go_Fishin.hq.ogg",
+    "SourceSHA256": "85901bde0bc5f2cad28acb83487ccf99bd6908d7359f1a449fd799d8bebb3319",
+    "StartSeconds": 0.14,
+    "InputScale": 0.8288330596240066
+  },
+  {
+    "ID": "pistachio",
+    "Group": "lossy-source",
+    "Title": "Lena Orsa / Pistachio Ice Cream Ragtime",
+    "Path": ".dev/visqol/audio-source/audio/442789__lena-orsa__happy-music-pistachio-ice-cream-ragtime.hq.ogg",
+    "SourceSHA256": "1cc83b775e640a8dd409da9e29f5b5e0124bc5ec9bb4fda975919d31d1d893b8",
+    "StartSeconds": 0.01,
+    "InputScale": 0.8715708541564933
+  },
+  {
+    "ID": "sweetwaltz",
+    "Group": "lossy-source",
+    "Title": "Setuniman / Sweet Waltz (synthesized instruments)",
+    "Path": ".dev/visqol/audio-source/audio/147793__setuniman__sweet-waltz-0i-22mi.hq.ogg",
+    "SourceSHA256": "248f93b7c729bc0bd6c4cbc107e6b67ec4d60e40c111e313d4d69f77748da26a",
+    "StartSeconds": 0,
+    "InputScale": 2.625319011390854
+  },
+  {
+    "ID": "nutcracker",
+    "Group": "lossy-source",
+    "Title": "Kevin MacLeod / Dance of the Sugar Plum Fairy",
+    "Path": ".dev/visqol/audio-source/audio/Kevin_MacLeod_-_P_I_Tchaikovsky_Dance_of_the_Sugar_Plum_Fairy.hq.ogg",
+    "SourceSHA256": "f062221a56a227cdb7c067cf2e6ac0e250a50012f7693ca0c8e31f05f83e49b1",
+    "StartSeconds": 1.08,
+    "InputScale": 5.651595196273304
+  },
+  {
+    "ID": "vibeace",
+    "Group": "lossy-source",
+    "Title": "Kevin MacLeod / Vibe Ace (jazz combo)",
+    "Path": ".dev/visqol/audio-source/audio/Kevin_MacLeod_-_Vibe_Ace.hq.ogg",
+    "SourceSHA256": "73d6443ef90a7c022f164e5aa90e56c2291585930b39b1656d0765abbc1f1779",
+    "StartSeconds": 0,
+    "InputScale": 1.2416730361075603
+  }
+]

@@ -1,0 +1,159 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.27.2-X:simd",
+  "Libopus": "libopus 1.6.1 ",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.27.2-X:simd",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.2.3-0.20261023192543-88e87250952e",
+        "Sum": "h1:4/xZhc7BeZpRRAdbmQaorERAJCS+LdXaGGpss5pAL2k="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "1"
+      },
+      {
+        "Key": "CGO_CFLAGS",
+        "Value": "-O2 -DRAINMUSIC_PKGCONFIG_09dc4d463f799ef8=1"
+      },
+      {
+        "Key": "CGO_CPPFLAGS"
+      },
+      {
+        "Key": "CGO_CXXFLAGS"
+      },
+      {
+        "Key": "CGO_LDFLAGS"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOEXPERIMENT",
+        "Value": "simd"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v3"
+      },
+      {
+        "Key": "vcs",
+        "Value": "git"
+      },
+      {
+        "Key": "vcs.modified",
+        "Value": "true"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "libopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 97.93544397989909,
+      "P50US": 98.30001831054688,
+      "P95US": 123.29998779296875,
+      "P99US": 165.199951171875,
+      "MaxUS": 310.89996337890625,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.452,
+      "DelaySamples": 312,
+      "SNRdB": 18.249479960915977,
+      "GainRatio": 0.9995277751100288,
+      "PacketSHA256": "d31d7f29a85eaca4d36c47ed53a0320434e3af124a07c91ddd2d25af3b6e091f"
+    },
+    {
+      "Codec": "libopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 95.31155566745335,
+      "P50US": 96.79998779296875,
+      "P95US": 115.20001220703125,
+      "P99US": 178.00003051757812,
+      "MaxUS": 280.70001220703125,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0033333333333333335,
+      "BytesPerFrame": 2.831111111111111,
+      "Kbps": 96.45244444444444,
+      "DelaySamples": 312,
+      "SNRdB": 18.02013252383807,
+      "GainRatio": 0.997678353683174,
+      "PacketSHA256": "9f90ad2810c447e1d4cb83b72a221c954317375d157dde33601a5bab60f240fd"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 80.81161056518555,
+      "P50US": 78.4000244140625,
+      "P95US": 113.39996337890625,
+      "P99US": 173.60000610351562,
+      "MaxUS": 267.4000244140625,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.452,
+      "DelaySamples": 312,
+      "SNRdB": 18.249481064045977,
+      "GainRatio": 0.9995277749298965,
+      "PacketSHA256": "d786873413da3eefe6f8e37f9f0af418a475c878d3236c407e10605aacedd26a"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 77.28866633097331,
+      "P50US": 77.89999389648438,
+      "P95US": 100.70001220703125,
+      "P99US": 132.19998168945312,
+      "MaxUS": 342.10003662109375,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.45244444444444,
+      "DelaySamples": 312,
+      "SNRdB": 18.020137847186476,
+      "GainRatio": 0.9976783696829966,
+      "PacketSHA256": "289f5e4aa6706f3769e3144adf2d3b121ab4a1fe938e016fa54f8c4730b21f30"
+    }
+  ],
+  "FixtureSHA256": "959ff8fb81a23ea4b790ce98806279392dbef5472b8d6dd96272dbbf4aaa23de",
+  "EncodeOnly": false,
+  "SIMD": {
+    "avx": true,
+    "avx2": true,
+    "experiment": true
+  }
+}

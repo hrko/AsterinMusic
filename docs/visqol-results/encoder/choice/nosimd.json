@@ -1,0 +1,157 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.27.2",
+  "Libopus": "libopus 1.6.1 ",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.27.2",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.2.3-0.20261023192543-88e87250952e",
+        "Sum": "h1:4/xZhc7BeZpRRAdbmQaorERAJCS+LdXaGGpss5pAL2k="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "1"
+      },
+      {
+        "Key": "CGO_CFLAGS",
+        "Value": "-O2 -DRAINMUSIC_PKGCONFIG_09dc4d463f799ef8=1"
+      },
+      {
+        "Key": "CGO_CPPFLAGS"
+      },
+      {
+        "Key": "CGO_CXXFLAGS"
+      },
+      {
+        "Key": "CGO_LDFLAGS"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOEXPERIMENT",
+        "Value": "nosimd"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v3"
+      },
+      {
+        "Key": "vcs",
+        "Value": "git"
+      },
+      {
+        "Key": "vcs.modified",
+        "Value": "true"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "libopus",
+      "Gain": 1,
+      "Frames": 1350,
+      "MeanUS": 106.46340772840712,
+      "P50US": 106.29995727539062,
+      "P95US": 137.5,
+      "P99US": 175.5999755859375,
+      "MaxUS": 341.4999694824219,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0007407407407407407,
+      "BytesPerFrame": 0.011851851851851851,
+      "Kbps": 93.2794074074074,
+      "DelaySamples": 312,
+      "SNRdB": 22.07382153486924,
+      "GainRatio": 1.0008571623493117,
+      "PacketSHA256": "057b700b20f614259a9af3078c6d8a74172d26c6ac5f4c62dd6d224b2000ae6e"
+    },
+    {
+      "Codec": "libopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1350,
+      "MeanUS": 112.63725895634404,
+      "P50US": 114.10003662109375,
+      "P95US": 140.19998168945312,
+      "P99US": 180.49996948242188,
+      "MaxUS": 1241.1999816894531,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 91.16829629629629,
+      "DelaySamples": 312,
+      "SNRdB": 22.248911777971507,
+      "GainRatio": 0.9965257608549367,
+      "PacketSHA256": "eb5d8da79aa6f67192cf43360d4094af459d08284e968ce3b5ee9ee1266112d1"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1350,
+      "MeanUS": 168.34962983308014,
+      "P50US": 166.5999755859375,
+      "P95US": 237.5,
+      "P99US": 340.5000305175781,
+      "MaxUS": 621.1999816894531,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0014814814814814814,
+      "BytesPerFrame": 0.023703703703703703,
+      "Kbps": 93.2794074074074,
+      "DelaySamples": 312,
+      "SNRdB": 22.083368024963214,
+      "GainRatio": 1.0007419703556446,
+      "PacketSHA256": "2a45757d4e1569cfb8c411e283f3061a805b140c985531f1dfaa6623d2ce94f6"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1350,
+      "MeanUS": 158.37429658112703,
+      "P50US": 161.30001831054688,
+      "P95US": 226.19998168945312,
+      "P99US": 288.6999816894531,
+      "MaxUS": 457.89996337890625,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0007407407407407407,
+      "BytesPerFrame": 0.011851851851851851,
+      "Kbps": 91.16829629629629,
+      "DelaySamples": 312,
+      "SNRdB": 22.24583342953469,
+      "GainRatio": 0.9964318818123078,
+      "PacketSHA256": "8c94b8d3e6e98cce181023871a092b8b4d35c8c02f9ebb66c7320102017760af"
+    }
+  ],
+  "FixtureSHA256": "fae4523646196f81953fafc9bd51a23742ab35a4362ae2d289d72d6dbf7498c6",
+  "EncodeOnly": false,
+  "SIMD": {
+    "experiment": false
+  }
+}

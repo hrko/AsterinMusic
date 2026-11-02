@@ -1,0 +1,125 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.26.1",
+  "Libopus": "disabled",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.26.1",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.1.2",
+        "Sum": "h1:owP6CIQ+RvoFDVwKkedHIGb77gnnCbH50d9oBOTxs7M="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "0"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v1"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "pion",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 178.32316753811307,
+      "P50US": 175.39999389648438,
+      "P95US": 239.69998168945312,
+      "P99US": 335.1000061035156,
+      "MaxUS": 460.8999938964844,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.4,
+      "DelaySamples": 0,
+      "SNRdB": 0,
+      "GainRatio": 0
+    },
+    {
+      "Codec": "pion",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 195.9793328857422,
+      "P50US": 183.69998168945312,
+      "P95US": 265,
+      "P99US": 392.0999755859375,
+      "MaxUS": 4302.099945068359,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 96.4,
+      "DelaySamples": 0,
+      "SNRdB": 0,
+      "GainRatio": 0
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1800,
+      "MeanUS": 129.1672223409017,
+      "P50US": 129.30001831054688,
+      "P95US": 181.20001220703125,
+      "P99US": 204.5,
+      "MaxUS": 386.0999450683594,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 93.22666666666667,
+      "DelaySamples": 0,
+      "SNRdB": 0,
+      "GainRatio": 0
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1800,
+      "MeanUS": 134.31333285861544,
+      "P50US": 135.20001220703125,
+      "P95US": 194.60003662109375,
+      "P99US": 224.29998779296875,
+      "MaxUS": 361.0999755859375,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0,
+      "BytesPerFrame": 0,
+      "Kbps": 91.80044444444444,
+      "DelaySamples": 0,
+      "SNRdB": 0,
+      "GainRatio": 0
+    }
+  ],
+  "FixtureSHA256": "9a49984d1fabeae3f58936c543db67337085534897eecc5c4d8577647bc8c037",
+  "EncodeOnly": true
+}

@@ -1,0 +1,123 @@
+{
+  "OS": "windows",
+  "Arch": "amd64",
+  "Go": "go1.27.2-X:simd",
+  "Libopus": "libopus 1.6.1 ",
+  "CPUs": 32,
+  "Build": {
+    "GoVersion": "go1.27.2-X:simd",
+    "Path": "rainmusic/opusbench",
+    "Main": {
+      "Path": "rainmusic/opusbench",
+      "Version": "(devel)"
+    },
+    "Deps": [
+      {
+        "Path": "github.com/pion/opus",
+        "Version": "v0.1.1-0.20261026214112-e7b8aa55508c",
+        "Sum": "h1:icxv25Ca9LiCVKigLyupvKvrZ6Vqvf3WQbXq8pcrnCI="
+      },
+      {
+        "Path": "github.com/thesyncim/gopus",
+        "Version": "v0.2.3-0.20261023192543-88e87250952e",
+        "Sum": "h1:4/xZhc7BeZpRRAdbmQaorERAJCS+LdXaGGpss5pAL2k="
+      }
+    ],
+    "Settings": [
+      {
+        "Key": "-buildmode",
+        "Value": "exe"
+      },
+      {
+        "Key": "-compiler",
+        "Value": "gc"
+      },
+      {
+        "Key": "CGO_ENABLED",
+        "Value": "1"
+      },
+      {
+        "Key": "CGO_CFLAGS",
+        "Value": "-O2 -DRAINMUSIC_PKGCONFIG_09dc4d463f799ef8=1"
+      },
+      {
+        "Key": "CGO_CPPFLAGS"
+      },
+      {
+        "Key": "CGO_CXXFLAGS"
+      },
+      {
+        "Key": "CGO_LDFLAGS"
+      },
+      {
+        "Key": "GOARCH",
+        "Value": "amd64"
+      },
+      {
+        "Key": "GOEXPERIMENT",
+        "Value": "simd"
+      },
+      {
+        "Key": "GOOS",
+        "Value": "windows"
+      },
+      {
+        "Key": "GOAMD64",
+        "Value": "v3"
+      },
+      {
+        "Key": "vcs",
+        "Value": "git"
+      },
+      {
+        "Key": "vcs.modified",
+        "Value": "true"
+      }
+    ]
+  },
+  "Results": [
+    {
+      "Codec": "gopus",
+      "Gain": 1,
+      "Frames": 1350,
+      "MeanUS": 108.19866599754052,
+      "P50US": 102.20001220703125,
+      "P95US": 155.89999389648438,
+      "P99US": 238.9000244140625,
+      "MaxUS": 680.6999816894531,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.0022222222222222222,
+      "BytesPerFrame": 0.9244444444444444,
+      "Kbps": 93.32562962962963,
+      "DelaySamples": 312,
+      "SNRdB": 21.1147499577702,
+      "GainRatio": 0.9983001547148627,
+      "PacketSHA256": "e7373c00190c7f9b3288469d6c3149b43b46edb88ff499204b5dd60de6fdfaee"
+    },
+    {
+      "Codec": "gopus",
+      "Gain": 0.03981071705534973,
+      "Frames": 1350,
+      "MeanUS": 88.47785099735967,
+      "P50US": 81.99996948242188,
+      "P95US": 141.60000610351562,
+      "P99US": 217.5,
+      "MaxUS": 429.79998779296875,
+      "Over20ms": 0,
+      "AllocsPerFrame": 0.002962962962962963,
+      "BytesPerFrame": 0.9362962962962963,
+      "Kbps": 91.71466666666667,
+      "DelaySamples": 312,
+      "SNRdB": 21.270660731981266,
+      "GainRatio": 1.0024123141179806,
+      "PacketSHA256": "1406823e83a1f727a673d6a446bf2a86c4614b051e1f71ad1065f198694eb1ea"
+    }
+  ],
+  "FixtureSHA256": "6296dd3052e9e8ce05aef5d0e8053f26018a360f6a4800a27f36c0ed9e2b2f4d",
+  "EncodeOnly": false,
+  "SIMD": {
+    "avx": true,
+    "avx2": true,
+    "experiment": true
+  }
+}
