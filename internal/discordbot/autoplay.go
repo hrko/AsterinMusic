@@ -20,9 +20,16 @@ type autoplay struct {
 	fetching   bool
 	cancel     context.CancelFunc
 	failures   int
+	done       chan struct{}
+	attempts   int
 }
 
 func (a *autoplay) invalidate() {
+	if a.done != nil {
+		close(a.done)
+		a.done = nil
+	}
+	a.attempts = 0
 	a.revision++
 	if a.cancel != nil {
 		a.cancel()
@@ -67,6 +74,18 @@ func (a *autoplay) started(t music.Track, automatic bool) {
 	}
 }
 func (a *autoplay) take(pending []music.Entry) (music.Track, bool) {
+	a.candidates = a.available(pending)
+	if len(a.candidates) == 0 {
+		return music.Track{}, false
+	}
+	t := a.candidates[0]
+	a.candidates = a.candidates[1:]
+	a.attempts = 0
+	return t, true
+}
+
+// available returns a filtered copy without consuming scheduling state.
+func (a *autoplay) available(pending []music.Entry) []music.Track {
 	blocked := make(map[string]bool)
 	for _, id := range a.history {
 		blocked[id] = true
@@ -74,14 +93,14 @@ func (a *autoplay) take(pending []music.Entry) (music.Track, bool) {
 	for _, e := range pending {
 		blocked[trackIdentity(e.Track.URL)] = true
 	}
-	for len(a.candidates) > 0 {
-		t := a.candidates[0]
-		a.candidates = a.candidates[1:]
+	var result []music.Track
+	for _, t := range a.candidates {
 		if !blocked[trackIdentity(t.URL)] {
-			return t, true
+			result = append(result, t)
+			blocked[trackIdentity(t.URL)] = true
 		}
 	}
-	return music.Track{}, false
+	return result
 }
 func (a *autoplay) store(tracks []music.Track) {
 	seen := make(map[string]bool)
@@ -125,6 +144,7 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 	switch action {
 	case "on":
 		s.auto.on(music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, s.current, s.currentAuto, s.started)
+		s.prefetchLocked()
 	case "off":
 		s.auto.off()
 		s.resumeAuto = nil
@@ -140,7 +160,6 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 // nextEntry is the sole scheduler. It releases the lock during network work,
 // then rechecks manual priority and the generation before using any result.
 func (s *session) nextEntry() (music.Entry, bool, bool) {
-	attempts := 0
 	for {
 		s.mu.Lock()
 		if s.stopped || s.app.ctx.Err() != nil {
@@ -173,7 +192,7 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			s.mu.Unlock()
 			return e, true, true
 		}
-		if attempts >= 2 {
+		if s.auto.attempts >= 2 && !s.auto.fetching {
 			s.auto.off()
 			s.running = false
 			s.idleSince = time.Now()
@@ -182,31 +201,57 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			s.app.notify(text, "自動再生の候補を取得できなかったためOFFにしました。")
 			return music.Entry{}, false, false
 		}
-		ctx, cancel := context.WithTimeout(s.app.ctx, 45*time.Second)
-		s.auto.fetching = true
-		s.auto.cancel = cancel
-		revision := s.auto.revision
-		url := s.auto.seed.URL
+		s.fetchCandidatesLocked()
+		done := s.auto.done
 		s.idleSince = time.Time{}
 		s.mu.Unlock()
-		fetch := s.fetchMix
-		if fetch == nil {
-			fetch = s.app.source.InspectMix
+		select {
+		case <-done:
+		case <-s.app.ctx.Done():
 		}
+	}
+}
+
+// Called with mu held; one speculative attempt per replenishment cycle.
+func (s *session) prefetchLocked() {
+	if s.stopped || s.shuttingDown || !s.started || !s.auto.enabled || s.auto.seed == nil || s.auto.attempts > 0 || s.auto.fetching {
+		return
+	}
+	_, pending := s.queue.Snapshot()
+	if len(pending) > 0 || len(s.auto.available(pending)) > 0 {
+		return
+	}
+	s.fetchCandidatesLocked()
+}
+
+func (s *session) fetchCandidatesLocked() {
+	if s.auto.fetching {
+		return
+	}
+	ctx, cancel := context.WithTimeout(s.app.ctx, 45*time.Second)
+	s.auto.fetching = true
+	s.auto.cancel = cancel
+	s.auto.done = make(chan struct{})
+	s.auto.attempts++
+	revision, url := s.auto.revision, s.auto.seed.URL
+	fetch := s.fetchMix
+	if fetch == nil {
+		fetch = s.app.source.InspectMix
+	}
+	go func() {
 		result, _ := fetch(ctx, url)
 		cancel()
 		s.mu.Lock()
-		if s.auto.revision != revision || !s.auto.enabled {
-			s.mu.Unlock()
-			attempts = 0
-			continue
+		defer s.mu.Unlock()
+		if revision != s.auto.revision || !s.auto.enabled {
+			return
 		}
 		s.auto.cancel = nil
 		s.auto.fetching = false
 		s.auto.store(result.Tracks)
-		s.mu.Unlock()
-		attempts++
-	}
+		close(s.auto.done)
+		s.auto.done = nil
+	}()
 }
 
 // Keeps the network boundary injectable for scheduling/cancellation tests.

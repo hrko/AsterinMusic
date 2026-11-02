@@ -19,6 +19,7 @@ import (
 )
 
 type session struct {
+	queueViewMu                        sync.Mutex
 	mu                                 sync.Mutex
 	app                                *App
 	guild, channel, text               snowflake.ID
@@ -287,6 +288,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			if s.current != nil && !s.started {
 				s.started = true
 				s.auto.started(s.current.Track, s.currentAuto)
+				s.prefetchLocked()
 			}
 			s.position += 20 * time.Millisecond
 			s.mu.Unlock()

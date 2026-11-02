@@ -20,7 +20,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		return
 	}
-	if err := e.DeferCreateMessage(false); err != nil {
+	if err := e.DeferCreateMessage(e.SlashCommandInteractionData().CommandName() == "queue" && e.SlashCommandInteractionData().String("action") != "clear"); err != nil {
 		return
 	}
 	s := a.getSession(*e.GuildID())
@@ -115,6 +115,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			s.mu.Lock()
 			s.epoch++
 			s.queue.Clear()
+			s.prefetchLocked()
 			saveErr := s.queue.PersistenceError()
 			autoOn := s.auto.enabled
 			s.mu.Unlock()
@@ -129,16 +130,9 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			reply(text)
 			return
 		}
-		_, pending := s.queue.Snapshot()
-		page := max(1, data.Int("page"))
-		pages := max(1, (len(pending)+9)/10)
-		page = min(page, pages)
-		var b strings.Builder
-		fmt.Fprintf(&b, "待機キュー：%d曲（%d/%dページ）\n", len(pending), page, pages)
-		for i := (page - 1) * 10; i < min(page*10, len(pending)); i++ {
-			fmt.Fprintf(&b, "%d. %s — %s\n", i+1, truncate(pending[i].Track.Title, 90), truncate(pending[i].Requester.Name, 40))
-		}
-		reply(b.String())
+		s.queueViewMu.Lock()
+		a.editQueue(e.Token(), s, user.ID, max(1, data.Int("page")), "")
+		s.queueViewMu.Unlock()
 	case "nowplaying":
 		s.mu.Lock()
 		var current *music.Entry
@@ -190,6 +184,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 }
 
 func (a *App) onComponent(e *events.ComponentInteractionCreate) {
+	if strings.HasPrefix(e.Data.CustomID(), "queue:") {
+		a.queueComponent(e)
+		return
+	}
 	id, ok := strings.CutPrefix(e.Data.CustomID(), "playlist:")
 	if !ok {
 		return
