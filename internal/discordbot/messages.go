@@ -64,7 +64,7 @@ func resultEmbed(title, body string, n, wanted int, partial bool, err error) dis
 func listLink(raw string, names ...string) string {
 	label := "プレイリストを開く"
 	if len(names) > 0 && strings.TrimSpace(names[0]) != "" {
-		label = escapeText(truncate(strings.Join(strings.Fields(names[0]), " "), 160))
+		label = escapeLinkLabel(truncate(strings.Join(strings.Fields(names[0]), " "), 160))
 	}
 	if in, err := source.Parse(raw); err == nil {
 		return "**[" + label + "](" + in.URL + ")**"

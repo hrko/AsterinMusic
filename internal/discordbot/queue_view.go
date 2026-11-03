@@ -26,6 +26,23 @@ func queueLink(t music.Track) string {
 	return trackLink(t, 60)
 }
 
+// Repair unmatched opening brackets after truncation, without escaping pairs.
+func escapeLinkLabel(s string) string {
+	runes := []rune(s)
+	var openings []int
+	for i, r := range runes {
+		if r == '[' {
+			openings = append(openings, i)
+		} else if r == ']' && len(openings) > 0 {
+			openings = openings[:len(openings)-1]
+		}
+	}
+	for _, i := range openings {
+		runes[i] = '［'
+	}
+	return strings.NewReplacer("\\", "\\\\", "*", "\\*", "_", "\\_", "`", "\\`", "~", "\\~", "|", "\\|", "<", "‹", ">", "›", "@", "＠").Replace(string(runes))
+}
+
 // Width is a Unicode monospace estimate, independent of the host locale.
 // Apply before Markdown escaping and only to waiting/candidate list entries.
 func compactQueueTrack(t music.Track) music.Track {
@@ -35,7 +52,7 @@ func compactQueueTrack(t music.Track) music.Track {
 	return t
 }
 func trackLink(t music.Track, limit int) string {
-	title := escapeText(truncate(strings.Join(strings.Fields(t.Title), " "), limit))
+	title := escapeLinkLabel(truncate(strings.Join(strings.Fields(t.Title), " "), limit))
 	return trackTitleLink(t, title)
 }
 func trackTitleLink(t music.Track, title string) string {
@@ -88,7 +105,7 @@ func queueChannel(t music.Track) string {
 	if !channelIDPattern.MatchString(t.ChannelID) || strings.TrimSpace(t.ChannelTitle) == "" {
 		return ""
 	}
-	return "[" + queueText(truncate(t.ChannelTitle, 24)) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
+	return "[" + escapeLinkLabel(truncate(strings.Join(strings.Fields(t.ChannelTitle), " "), 24)) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
 }
 func trackThumbnail(t music.Track) *discord.EmbedResource {
 	if strings.HasPrefix(t.ThumbnailURL, "https://") && len(t.ThumbnailURL) <= 2048 {
@@ -188,9 +205,9 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 			number := fmt.Sprintf("%d. ", i+1)
 			channel := ""
 			if channelIDPattern.MatchString(t.ChannelID) && t.ChannelTitle != "" {
-				channel = "[" + escapeText(t.ChannelTitle) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
+				channel = "[" + escapeLinkLabel(t.ChannelTitle) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
 			}
-			fmt.Fprintf(&description, "%s%s  \n%s-# %s\n", number, trackTitleLink(t, escapeText(t.Title)), indent, trackDetail(t, who, channel))
+			fmt.Fprintf(&description, "%s%s  \n%s-# %s\n", number, trackTitleLink(t, escapeLinkLabel(t.Title)), indent, trackDetail(t, who, channel))
 		}
 	}
 	embed.Description = strings.TrimSpace(description.String())
