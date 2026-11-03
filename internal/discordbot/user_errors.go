@@ -16,10 +16,13 @@ const (
 	errNotPlaying
 	errVoiceConnection
 	errQueueSave
+	errConnecting
 )
 
 func (e operationError) Error() string {
 	switch e {
+	case errConnecting:
+		return "音声接続中です。少し待って再実行してください。"
 	case errJoinVoice:
 		return "音声チャンネルへ参加してください。"
 	case errSameVoice:

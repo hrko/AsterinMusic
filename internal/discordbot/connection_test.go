@@ -1,13 +1,70 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/music"
 	"context"
 	"errors"
+	"github.com/disgoorg/snowflake/v2"
 	"testing"
 	"time"
 
 	"github.com/disgoorg/disgo/voice"
 )
+
+type delayedOpenConn struct {
+	voice.Conn
+	entered, release, closed chan struct{}
+}
+
+func (c *delayedOpenConn) Open(context.Context, snowflake.ID, bool, bool) error {
+	close(c.entered)
+	<-c.release // Simulate a late success even after cancellation.
+	return nil
+}
+func (c *delayedOpenConn) Close(context.Context) { close(c.closed) }
+
+func TestStopDuringOpenRejectsLateConnection(t *testing.T) {
+	c := &delayedOpenConn{entered: make(chan struct{}), release: make(chan struct{}), closed: make(chan struct{})}
+	s := newSession(&App{ctx: context.Background()}, 1)
+	s.queue.Add(music.Requester{ID: "a"}, []music.Track{{URL: "track"}}, "", "")
+	s.createConn = func() voice.Conn { return c }
+	result := make(chan error, 1)
+	go func() { s.mu.Lock(); defer s.mu.Unlock(); result <- s.startLocked(2) }()
+	<-c.entered
+	status := make(chan bool, 1)
+	go func() { status <- s.playbackStatus().Active }()
+	select {
+	case active := <-status:
+		if !active {
+			t.Error("connecting not reported active")
+		}
+	case <-time.After(time.Second):
+		close(c.release)
+		t.Fatal("status blocked during Open")
+	}
+	if err := s.stop(); err != nil {
+		t.Fatal(err)
+	}
+	close(c.release)
+	select {
+	case err := <-result:
+		if !errors.Is(err, errQueueChanged) {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("late connection not discarded")
+	}
+	<-c.closed
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.conn != nil || s.running || s.connecting || s.closing != nil {
+		t.Fatal("late success revived playback")
+	}
+	_, pending := s.queue.Snapshot()
+	if len(pending) != 1 {
+		t.Fatal("queued work lost")
+	}
+}
 
 type delayedCloseConn struct {
 	voice.Conn

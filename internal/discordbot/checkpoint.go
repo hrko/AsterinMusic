@@ -57,7 +57,7 @@ func (s *session) checkpoint(path string) error {
 		return err
 	}
 	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
-		Playing: !s.stopped && s.running, Volume: s.volume.Percent(),
+		Playing: !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
 		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
 	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
 		v.AutomaticTrack = s.current
@@ -96,6 +96,9 @@ func (s *session) checkpoint(path string) error {
 	}
 	// Freeze queue selection and additions only after the checkpoint succeeds.
 	s.shuttingDown = true
+	if s.connectCancel != nil {
+		s.connectCancel()
+	}
 	s.stopped = true
 	s.epoch++
 	if s.trackCancel != nil {

@@ -34,6 +34,9 @@ type session struct {
 	trackCancel                        context.CancelFunc
 	done                               chan struct{}
 	closing                            chan struct{}
+	connecting                         bool
+	connectCancel                      context.CancelFunc
+	createConn                         func() voice.Conn
 	idleSince, emptySince              time.Time
 	position                           time.Duration
 	auto                               autoplay
@@ -90,6 +93,9 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	if s.channel != 0 && s.channel != channel {
 		return 0, "", errVoiceChanged
 	}
+	if s.connecting {
+		return 0, "", errConnecting
+	}
 	if s.closing != nil || (s.stopped && s.running) {
 		return 0, "", errStopping
 	}
@@ -121,6 +127,12 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 }
 
 func (s *session) startLocked(channel snowflake.ID) error {
+	if err := s.mutableLocked(); err != nil {
+		return err
+	}
+	if s.connecting {
+		return errConnecting
+	}
 	if s.closing != nil {
 		return errStopping
 	}
@@ -129,18 +141,44 @@ func (s *session) startLocked(channel snowflake.ID) error {
 		return errQueueEmpty
 	}
 	if s.conn == nil {
-		conn := s.app.client.VoiceManager.CreateConn(s.guild)
 		ctx, cancel := context.WithTimeout(s.app.ctx, 25*time.Second)
+		s.connectCancel = cancel
+		s.connecting = true
+		s.stopped = false
+		s.channel = channel
+		done := make(chan struct{})
+		s.closing = done
+		epoch := s.epoch
+		create := s.createConn
+		if create == nil {
+			create = func() voice.Conn { return s.app.client.VoiceManager.CreateConn(s.guild) }
+		}
+		s.mu.Unlock()
+		conn := create()
 		err := conn.Open(ctx, channel, false, true)
 		cancel()
-		if err != nil {
-			slog.Warn("voice connection failed", "error", s.app.safeError(err))
+		s.mu.Lock()
+		stale := s.stopped || s.shuttingDown || s.epoch != epoch || s.app.ctx.Err() != nil
+		s.connecting = false
+		s.connectCancel = nil
+		if err != nil || stale {
+			s.channel = 0
+			s.mu.Unlock()
+			logOperationFailure("voice.connect", err)
 			closeCtx, c := context.WithTimeout(context.Background(), 5*time.Second)
 			conn.Close(closeCtx)
 			s.app.closeDave(conn)
 			c()
+			s.mu.Lock()
+			s.closing = nil
+			close(done)
+			if stale {
+				return errQueueChanged
+			}
 			return errVoiceConnection
 		}
+		s.closing = nil
+		close(done)
 		s.conn = conn
 		s.channel = channel
 	}
@@ -334,7 +372,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 func (s *session) playbackStatus() runcontrol.Playback {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return runcontrol.Playback{Active: !s.stopped && (s.running || s.current != nil), Started: s.started, Sequence: s.playbackSequence}
+	return runcontrol.Playback{Active: !s.stopped && (s.connecting || s.running || s.current != nil), Started: s.started, Sequence: s.playbackSequence}
 }
 
 var diagnosticURL = regexp.MustCompile(`https?://[^\s]+`)
@@ -389,6 +427,9 @@ func (s *session) stop() error {
 }
 
 func (s *session) stopLocked() {
+	if s.connectCancel != nil {
+		s.connectCancel()
+	}
 	s.auto.off()
 	s.resumeAuto = nil
 	s.epoch++
