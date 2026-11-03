@@ -1,6 +1,7 @@
 # AsterinMusic development operations
 
 - Use mise for tasks and locked development dependencies. Implement automation in Go; do not add shell or PowerShell scripts.
+- Commit after each coherent, reviewable unit of work (a feature, fix, or documentation decision), once relevant checks pass. Keep its implementation, tests, and current documentation together; split unrelated changes and do not mix prior work into a new feature. Inspect staged changes for unintended files and secrets. Preserve user changes, never rewrite history without instruction, and push only when explicitly requested.
 - Keep current behavior in `docs/specification.md` and its linked details, architecture in `docs/architecture.md`, and task procedures in `docs/development.md`. Update the relevant current document when changing behavior. Keep README focused on setup and entry points; preserve dated verification/migration reports as historical evidence. See `docs/index.md` for the document map.
 - For the development Bot, use only `mise run bot-start`, `bot-stop`, `bot-restart`, `bot-status`, and `bot-logs`. `serve` is an alias of `bot-start`.
 - Do not launch the Bot with ad hoc `Start-Process`, raw executable invocations, or `go run ... serve`. Do not use process-name-based termination. Do not treat an empty process result from a restricted environment as evidence that the host Bot is stopped.
