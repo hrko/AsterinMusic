@@ -137,6 +137,36 @@ func TestCheckpointExcludesExplicitlyEndedCurrent(t *testing.T) {
 	}
 }
 
+func TestCheckpointStopBetweenSelectionAndPlayback(t *testing.T) {
+	s := newSession(&App{ctx: context.Background()}, 1)
+	root := t.TempDir()
+	qpath := filepath.Join(root, "queue.json")
+	var err error
+	s.queue, err = music.OpenQueue(500, qpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.queue.Add(music.Requester{ID: "1"}, []music.Track{autoTrack("abcdefghijk"), autoTrack("lmnopqrstuv")}, "", "")
+	selected, automatic, ok := s.nextEntry()
+	if !ok || automatic || s.current != nil {
+		t.Fatal("expected manual selection before playback handoff")
+	}
+	if err := s.stop(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.checkpoint(filepath.Join(root, "playback.json")); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := music.OpenQueue(500, qpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, pending := restored.Snapshot()
+	if current != nil || len(pending) != 1 || pending[0].ID == selected.ID {
+		t.Fatal("stopped selection returned after restore", current, pending)
+	}
+}
+
 func TestPlaybackCheckpointRoundTrip(t *testing.T) {
 	for _, playing := range []bool{true, false} {
 		s := newSession(&App{ctx: context.Background()}, 1)

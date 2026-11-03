@@ -54,7 +54,14 @@ func (s *session) checkpoint(path string) error {
 	}
 	// Explicit user termination wins over a later managed shutdown, even if
 	// the playback goroutine has not finished its cancellation cleanup yet.
-	if (s.skipping || s.stopped) && s.current != nil && !s.currentAuto {
+	if s.stopped {
+		// Queue.Start may have selected a manual track before loop assigns
+		// session.current. Stop ends that selection as well.
+		if current, _ := s.queue.Snapshot(); current != nil {
+			id := current.ID
+			s.queueIOLocked(func() { s.queue.Finish(id) })
+		}
+	} else if s.skipping && s.current != nil && !s.currentAuto {
 		id := s.current.ID
 		s.queueIOLocked(func() { s.queue.Finish(id) })
 	}
