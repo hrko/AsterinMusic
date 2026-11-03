@@ -4,7 +4,7 @@ import (
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
 	"context"
-	"fmt"
+
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"time"
@@ -113,23 +113,6 @@ func (a *autoplay) store(tracks []music.Track) {
 		}
 	}
 }
-func (a *autoplay) status() string {
-	if !a.enabled {
-		return "自動再生：OFF"
-	}
-	state := "待機中"
-	if a.seed == nil {
-		state = "起点待ち"
-	} else if a.fetching {
-		state = "候補取得中"
-	}
-	seed := "未設定"
-	if a.seed != nil {
-		seed = truncate(a.seed.Title, 180) + "\n" + a.seed.URL
-	}
-	return fmt.Sprintf("自動再生：ON（%s）\n起点：%s\n有効化：%s\n手動キューを優先します。曲数・時間の上限はありません。", state, seed, a.owner.Name)
-}
-
 func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *session) {
 	action := "status"
 	if sub := e.SlashCommandInteractionData().SubCommandName; sub != nil {
@@ -153,7 +136,10 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 			s.trackCancel()
 		}
 	}
-	text := "自動再生をOFFにしました。現在の曲はそのまま再生します。"
+	text := "自動再生をOFFにしました。"
+	if action == "off" && s.current != nil && s.started {
+		text += " 現在の曲はそのまま再生します。"
+	}
 	if action == "on" {
 		text = "自動再生をONにしました。"
 		if s.auto.seed == nil {
@@ -223,7 +209,7 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			s.idleSince = time.Now()
 			text := s.text
 			s.mu.Unlock()
-			s.app.notify(text, "自動再生の候補を取得できなかったためOFFにしました。")
+			s.notifyFailure(text, nil, "自動再生の候補を取得できなかったためOFFにしました。", true)
 			return music.Entry{}, false, false
 		}
 		s.fetchCandidatesLocked()

@@ -280,17 +280,6 @@ func (a *App) getSession(guild snowflake.ID) *session {
 	return s
 }
 
-func (a *App) notify(channel snowflake.ID, text string) {
-	if channel == 0 {
-		return
-	}
-	ctx, cancel := context.WithTimeout(a.ctx, 10*time.Second)
-	defer cancel()
-	if _, err := a.client.Rest.CreateMessage(channel, discord.MessageCreate{Content: truncate(text, 1900), AllowedMentions: &discord.AllowedMentions{}}, rest.WithCtx(ctx)); err != nil {
-		slog.Warn("could not send playback notification")
-	}
-}
-
 func truncate(s string, n int) string {
 	r := []rune(s)
 	if len(r) > n {

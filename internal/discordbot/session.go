@@ -3,7 +3,6 @@ package discordbot
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"regexp"
@@ -20,6 +19,7 @@ import (
 )
 
 type session struct {
+	failureNotice                      failureNotice
 	playbackSequence                   uint64
 	queueViewMu                        sync.Mutex
 	mu                                 sync.Mutex
@@ -180,11 +180,6 @@ func (s *session) loop(done chan struct{}) {
 		s.skipping = false
 		conn, text := s.conn, s.text
 		s.mu.Unlock()
-		origin := entry.Requester.Name
-		if automatic {
-			origin = "自動再生（有効化：" + entry.Requester.Name + "）"
-		}
-		s.app.notify(text, fmt.Sprintf("再生準備：%s\n%s\n追加元：%s", entry.Track.Title, entry.Track.URL, origin))
 		play := s.playAudio
 		if play == nil {
 			play = s.playTrack
@@ -224,7 +219,7 @@ func (s *session) loop(done chan struct{}) {
 			if s.auto.enabled && s.auto.failures >= 3 {
 				s.auto.off()
 				s.mu.Unlock()
-				s.app.notify(text, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。")
+				s.notifyFailure(text, &entry.Track, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。", true)
 				continue
 			}
 		}
@@ -235,12 +230,12 @@ func (s *session) loop(done chan struct{}) {
 			s.stopLocked()
 			s.running = false
 			s.mu.Unlock()
-			s.app.notify(text, "3曲続けて再生に失敗したため停止しました。残りのキューは保持しています。")
+			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため停止しました。残りのキューは保持しています。", true)
 			return
 		}
 		s.mu.Unlock()
 		if err != nil && !skipped {
-			s.app.notify(text, source.AuthMessage(err, "曲の取得または再生に失敗したため、次の曲へ進みます。"))
+			s.notifyFailure(text, &entry.Track, source.AuthMessage(err, "曲の取得または再生に失敗しました。")+"\n次の曲へ進みます。", false)
 		}
 	}
 }

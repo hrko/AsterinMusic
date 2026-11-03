@@ -2,6 +2,8 @@
 
 ## 設定ロード
 
+連続失敗通知はセッションごとの `failureNotice` で管理する。通知専用mutexで更新を直列化し、音声・キューのmutexを保持したままDiscordへ送信しない。最初の音声パケットの送信成功で進むplaybackSequenceと通知先を用いて通知のまとまりを区切る。削除済みメッセージへの更新のみ再作成し、その他のRESTエラーはログへ残して再生処理を続ける。
+
 Discordメッセージの共通生成は `internal/discordbot/messages.go` が担当する。操作結果と公開範囲の判定をネットワーク処理から分離し、テキストとEmbedの切り替え時は不要なContent/Embeds/Componentsを明示的に空にする。入力・VC条件を遅延応答より前に検証し、公開応答開始後は公開範囲を変えない。
 
 Data API補完器のキャッシュはタイトル・再生時間・チャンネル・サムネイルを一体で保持する。TrackにChannelID/ChannelTitle/ThumbnailURLを任意JSONフィールドとして保存する。チャンネルURLは検証済みIDから表示時に生成し、Discord EmbedにサムネイルURLを渡す。キュー表示はメタデータ取得を行わない。動画IDが返らなければ5分、取得済みメタデータは24時間キャッシュする。
