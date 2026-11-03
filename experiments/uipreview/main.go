@@ -128,7 +128,14 @@ func run() error {
 	u.RawQuery = q.Encode()
 	client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	for _, v := range variants {
-		payload := map[string]any{"username": "AsterinMusic UI検証", "content": "レイアウト比較（検証用サンプル）", "embeds": []embed{sample(v)}, "allowed_mentions": map[string]any{"parse": []string{}}}
+		preview := sample(v)
+		if userID := os.Getenv("UI_PREVIEW_USER_ID"); userID != "" {
+			if len(userID) < 17 || len(userID) > 20 || strings.Trim(userID, "0123456789") != "" {
+				return fmt.Errorf("invalid UI_PREVIEW_USER_ID")
+			}
+			preview.Description = strings.ReplaceAll(preview.Description, "サンプルユーザー", "<@"+userID+">")
+		}
+		payload := map[string]any{"username": "AsterinMusic UI検証", "content": "レイアウト比較（検証用サンプル）", "embeds": []embed{preview}, "allowed_mentions": map[string]any{"parse": []string{}}}
 		b, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("cannot encode preview")
