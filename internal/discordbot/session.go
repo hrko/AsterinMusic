@@ -320,31 +320,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			return err
 		}
 		err := waitDave(ctx, func() error {
-			s.mu.Lock()
-			if s.current != nil && !s.started && s.currentAuto {
-				_, pending := s.queue.Snapshot()
-				if !s.auto.enabled || s.auto.revision != s.currentRevision || len(pending) > 0 {
-					s.mu.Unlock()
-					return errSuperseded
-				}
-			}
-			if ctx.Err() != nil {
-				s.mu.Unlock()
-				return ctx.Err()
-			}
-			if _, err := conn.UDP().Write(packet); err != nil {
-				s.mu.Unlock()
-				return err
-			}
-			if s.current != nil && !s.started {
-				s.started = true
-				s.playbackSequence++
-				s.recordStartedLocked()
-				s.prefetchLocked()
-			}
-			s.position += 20 * time.Millisecond
-			s.mu.Unlock()
-			return nil
+			return s.sendPacket(ctx, func() error { _, err := conn.UDP().Write(packet); return err })
 		})
 		if err != nil {
 			return err
