@@ -125,6 +125,13 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 		}
 	}
 	s.mu.Lock()
+	if action != "status" {
+		if err := s.mutableLocked(); err != nil {
+			s.mu.Unlock()
+			a.edit(e.Token(), userError(err), nil)
+			return
+		}
+	}
 	switch action {
 	case "on":
 		s.auto.on(music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, s.current, s.currentAuto, s.started)

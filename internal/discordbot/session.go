@@ -362,10 +362,14 @@ func (a *App) safeError(err error) string {
 	return truncate(diagnosticURL.ReplaceAllString(s, "[URL]"), 1200)
 }
 
-func (s *session) stop() {
+func (s *session) stop() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.mutableLocked(); err != nil {
+		return err
+	}
 	s.stopLocked()
+	return nil
 }
 
 func (s *session) stopLocked() {
@@ -392,6 +396,9 @@ func (s *session) stopLocked() {
 func (s *session) skip() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.mutableLocked(); err != nil {
+		return err
+	}
 	if s.trackCancel == nil {
 		return errors.New("再生中の曲はありません。")
 	}

@@ -129,6 +129,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 				return
 			}
 			s.mu.Lock()
+			if err := s.mutableLocked(); err != nil {
+				s.mu.Unlock()
+				reply(userError(err))
+				return
+			}
 			s.epoch++
 			s.queue.Clear()
 			s.prefetchLocked()
@@ -177,7 +182,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 				reply(userError(err))
 				return
 			}
-			if err := s.volume.Set(p); err != nil {
+			if err := s.setVolume(p); err != nil {
 				reply(userError(err))
 				return
 			}
@@ -196,7 +201,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			return
 		}
 		if data.CommandName() == "stop" {
-			s.stop()
+			if err := s.stop(); err != nil {
+				reply(userError(err))
+				return
+			}
 			reply("停止して切断しました。待機キューは保持しています。")
 		} else if err := s.skip(); err != nil {
 			reply(userError(err))
