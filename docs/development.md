@@ -46,7 +46,7 @@
 | `mise run audio-check` | FFmpeg変換、音量、ミュート、キャンセル |
 | `mise run opus-audio-check` | ライブ用gopus SIMD経路、音量反映時間、送信間隔、キャンセル（CGO無効） |
 | `mise run dave-check` | Pure Go DAVE組み込み・上流DAVEテスト（CGO無効） |
-| `mise run dave-interop` | Go MLSと公式libdaveのWelcome・双方向暗号フレーム相互運用（CGOあり） |
+| `mise run dave-interop` | 独立モジュール`experiments/daveinterop`でGo MLSと公式libdaveの相互運用を検証（CGOあり）。初回は`mise -C experiments install`で任意依存を準備 |
 | `mise run opus-compare` | 独立モジュールでPure Go Opusとlibopusを比較（[結果](opus-comparison.md)） |
 | `mise run opus-pure-check` | CGO無効でPure Go候補を実行 |
 | `mise run opus-simd-compare` | Go 1.27・amd64 v3でgopus通常版／SIMD版を3回ずつ比較（[結果](opus-simd-comparison.md)） |

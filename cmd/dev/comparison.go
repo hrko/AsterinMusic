@@ -12,18 +12,21 @@ import (
 
 // comparison runs optional native-library experiments, never Bot lifecycle tasks.
 func comparison(action string) error {
-	out, err := exec.Command("mise", "where", "github:discord/libdave").Output()
-	if err != nil {
-		return fmt.Errorf("locate libdave: %w", err)
-	}
-	root := strings.TrimSpace(string(out))
-	out, err = exec.Command("mise", "where", "ffmpeg").Output()
+	out, err := exec.Command("mise", "where", "ffmpeg").Output()
 	if err != nil {
 		return fmt.Errorf("locate opus: %w", err)
 	}
 	opusRoot := strings.TrimSpace(string(out))
 	if runtime.GOOS == "windows" {
 		opusRoot = filepath.Join(opusRoot, "Library")
+	}
+	root := opusRoot
+	if action == "dave-interop" {
+		out, err = exec.Command("mise", "-C", "experiments", "where", "github:discord/libdave").Output()
+		if err != nil {
+			return fmt.Errorf("locate optional libdave (mise -C experiments install): %w", err)
+		}
+		root = strings.TrimSpace(string(out))
 	}
 	ext := ""
 	if runtime.GOOS == "windows" {
@@ -56,7 +59,7 @@ func comparison(action string) error {
 		return compareSIMD(env, dir, ext)
 	}
 	if action == "dave-interop" {
-		return command(env, "go", "test", "-tags", "daveinterop", "./internal/davecheck", "-count=1", "-v")
+		return command(env, "go", "-C", "experiments/daveinterop", "test", "-tags", "daveinterop", "./...", "-count=1", "-v")
 	}
 	if action == "opus-compare" {
 		if err := command(env, "go", "-C", "experiments/opusbench", "test", "-v", "./..."); err != nil {

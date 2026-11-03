@@ -1,0 +1,9 @@
+[settings]
+lockfile = true
+lockfile_platforms = ["linux-x64", "windows-x64"]
+
+# Optional native comparison dependency; not required by the application.
+[tools."github:discord/libdave"]
+version = "1.1.0/cpp"
+platforms.windows-x64 = { asset_pattern = "libdave-Windows-X64-boringssl.zip" }
+platforms.linux-x64 = { asset_pattern = "libdave-Linux-X64-boringssl.zip" }

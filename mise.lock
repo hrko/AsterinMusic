@@ -1141,6 +1141,7 @@ url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/8158039
 [[tools."github:bazelbuild/bazel"]]
 version = "5.3.2"
 backend = "github:bazelbuild/bazel"
+specifiers = ["5.3.2"]
 
 [tools."github:bazelbuild/bazel".options]
 asset_pattern = "bazel-5.3.2-linux-x86_64"
@@ -1149,31 +1150,6 @@ asset_pattern = "bazel-5.3.2-linux-x86_64"
 checksum = "sha256:973e213b1e9207ccdd3ea4730c0f92cbef769ec112ac2b84980583220d8db845"
 url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64"
 url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580360"
-
-[[tools."github:discord/libdave"]]
-version = "1.1.0/cpp"
-backend = "github:discord/libdave"
-specifiers = ["1.1.0/cpp"]
-
-[tools."github:discord/libdave".options]
-asset_pattern = "libdave-Windows-X64-boringssl.zip"
-
-[tools."github:discord/libdave"."platforms.windows-x64"]
-checksum = "sha256:fe54cffcfd948e75b49b0858def30ff1de069803c23fcf19893a069dc3248697"
-url = "https://github.com/discord/libdave/releases/download/v1.1.0/cpp/libdave-Windows-X64-boringssl.zip"
-url_api = "https://api.github.com/repos/discord/libdave/releases/assets/341735464"
-
-[[tools."github:discord/libdave"]]
-version = "1.1.0/cpp"
-backend = "github:discord/libdave"
-
-[tools."github:discord/libdave".options]
-asset_pattern = "libdave-Linux-X64-boringssl.zip"
-
-[tools."github:discord/libdave"."platforms.linux-x64"]
-checksum = "sha256:33157b8cbadcdd3c6cb4df3be18e8bbe7b86e3c65d57d0f1bc9dadc62a768d6a"
-url = "https://github.com/discord/libdave/releases/download/v1.1.0/cpp/libdave-Linux-X64-boringssl.zip"
-url_api = "https://api.github.com/repos/discord/libdave/releases/assets/341735449"
 
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
@@ -1192,6 +1168,7 @@ provenance = "github-attestations"
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
 backend = "github:yt-dlp/yt-dlp"
+specifiers = ["latest"]
 
 [tools."github:yt-dlp/yt-dlp".options]
 asset_pattern = "yt-dlp_linux"

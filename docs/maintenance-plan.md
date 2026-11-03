@@ -71,6 +71,8 @@ Data APIのキャッシュと通信の直列化は、任意補完の失敗時フ
 
 ## 完了の判断
 
+比較依存の分離：libdave相互運用試験を`experiments/daveinterop`の独立モジュールへ移し、本体のgolibdave/libdave依存を削除した。libdaveのmise設定・両OS用ロックは`experiments`へ移した。Opus比較はlibdaveを探索しない。移動後の相互運用試験で双方向各1000フレームと改ざん拒否が成功した。
+
 Pure Go一本化の途中経過：旧libdaveのBot実装・選択変数の参照・切替タスクを撤去し、管理起動経路をPure Goへ統一した。現行の音声実装を`stream_opus.go`、検証タスクを`opus-audio-check`へ改名した。raceタスクはlibdave・pkg-config準備を不要としたが、WindowsではThreadSanitizerのメモリ確保エラーで実行できず、race検証は未完了。比較実験のモジュール・mise依存分離は未対応。
 
 失敗記録：テキスト・Embed・キューの応答更新、コマンドとキューの遅延応答、自動再生候補取得に操作名と安全なエラー分類を記録する。上流エラー原文は出力せず、候補取得の部分成功は従来どおり採用する。利用者向けエラー型の整理などは未対応。

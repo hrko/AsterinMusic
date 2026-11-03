@@ -9,11 +9,6 @@ ffmpeg = "8"
 zig = "0.15.2"
 python = "3.11.14"
 
-[tools."github:discord/libdave"]
-version = "1.1.0/cpp"
-platforms.windows-x64 = { asset_pattern = "libdave-Windows-X64-boringssl.zip" }
-platforms.linux-x64 = { asset_pattern = "libdave-Linux-X64-boringssl.zip" }
-
 [tools."github:bazelbuild/bazel"]
 version = "5.3.2"
 platforms.linux-x64 = { asset_pattern = "bazel-5.3.2-linux-x86_64", format = "raw", rename_exe = "bazel" }
