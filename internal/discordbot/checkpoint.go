@@ -11,16 +11,34 @@ import (
 )
 
 type playbackCheckpoint struct {
-	Version        int
-	Guild          snowflake.ID
-	Channel, Text  snowflake.ID
-	Playing        bool
-	Volume         int
-	AutoEnabled    bool
-	AutoOwner      music.Requester
-	Seed           *music.Track
-	History        []string
-	AutomaticTrack *music.Entry
+	Version          int
+	Guild            snowflake.ID
+	Channel, Text    snowflake.ID
+	Playing          bool
+	Volume           int
+	AutoEnabled      bool
+	AutoOwner        music.Requester
+	Seed             *music.Track
+	History          []string
+	AutomaticTrack   *music.Entry
+	RecordedPlayback *recordedPlayback `json:",omitempty"`
+}
+
+// Identify a playback occurrence, not just a video. Manual re-additions have
+// distinct entry IDs; automatic entries are distinguished by AddedAt.
+type recordedPlayback struct {
+	Entry     music.Entry
+	Automatic bool
+}
+
+func (s *session) recordStartedLocked() {
+	r := s.historyResume
+	s.historyResume = nil
+	if r != nil && r.Automatic == s.currentAuto && r.Entry.ID == s.current.ID &&
+		r.Entry.Track.URL == s.current.Track.URL && r.Entry.AddedAt.Equal(s.current.AddedAt) {
+		return
+	}
+	s.auto.started(s.current.Track, s.currentAuto)
 }
 
 // Called by the authenticated lifecycle endpoint before app cancellation.
@@ -43,6 +61,12 @@ func (s *session) checkpoint(path string) error {
 		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
 	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
 		v.AutomaticTrack = s.current
+	}
+	if !s.skipping && !s.stopped {
+		v.RecordedPlayback = s.historyResume
+		if s.current != nil && s.started {
+			v.RecordedPlayback = &recordedPlayback{Entry: *s.current, Automatic: s.currentAuto}
+		}
 	}
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -107,6 +131,7 @@ func (s *session) restoreSettings(v *playbackCheckpoint) {
 	s.auto.owner = v.AutoOwner
 	s.auto.seed = v.Seed
 	s.auto.history = append([]string(nil), v.History...)
+	s.historyResume = v.RecordedPlayback
 	if v.AutoEnabled {
 		s.resumeAuto = v.AutomaticTrack
 	}

@@ -38,6 +38,7 @@ type session struct {
 	auto                               autoplay
 	current                            *music.Entry
 	resumeAuto                         *music.Entry
+	historyResume                      *recordedPlayback
 	currentAuto, started               bool
 	selectionRevision, currentRevision uint64
 	selectionSeed                      uint64
@@ -296,7 +297,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			if s.current != nil && !s.started {
 				s.started = true
 				s.playbackSequence++
-				s.auto.started(s.current.Track, s.currentAuto)
+				s.recordStartedLocked()
 				s.prefetchLocked()
 			}
 			s.position += 20 * time.Millisecond

@@ -6,7 +6,57 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
+
+func TestManagedResumeRecordsPlaybackOnlyOnce(t *testing.T) {
+	for _, automatic := range []bool{false, true} {
+		s := newSession(&App{ctx: context.Background()}, 1)
+		s.auto.enabled = true
+		s.running = true
+		s.currentAuto = automatic
+		entry := music.Entry{ID: "1", Track: autoTrack("abcdefghijk"), AddedAt: time.Now()}
+		if automatic {
+			entry.ID = ""
+		}
+		s.current = &entry
+		s.recordStartedLocked()
+		s.started = true
+		path := filepath.Join(t.TempDir(), "playback.json")
+		if err := s.checkpoint(path); err != nil {
+			t.Fatal(err)
+		}
+		v, err := readPlaybackCheckpoint(path, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := newSession(&App{ctx: context.Background()}, 1)
+		r.restoreSettings(v)
+		// A second restart before the first packet must keep the marker too.
+		if err := r.checkpoint(path); err != nil {
+			t.Fatal(err)
+		}
+		v, err = readPlaybackCheckpoint(path, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r = newSession(&App{ctx: context.Background()}, 1)
+		r.restoreSettings(v)
+		r.current, r.currentAuto = &entry, automatic
+		r.recordStartedLocked()
+		if len(r.auto.history) != 1 {
+			t.Fatal("resume duplicated history", r.auto.history)
+		}
+		// The same video added again is a new playback occurrence.
+		entry.ID = "2"
+		entry.AddedAt = entry.AddedAt.Add(time.Second)
+		r.current = &entry
+		r.recordStartedLocked()
+		if len(r.auto.history) != 2 {
+			t.Fatal("new playback was suppressed", r.auto.history)
+		}
+	}
+}
 
 func TestCheckpointExcludesExplicitlyEndedCurrent(t *testing.T) {
 	for _, action := range []string{"skip", "stop"} {
