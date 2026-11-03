@@ -178,7 +178,7 @@ yt-dlpの最新版を起動時と24時間ごとに確認し、ログへ記録す
 | URL正規化・サイト取得 | `internal/source/url.go`、`ytdlp.go`、`buffer.go` |
 | ボタン・Mix | `internal/discordbot/offers.go`、`mix.go`、`internal/source/mix.go` |
 | 自動再生 | `internal/discordbot/autoplay.go` |
-| 音量・送信・暗号化 | `internal/audio/volume.go`、`stream_native.go`、`internal/discordbot/dave_go.go` |
+| 音量・送信・暗号化 | `internal/audio/volume.go`、`stream_opus.go`、`internal/discordbot/dave_go.go` |
 
 仕様と実装の食い違いを見つけた場合は、どちらを変更するか判断して両方を揃える。検証記録を編集して、過去に未確認だった動作を確認済みに書き換えない。
 
