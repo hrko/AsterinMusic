@@ -90,3 +90,5 @@ Git管理外の .env.ui-preview に DISCORD_UI_PREVIEW_WEBHOOK を設定する�
 開始番号の検証には mise run ui-preview -- d11 を使う（D方式・11〜20番）。mise run ui-preview -- df11 は同じ開始番号で、行末スペース2個の改行と補足のsubtextを組み合わせる。
 
 環境変数 `UI_PREVIEW_USER_ID` に検証対象のユーザーIDを指定すると、サンプルユーザーの表記を実際のメンションに置き換える。通知は引き続き抑止する。未指定時はプレーンテキストで表示する。
+
+`mise run ui-preview -- end0 end1 end2` はD＋Fの本文末尾の改行を0個・1個・2個で比較する。本番と同じく自動再生の説明を別フィールドに置き、一覧の最終行でsubtextが成立するかを確認する。

@@ -28,6 +28,15 @@ type embed struct {
 }
 
 func sample(variant string) embed {
+	if variant == "end0" || variant == "end1" || variant == "end2" {
+		e := sample("df11")
+		body, _, _ := strings.Cut(e.Description, "\n**自動再生 ON**")
+		n := int(variant[len(variant)-1] - '0')
+		e.Title = fmt.Sprintf("D＋F：本文末尾の改行%d個", n)
+		e.Description = strings.TrimSpace(body) + strings.Repeat("\n", n)
+		e.Fields = []field{{Name: "自動再生 ON", Value: "待機キュー終了後に自動再生します。"}}
+		return e
+	}
 	e := embed{Color: 0x527DA8, Footer: map[string]string{"text": "表示確認用サンプル · 曲の追加・再生は行いません"}}
 	e.Description = "**再生中**\n**[藤井 風 - きらり (Official Video)](https://www.youtube.com/watch?v=TcLLpZBWsck)**\n3:52 · [Fujii Kaze](https://www.youtube.com/) · サンプルユーザー\n\n**次の再生予定**\n"
 	titles := []string{"藤井 風 - 青春病 (Live at Nissan Stadium) [Day2] — 長いタイトルの折り返し確認", "藤井 風 - 花 (Official Video)", "YOASOBI「アイドル」 Official Music Video", "短い曲名"}
@@ -111,8 +120,8 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
-		if v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
-			return fmt.Errorf("choose a through f, d11, or df11")
+		if v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
+			return fmt.Errorf("choose a through f, d11, df11, or end0 through end2")
 		}
 	}
 	env, err := godotenv.Read(".env.ui-preview")
