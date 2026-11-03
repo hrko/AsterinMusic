@@ -43,4 +43,51 @@ func TestCleanupProtectsActiveAndUnrelatedFiles(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(root, ".dev", "state", "queue.json")); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.MkdirAll(filepath.Join(root, ".dev", "run"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".dev", "run", "latest-log"), []byte(log), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cleanupApply = false
+	t.Cleanup(func() { cleanupApply = false })
+	if err := cleanupArtifacts(root, active); err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range plan {
+		if _, err := os.Stat(file.path); err != nil {
+			t.Fatal("preview removed a file", err)
+		}
+	}
+	cleanupApply = true
+	if err := cleanupArtifacts(root, active); err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range plan {
+		if _, err := os.Stat(file.path); !os.IsNotExist(err) {
+			t.Fatal("candidate was not removed", err)
+		}
+	}
+	for _, name := range []string{active, log, filepath.Join(root, "bin", "asterinmusic-voice-12.exe"), filepath.Join(root, ".dev", "state", "queue.json"), filepath.Join(root, "bin", "custom.exe")} {
+		if _, err := os.Stat(name); err != nil {
+			t.Fatal("protected file removed", err)
+		}
+	}
+}
+
+func TestCleanupRejectsRedirectedDirectory(t *testing.T) {
+	root, outside := t.TempDir(), t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "bin")); err != nil {
+		t.Skipf("directory symlinks unavailable: %v", err)
+	}
+	if _, err := cleanupPlan(root, "", ""); err == nil {
+		t.Fatal("redirected artifact directory accepted")
+	}
+}
+
+func TestCleanupRequiresActiveLog(t *testing.T) {
+	root := t.TempDir()
+	if err := cleanupArtifacts(root, filepath.Join(root, "bin", "active.exe")); err == nil {
+		t.Fatal("cleanup accepted unknown active log")
+	}
 }
