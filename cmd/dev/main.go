@@ -110,6 +110,12 @@ func run() error {
 		if err := command(nil, "go", "test", "./..."); err != nil {
 			return err
 		}
+		productionEnv := []string{"CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3"}
+		for _, action := range []string{"vet", "test"} {
+			if err := command(productionEnv, "go", action, "-tags", "davego,opus", "./..."); err != nil {
+				return err
+			}
+		}
 		for _, target := range []string{"linux", "windows"} {
 			if err := command([]string{"GOOS=" + target, "GOARCH=amd64", "CGO_ENABLED=0"}, "go", "build", "./..."); err != nil {
 				return err
