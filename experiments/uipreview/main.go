@@ -28,6 +28,35 @@ type embed struct {
 }
 
 func sample(variant string) embed {
+	if variant == "digits1" || variant == "digits11" || variant == "digits1fixed" {
+		e := sample("end0")
+		e.Title = "B：11〜20番・番号幅に合わせたインデント"
+		if variant != "digits11" {
+			e.Title = "A：1〜10番・番号幅に合わせたインデント"
+			lines := strings.Split(e.Description, "\n")
+			for i, line := range lines {
+				for n := 11; n <= 20; n++ {
+					prefix := fmt.Sprintf("%d. ", n)
+					if strings.HasPrefix(line, prefix) {
+						newPrefix := fmt.Sprintf("%d. ", n-10)
+						lines[i] = newPrefix + strings.TrimPrefix(line, prefix)
+						indent := len(newPrefix)
+						if variant == "digits1fixed" {
+							indent = 3
+						}
+						lines[i+1] = strings.Repeat(" ", indent) + strings.TrimLeft(lines[i+1], " ")
+						break
+					}
+				}
+			}
+			e.Description = strings.Join(lines, "\n")
+		}
+		if variant == "digits1fixed" {
+			e.Title = "C：1〜10番・補足を3スペース固定"
+		}
+		e.Footer["text"] = "番号と補足行のインデント比較 · 本文末尾の改行なし"
+		return e
+	}
 	if variant == "end0" || variant == "end1" || variant == "end2" {
 		e := sample("df11")
 		body, _, _ := strings.Cut(e.Description, "\n**自動再生 ON**")
@@ -120,7 +149,7 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
-		if v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
+		if v != "digits1" && v != "digits11" && v != "digits1fixed" && v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
 			return fmt.Errorf("choose a through f, d11, df11, or end0 through end2")
 		}
 	}
