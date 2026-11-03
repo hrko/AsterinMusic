@@ -61,7 +61,7 @@ func TestQueueViewLimitsAndEscaping(t *testing.T) {
 	s.current = &music.Entry{Track: tracks[0]}
 	s.auto.seed = &tracks[0]
 	e, _ := s.queueView(123, 1, "")
-	if e.Thumbnail == nil || e.Thumbnail.URL != tracks[0].ThumbnailURL || !strings.Contains(e.Description, "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv") || strings.Contains(e.Description, "投稿：") || !strings.Contains(e.Description, "<@123>") || strings.Contains(e.Description, "追加：") {
+	if e.Thumbnail != nil || !strings.Contains(e.Description, "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv") || strings.Contains(e.Description, "投稿：") || !strings.Contains(e.Description, "<@123>") || strings.Contains(e.Description, "追加：") {
 		t.Fatal("channel/thumbnail layout")
 	}
 	size := func(v string) int { return len(utf16.Encode([]rune(v))) }

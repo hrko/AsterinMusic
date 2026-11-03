@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
 	"fmt"
+	"github.com/clipperhouse/displaywidth"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
@@ -24,8 +25,20 @@ func escapeText(s string) string {
 func queueLink(t music.Track) string {
 	return trackLink(t, 60)
 }
+
+// Width is a Unicode monospace estimate, independent of the host locale.
+// Apply before Markdown escaping and only to waiting/candidate list entries.
+func compactQueueTrack(t music.Track) music.Track {
+	options := displaywidth.Options{EastAsianWidth: false}
+	t.Title = options.TruncateString(strings.Join(strings.Fields(t.Title), " "), 56, "…")
+	t.ChannelTitle = options.TruncateString(strings.Join(strings.Fields(t.ChannelTitle), " "), 24, "…")
+	return t
+}
 func trackLink(t music.Track, limit int) string {
 	title := escapeText(truncate(strings.Join(strings.Fields(t.Title), " "), limit))
+	return trackTitleLink(t, title)
+}
+func trackTitleLink(t music.Track, title string) string {
 	if title == "" {
 		title = "曲名不明"
 	}
@@ -54,8 +67,11 @@ func queueDuration(seconds int64) string {
 	return fmt.Sprintf("%d:%02d", seconds/60, seconds%60)
 }
 func queueDetail(t music.Track, who string) string {
+	return trackDetail(t, who, queueChannel(t))
+}
+func trackDetail(t music.Track, who, channel string) string {
 	parts := []string{queueTrackDuration(t)}
-	if channel := queueChannel(t); channel != "" {
+	if channel != "" {
 		parts = append(parts, channel)
 	} else {
 		parts = append(parts, queueSite(t))
@@ -130,7 +146,6 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 			who = "自動再生"
 		}
 		current = queueLink(s.current.Track) + "\n" + queueDetail(s.current.Track, who)
-		embed.Thumbnail = trackThumbnail(s.current.Track)
 		if !s.started {
 			label = "再生準備中"
 		}
@@ -162,14 +177,20 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 		}
 		description.WriteString(empty)
 	} else {
+		// Discord uses the first list marker's width for continuation lines.
+		indent := strings.Repeat(" ", len(fmt.Sprintf("%d. ", (page-1)*10+1)))
 		for i := (page - 1) * 10; i < min(page*10, len(entries)); i++ {
-			t := entries[i].Track
+			t := compactQueueTrack(entries[i].Track)
 			who := ""
 			if mode == "manual" {
 				who = queueMention(entries[i].Requester.ID)
 			}
 			number := fmt.Sprintf("%d. ", i+1)
-			fmt.Fprintf(&description, "%s%s  \n%s-# %s\n", number, queueLink(t), strings.Repeat(" ", len(number)), queueDetail(t, who))
+			channel := ""
+			if channelIDPattern.MatchString(t.ChannelID) && t.ChannelTitle != "" {
+				channel = "[" + escapeText(t.ChannelTitle) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
+			}
+			fmt.Fprintf(&description, "%s%s  \n%s-# %s\n", number, trackTitleLink(t, escapeText(t.Title)), indent, trackDetail(t, who, channel))
 		}
 	}
 	embed.Description = strings.TrimSpace(description.String())

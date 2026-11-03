@@ -2,10 +2,34 @@ package discordbot
 
 import (
 	"asterinmusic/internal/music"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestQueuePageIndentAndUnicode(t *testing.T) {
+	s := autoSession()
+	tracks := make([]music.Track, 100)
+	for i := range tracks {
+		tracks[i] = autoTrack(fmt.Sprintf("%011d", i))
+		tracks[i].Title = strings.Repeat("👨‍👩‍👧‍👦", 30)
+	}
+	s.queue.Add(music.Requester{ID: "123"}, tracks, "", "")
+	for _, page := range []int{1, 2, 10} {
+		e, _ := s.queueView(123, page, "")
+		indent := strings.Repeat(" ", len(fmt.Sprintf("%d. ", (page-1)*10+1)))
+		if strings.Count(e.Description, "\n"+indent+"-# ") != 10 {
+			t.Fatal("inconsistent page indentation", page)
+		}
+		if !strings.Contains(e.Description, strings.Repeat("👨‍👩‍👧‍👦", 27)+"…") {
+			t.Fatal("grapheme split or incorrect width")
+		}
+	}
+	if tracks[0].Title != strings.Repeat("👨‍👩‍👧‍👦", 30) {
+		t.Fatal("source metadata modified")
+	}
+}
 
 func TestOfferRetainsTrackMetadata(t *testing.T) {
 	o := newOffers()
