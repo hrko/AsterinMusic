@@ -191,15 +191,24 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 func (s *session) nextEntry() (music.Entry, bool, bool) {
 	for {
 		s.mu.Lock()
+		s.waitQueueLocked()
 		if s.stopped || s.app.ctx.Err() != nil {
 			s.running = false
 			s.mu.Unlock()
 			return music.Entry{}, false, false
 		}
-		if entry, ok := s.queue.Start(); ok {
+		var entry music.Entry
+		var ok bool
+		s.queueIOLocked(func() { entry, ok = s.queue.Start() })
+		if ok {
 			s.resumeAuto = nil
 			s.mu.Unlock()
 			return entry, false, true
+		}
+		if s.stopped || s.shuttingDown || s.app.ctx.Err() != nil {
+			s.running = false
+			s.mu.Unlock()
+			return music.Entry{}, false, false
 		}
 		if s.resumeAuto != nil && s.auto.enabled {
 			entry := *s.resumeAuto

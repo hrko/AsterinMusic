@@ -131,15 +131,16 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 				return
 			}
 			s.mu.Lock()
+			s.waitQueueLocked()
 			if err := s.mutableLocked(); err != nil {
 				s.mu.Unlock()
 				reply(userError(err))
 				return
 			}
 			s.epoch++
-			s.queue.Clear()
+			var saveErr error
+			s.queueIOLocked(func() { s.queue.Clear(); saveErr = s.queue.PersistenceError() })
 			s.prefetchLocked()
-			saveErr := s.queue.PersistenceError()
 			autoOn := s.auto.enabled
 			s.mu.Unlock()
 			if saveErr != nil {

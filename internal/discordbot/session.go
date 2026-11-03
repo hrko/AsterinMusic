@@ -34,6 +34,7 @@ type session struct {
 	trackCancel                        context.CancelFunc
 	done                               chan struct{}
 	closing                            chan struct{}
+	queueSaving                        chan struct{}
 	connecting                         bool
 	connectCancel                      context.CancelFunc
 	createConn                         func() voice.Conn
@@ -84,6 +85,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.waitQueueLocked()
 	if err := s.mutableLocked(); err != nil {
 		return 0, "", err
 	}
@@ -99,15 +101,24 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	if s.closing != nil || (s.stopped && s.running) {
 		return 0, "", errStopping
 	}
-	n, entryID, err := s.queue.AddAt(who, tracks, playlist, importID, position)
+	var n int
+	var entryID string
+	var saveErr error
+	s.queueIOLocked(func() {
+		n, entryID, err = s.queue.AddAt(who, tracks, playlist, importID, position)
+		saveErr = s.queue.PersistenceError()
+	})
 	if err != nil {
 		return 0, "", err
 	}
 	if len(tracks) > 0 && n == 0 {
 		return 0, "", errQueueFull
 	}
-	if err := s.queue.PersistenceError(); err != nil {
+	if saveErr != nil {
 		return n, entryID, errQueueSave
+	}
+	if s.epoch != epoch || s.shuttingDown {
+		return n, entryID, errQueueChanged
 	}
 	s.text = text
 	if n > 0 {
@@ -199,9 +210,10 @@ func (s *session) loop(done chan struct{}) {
 			return
 		}
 		s.mu.Lock()
+		s.waitQueueLocked()
 		if s.stopped || s.app.ctx.Err() != nil {
 			if !automatic && !s.shuttingDown && s.app.ctx.Err() == nil {
-				s.queue.Finish(entry.ID)
+				s.queueIOLocked(func() { s.queue.Finish(entry.ID) })
 			}
 			s.running = false
 			s.mu.Unlock()
@@ -236,6 +248,7 @@ func (s *session) loop(done chan struct{}) {
 		})
 		cancel()
 		s.mu.Lock()
+		s.waitQueueLocked()
 		if automatic && !s.started && !s.skipping && !s.stopped && !s.shuttingDown && s.app.ctx.Err() == nil &&
 			(errors.Is(err, context.Canceled) || errors.Is(err, errSuperseded)) {
 			_, pending := s.queue.Snapshot()
@@ -244,7 +257,7 @@ func (s *session) loop(done chan struct{}) {
 			}
 		}
 		if !automatic && !s.shuttingDown && s.app.ctx.Err() == nil {
-			s.queue.Finish(entry.ID)
+			s.queueIOLocked(func() { s.queue.Finish(entry.ID) })
 		}
 		s.current = nil
 		s.started = false

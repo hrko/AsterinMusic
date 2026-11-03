@@ -45,13 +45,15 @@ func (s *session) recordStartedLocked() {
 func (s *session) checkpoint(path string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.waitQueueLocked()
 	if s.shuttingDown {
 		return nil
 	}
 	// Explicit user termination wins over a later managed shutdown, even if
 	// the playback goroutine has not finished its cancellation cleanup yet.
 	if (s.skipping || s.stopped) && s.current != nil && !s.currentAuto {
-		s.queue.Finish(s.current.ID)
+		id := s.current.ID
+		s.queueIOLocked(func() { s.queue.Finish(id) })
 	}
 	if err := s.queue.PersistenceError(); err != nil {
 		return err
