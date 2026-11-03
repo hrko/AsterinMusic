@@ -6,7 +6,6 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
-	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -30,7 +29,7 @@ func (n *failureNotice) publish(sequence uint64, channel snowflake.ID, embed dis
 	}
 	id, err := send(n.message, embed)
 	if err != nil {
-		slog.Warn("could not send playback failure notification")
+		logOperationFailure("notification.playback_failure", err)
 		return
 	}
 	n.message = id

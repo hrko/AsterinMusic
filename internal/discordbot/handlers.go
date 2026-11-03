@@ -31,7 +31,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 	}
 	if problem != "" {
-		_ = e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}})
+		logOperationFailure("interaction.reject_command", e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 		return
 	}
 	if err := e.DeferCreateMessage(privateQuery(data)); err != nil {
@@ -227,7 +227,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	fail := func(text string) {
-		_ = e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}})
+		logOperationFailure("interaction.reject_import", e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 	}
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		fail("このサーバーでは操作できません。")
@@ -244,6 +244,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err := e.DeferUpdateMessage(); err != nil {
+		logOperationFailure("interaction.defer_import", err)
 		a.offers.finish(id, false)
 		return
 	}
