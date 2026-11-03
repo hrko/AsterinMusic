@@ -41,6 +41,8 @@
 | タスク | 用途 |
 | --- | --- |
 | `mise run fmt` | Goソースを整形 |
+| `mise run title-plugin-probe` | 実験用yt-dlpプラグインの言語別タイトル取得を検証。Botへの組み込みなし。[検証結果](title-plugin-probe.md) |
+| `mise run youtube-data-probe` | `.env.youtube` の `YOUTUBE_DATA_API_KEY` で5動画のタイトルをja/en/言語未指定で比較し、本番の補完器でも3曲の日本語タイトルを検証。Discord接続なし。[検証結果](title-plugin-probe.md) |
 | `mise run check` | 整形、vet、単体テスト、CGO無効のLinux/Windowsクロスビルド |
 | `mise run race-test` | 並行処理の競合検出 |
 | `mise run audio-check` | FFmpeg変換、音量、ミュート、キャンセル |

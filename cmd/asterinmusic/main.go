@@ -77,6 +77,9 @@ func run(ctx context.Context, args []string) error {
 		}
 		c := source.New(executable)
 		c.MetadataLanguage = cfg.YouTubeMetadataLanguage
+		if cfg.YouTubeDataEnabled {
+			c.YouTubeData = source.NewYouTubeData(cfg.YouTubeDataAPIKey)
+		}
 		if err = c.ConfigureAuth(cfg.NiconicoAuth); err != nil {
 			return err
 		}

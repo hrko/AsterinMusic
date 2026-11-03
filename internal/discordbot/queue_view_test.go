@@ -24,7 +24,7 @@ func TestQueueViewTotalsModesAndNoConsumption(t *testing.T) {
 	tracks[0].Duration = nil
 	s.queue.Add(music.Requester{ID: "123", Name: "must not display"}, tracks, "", "")
 	e, _ := s.queueView(123, 2, "")
-	if !strings.Contains(e.Footer.Text, "待機12曲\n合計11分55秒 ＋ 時間不明1曲") || !strings.Contains(e.Description, "11. [") || !strings.Contains(e.Description, "<@123>") {
+	if !strings.Contains(e.Footer.Text, "待機12曲\n既知分11分55秒／時間不明1曲") || !strings.Contains(e.Description, "11. [") || !strings.Contains(e.Description, "<@123>") {
 		t.Fatalf("unexpected view: %+v", e)
 	}
 	s.auto.store(tracks)
@@ -53,11 +53,17 @@ func TestQueueViewLimitsAndEscaping(t *testing.T) {
 	for i := range tracks {
 		tracks[i] = autoTrack(fmt.Sprintf("%011d", i))
 		tracks[i].Title = strings.Repeat("😀[*_`@everyone", 80)
+		tracks[i].ChannelTitle = strings.Repeat("😀[*_`@everyone", 80)
+		tracks[i].ChannelID = "UCabcdefghijklmnopqrstuv"
+		tracks[i].ThumbnailURL = "https://i.ytimg.com/example.jpg"
 	}
 	s.queue.Add(music.Requester{ID: "123"}, tracks, "", "")
 	s.current = &music.Entry{Track: tracks[0]}
 	s.auto.seed = &tracks[0]
 	e, _ := s.queueView(123, 1, "")
+	if e.Thumbnail == nil || e.Thumbnail.URL != tracks[0].ThumbnailURL || !strings.Contains(e.Description, "https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv") || strings.Contains(e.Description, "投稿：") || !strings.Contains(e.Description, "<@123>") || strings.Contains(e.Description, "追加：") {
+		t.Fatal("channel/thumbnail layout")
+	}
 	size := func(v string) int { return len(utf16.Encode([]rune(v))) }
 	total := size(e.Title) + size(e.Footer.Text) + size(e.Description) + size(e.Author.Name)
 	if size(e.Description) > 4096 || strings.Contains(e.Description, "@everyone") {

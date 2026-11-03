@@ -2,6 +2,10 @@
 
 ## 設定ロード
 
+Data API補完器のキャッシュはタイトル・再生時間・チャンネル・サムネイルを一体で保持する。TrackにChannelID/ChannelTitle/ThumbnailURLを任意JSONフィールドとして保存する。チャンネルURLは検証済みIDから表示時に生成し、Discord EmbedにサムネイルURLを渡す。キュー表示はメタデータ取得を行わない。動画IDが返らなければ5分、取得済みメタデータは24時間キャッシュする。
+
+`source.Client.YouTubeData` は任意のタイトル補完器。共通の `inspect` がyt-dlp出力をTrackへ変換した後に呼ぶため、単曲・リスト・Mix・自動再生候補へ適用される。公式APIへのHTTP処理はGo標準ライブラリを使用し、キーはヘッダーで渡す。動画IDと言語のメモリキャッシュ、50件単位の取得、最大3秒の操作期限を持つ。ゲートで同時のキャッシュミスを直列化し、先行処理の結果を再利用する。表示時や音声取得時にAPIを呼ばない。TrackのTitleSource/TitleLanguageは任意JSONフィールドであり、古い保存状態も読める。実験用yt-dlpプラグインは本番にはロードしない。
+
 YouTubeメタデータ言語は型付きConfigから`source.Client.MetadataLanguage`へ渡し、メタデータ取得時だけ`--extractor-args youtube:lang=CODE`を追加する。ニコニコ認証・音声形式の選択とは独立している。独立診断用Clientも既定は`ja`で、設定ファイルを読む`source-check`は設定値を使用する。
 
 `internal/config`がkoanf v2、file/confmap Provider、dotenv Parser、厳密なYAML Parserを使って読み込む。dotenvは別のkoanfインスタンスへ保持し、プロセス環境変数優先の参照関数を構成する。YAML解析後に文字列のみ1回展開し、既定値とマージしてmapstructureの厳密なデコードと意味検証を行う。認証でApplication IDを確認してから、単一Bot用の型付きConfigをAppへ渡す。koanfや未展開の値を再生処理へ渡さない。[設定仕様](configuration.md)を参照。

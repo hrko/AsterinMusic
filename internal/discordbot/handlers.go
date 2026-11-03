@@ -146,15 +146,15 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			reply("再生中の曲はありません。")
 			return
 		}
-		origin := current.Requester.Name
+		origin := queueMention(current.Requester.ID)
 		if automatic {
-			origin = "自動再生（有効化：" + origin + "）"
+			origin = "自動再生"
 		}
 		state := "再生中"
 		if !started {
 			state = "再生準備中"
 		}
-		reply(fmt.Sprintf("%s：%s\n%s\n追加元：%s / 経過 %s / 音量 %d%%", state, current.Track.Title, current.Track.URL, origin, position.Truncate(time.Second), s.volume.Percent()))
+		_, _ = a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, e.Token(), discord.MessageUpdate{Embeds: &[]discord.Embed{{Title: state, Description: queueLink(current.Track) + "\n" + queueDetail(current.Track, origin), Color: 0x527DA8, Thumbnail: trackThumbnail(current.Track), Footer: &discord.EmbedFooter{Text: fmt.Sprintf("経過 %s / 音量 %d%%", position.Truncate(time.Second), s.volume.Percent())}}}, AllowedMentions: &discord.AllowedMentions{}})
 	case "volume":
 		if p, ok := data.OptInt("percent"); ok {
 			if _, err := s.authorize(user.ID); err != nil {

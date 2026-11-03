@@ -8,6 +8,7 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/snowflake/v2"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -35,7 +36,7 @@ func queueMention(id string) string {
 	return "<@" + strconv.FormatUint(n, 10) + ">"
 }
 func queueSeconds(t music.Track) (int64, bool) {
-	if t.Duration == nil || math.IsNaN(*t.Duration) || math.IsInf(*t.Duration, 0) || *t.Duration < 0 || *t.Duration > 1e9 {
+	if t.Duration == nil || math.IsNaN(*t.Duration) || math.IsInf(*t.Duration, 0) || *t.Duration <= 0 || *t.Duration > 1e9 {
 		return 0, false
 	}
 	return int64(*t.Duration), true
@@ -47,7 +48,31 @@ func queueDuration(seconds int64) string {
 	return fmt.Sprintf("%d:%02d", seconds/60, seconds%60)
 }
 func queueDetail(t music.Track, who string) string {
-	return queueTrackDuration(t) + " · " + queueSite(t) + " · " + who
+	parts := []string{queueTrackDuration(t)}
+	if channel := queueChannel(t); channel != "" {
+		parts = append(parts, channel)
+	} else {
+		parts = append(parts, queueSite(t))
+	}
+	if who != "" {
+		parts = append(parts, who)
+	}
+	return strings.Join(parts, " · ")
+}
+
+var channelIDPattern = regexp.MustCompile(`^UC[A-Za-z0-9_-]{22}$`)
+
+func queueChannel(t music.Track) string {
+	if !channelIDPattern.MatchString(t.ChannelID) || strings.TrimSpace(t.ChannelTitle) == "" {
+		return ""
+	}
+	return "[" + queueText(truncate(t.ChannelTitle, 24)) + "](https://www.youtube.com/channel/" + t.ChannelID + ")"
+}
+func trackThumbnail(t music.Track) *discord.EmbedResource {
+	if strings.HasPrefix(t.ThumbnailURL, "https://") && len(t.ThumbnailURL) <= 2048 {
+		return &discord.EmbedResource{URL: t.ThumbnailURL}
+	}
+	return nil
 }
 func queueTrackDuration(t music.Track) string {
 	duration := "時間不明"
@@ -99,6 +124,7 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 			who = "自動再生"
 		}
 		current = queueLink(s.current.Track) + "\n" + queueDetail(s.current.Track, who)
+		embed.Thumbnail = trackThumbnail(s.current.Track)
 		if !s.started {
 			label = "再生準備中"
 		}
@@ -132,12 +158,11 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 	} else {
 		for i := (page - 1) * 10; i < min(page*10, len(entries)); i++ {
 			t := entries[i].Track
-			fmt.Fprintf(&description, "%02d. %s · %s\n", i+1, queueLink(t), queueTrackDuration(t))
+			who := ""
 			if mode == "manual" {
-				fmt.Fprintf(&description, "　%s · %s\n\n", queueMention(entries[i].Requester.ID), queueSite(t))
-			} else if heading == "次の候補" {
-				fmt.Fprintf(&description, "　%s\n", queueSite(t))
+				who = queueMention(entries[i].Requester.ID)
 			}
+			fmt.Fprintf(&description, "%02d. %s\n%s\n\n", i+1, queueLink(t), queueDetail(t, who))
 		}
 	}
 	embed.Description = strings.TrimSpace(description.String())
@@ -180,7 +205,7 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 		}
 		footer = fmt.Sprintf("%d / %dページ · 待機%d曲\n合計%s", page, pages, len(pending), queueTotalDuration(total))
 		if unknown > 0 {
-			footer += fmt.Sprintf(" ＋ 時間不明%d曲", unknown)
+			footer = fmt.Sprintf("%d / %dページ · 待機%d曲\n既知分%s／時間不明%d曲", page, pages, len(pending), queueTotalDuration(total), unknown)
 		}
 		footer += "\n再生予定順 · 操作時点の情報"
 	}

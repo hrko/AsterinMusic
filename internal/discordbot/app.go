@@ -60,6 +60,9 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 	if c.YouTubeMetadataLanguage != "" {
 		a.source.MetadataLanguage = c.YouTubeMetadataLanguage
 	}
+	if c.YouTubeDataEnabled {
+		a.source.YouTubeData = source.NewYouTubeData(c.YouTubeDataAPIKey)
+	}
 	if err := a.source.ConfigureAuth(c.NiconicoAuth); err != nil {
 		return nil, err
 	}

@@ -13,6 +13,9 @@ playback:
 sources:
   youtube:
     metadata_language: ja
+    data_api:
+      enabled: false
+      # api_key: "${YOUTUBE_DATA_API_KEY}"
   niconico:
     auth:
       method: none

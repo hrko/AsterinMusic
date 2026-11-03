@@ -11,10 +11,15 @@ import (
 const DefaultQueueLimit = 500
 
 type Track struct {
-	URL      string   `json:"url"`
-	Title    string   `json:"title"`
-	Site     string   `json:"site"`
-	Duration *float64 `json:"duration,omitempty"`
+	ThumbnailURL  string   `json:"thumbnail_url,omitempty"`
+	ChannelID     string   `json:"channel_id,omitempty"`
+	ChannelTitle  string   `json:"channel_title,omitempty"`
+	TitleSource   string   `json:"title_source,omitempty"`
+	TitleLanguage string   `json:"title_language,omitempty"`
+	URL           string   `json:"url"`
+	Title         string   `json:"title"`
+	Site          string   `json:"site"`
+	Duration      *float64 `json:"duration,omitempty"`
 }
 
 type Requester struct {

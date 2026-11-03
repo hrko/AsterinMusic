@@ -19,6 +19,7 @@ const PlaylistLimit = 100
 type Runner func(context.Context, string, []string, io.Reader, io.Writer) error
 
 type Client struct {
+	YouTubeData      *YouTubeData
 	MetadataLanguage string
 	auth             *nicoAuth
 	Executable       string
@@ -126,6 +127,7 @@ func (c *Client) inspect(ctx context.Context, input Input) (Result, error) {
 		}
 		return result, errors.New("no playable tracks found")
 	}
+	c.YouTubeData.Enrich(ctx, result.Tracks, c.MetadataLanguage)
 	return result, err // Caller may accept playlist partial results while reporting the error.
 }
 

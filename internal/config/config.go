@@ -18,6 +18,8 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	YouTubeDataEnabled                                    bool
+	YouTubeDataAPIKey                                     string
 	DisconnectWhenIdle                                    bool
 	YouTubeMetadataLanguage                               string
 	NiconicoAuth                                          source.AuthConfig
@@ -30,6 +32,10 @@ type Config struct {
 type Document struct {
 	Sources struct {
 		YouTube struct {
+			DataAPI struct {
+				Enabled bool   `koanf:"enabled"`
+				APIKey  string `koanf:"api_key"`
+			} `koanf:"data_api"`
 			MetadataLanguage *string `koanf:"metadata_language"`
 		} `koanf:"youtube"`
 		Niconico struct {
@@ -149,6 +155,11 @@ func (d Document) resolve(base string) (Config, error) {
 	}
 	c := Config{StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
 	c.YouTubeMetadataLanguage = "ja"
+	c.YouTubeDataEnabled = d.Sources.YouTube.DataAPI.Enabled
+	c.YouTubeDataAPIKey = d.Sources.YouTube.DataAPI.APIKey
+	if c.YouTubeDataEnabled && (strings.TrimSpace(c.YouTubeDataAPIKey) == "" || strings.ContainsAny(c.YouTubeDataAPIKey, "\r\n\x00")) {
+		return fail("YouTube Data API requires a nonempty valid api_key")
+	}
 	c.DisconnectWhenIdle = d.Playback.DisconnectWhenIdle
 	if value := d.Sources.YouTube.MetadataLanguage; value != nil {
 		c.YouTubeMetadataLanguage = *value

@@ -14,7 +14,7 @@ func TestCheckpointRestartFairOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, b := Requester{ID: "a", Name: "Alice"}, Requester{ID: "b", Name: "Bob"}
-	q.Add(a, []Track{{URL: "a1"}, {URL: "a2"}, {URL: "a3"}}, "playlist", "import")
+	q.Add(a, []Track{{URL: "a1", Title: "日本語タイトル", TitleSource: "youtube_data_api", TitleLanguage: "ja", ChannelID: "UCabcdefghijklmnopqrstuv", ChannelTitle: "channel", ThumbnailURL: "https://i.ytimg.com/example.jpg"}, {URL: "a2"}, {URL: "a3"}}, "playlist", "import")
 	current, _ := q.Start()
 	q.Add(b, []Track{{URL: "b1"}, {URL: "b2"}}, "", "")
 	q.Add(a, []Track{{URL: "a4"}}, "", "")
