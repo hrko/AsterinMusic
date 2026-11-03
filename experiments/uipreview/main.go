@@ -28,7 +28,7 @@ type embed struct {
 }
 
 func sample(variant string) embed {
-	if variant == "digits1" || variant == "digits11" || variant == "digits1fixed" {
+	if variant == "digits1" || variant == "digits11" || variant == "digits1fixed" || variant == "digits91" || variant == "digits91fixed" {
 		e := sample("end0")
 		e.Title = "B：11〜20番・番号幅に合わせたインデント"
 		if variant != "digits11" {
@@ -39,10 +39,16 @@ func sample(variant string) embed {
 					prefix := fmt.Sprintf("%d. ", n)
 					if strings.HasPrefix(line, prefix) {
 						newPrefix := fmt.Sprintf("%d. ", n-10)
+						if strings.HasPrefix(variant, "digits91") {
+							newPrefix = fmt.Sprintf("%d. ", n+80)
+						}
 						lines[i] = newPrefix + strings.TrimPrefix(line, prefix)
 						indent := len(newPrefix)
 						if variant == "digits1fixed" {
 							indent = 3
+						}
+						if variant == "digits91fixed" {
+							indent = 4
 						}
 						lines[i+1] = strings.Repeat(" ", indent) + strings.TrimLeft(lines[i+1], " ")
 						break
@@ -53,6 +59,12 @@ func sample(variant string) embed {
 		}
 		if variant == "digits1fixed" {
 			e.Title = "C：1〜10番・補足を3スペース固定"
+		}
+		if variant == "digits91" {
+			e.Title = "比較用：91〜100番・100番だけ5スペース"
+		}
+		if variant == "digits91fixed" {
+			e.Title = "修正案：91〜100番・補足を4スペース固定"
 		}
 		e.Footer["text"] = "番号と補足行のインデント比較 · 本文末尾の改行なし"
 		return e
@@ -149,7 +161,7 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
-		if v != "digits1" && v != "digits11" && v != "digits1fixed" && v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
+		if v != "digits91" && v != "digits91fixed" && v != "digits1" && v != "digits11" && v != "digits1fixed" && v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
 			return fmt.Errorf("choose a through f, d11, df11, or end0 through end2")
 		}
 	}

@@ -94,3 +94,5 @@ Git管理外の .env.ui-preview に DISCORD_UI_PREVIEW_WEBHOOK を設定する�
 `mise run ui-preview -- end0 end1 end2` はD＋Fの本文末尾の改行を0個・1個・2個で比較する。本番と同じく自動再生の説明を別フィールドに置き、一覧の最終行でsubtextが成立するかを確認する。
 
 `mise run ui-preview -- digits1 digits11 digits1fixed` は同じ10曲で、1〜10番・11〜20番・1〜10番の補足インデント3スペース固定を比較する。前2つは各番号の幅に補足インデントを合わせる。本文末尾の改行なし、自動再生説明は別フィールドで統一する。
+
+`mise run ui-preview -- digits91fixed digits91` は91〜100番で、補足インデント4スペース固定と、100番だけ5スペースに増やす方式を比較する。
