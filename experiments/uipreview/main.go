@@ -50,6 +50,9 @@ func imageSamples(variant string) []embed {
 }
 
 func sample(variant string) embed {
+	if variant == "brackets" {
+		return bracketSample()
+	}
 	if strings.HasPrefix(variant, "width-") {
 		return widthSample(variant)
 	}
@@ -186,6 +189,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "brackets" {
+			continue
+		}
 		if v == "width-current" || v == "width-standard" || v == "width-compact" {
 			continue
 		}
