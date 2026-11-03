@@ -9,6 +9,50 @@ import (
 	"time"
 )
 
+func TestSnapshotDuringBlockedSave(t *testing.T) {
+	q := NewQueue(10)
+	q.statePath = filepath.Join(t.TempDir(), "queue.json")
+	entered, release := make(chan struct{}), make(chan struct{})
+	q.writeState = func(path string, b []byte) error {
+		close(entered)
+		<-release
+		return writeQueueState(path, b)
+	}
+	added := make(chan struct{})
+	go func() { q.Add(Requester{ID: "a"}, []Track{{URL: "first"}}, "", ""); close(added) }()
+	<-entered
+	read := make(chan []Entry, 1)
+	go func() { _, entries := q.Snapshot(); read <- entries }()
+	select {
+	case entries := <-read:
+		if len(entries) != 1 {
+			t.Error("in-memory mutation not visible")
+		}
+	case <-time.After(time.Second):
+		close(release)
+		<-added
+		t.Fatal("save blocked snapshot")
+	}
+	select {
+	case <-added:
+		t.Fatal("mutation returned before save completed")
+	default:
+	}
+	close(release)
+	<-added
+	if err := q.PersistenceError(); err != nil {
+		t.Fatal(err)
+	}
+	r, err := OpenQueue(10, q.statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, entries := r.Snapshot()
+	if len(entries) != 1 || entries[0].Track.URL != "first" {
+		t.Fatal("saved mutation lost")
+	}
+}
+
 func TestNoopAddDoesNotRewriteCheckpoint(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "queue.json")
 	q, err := OpenQueue(1, path)

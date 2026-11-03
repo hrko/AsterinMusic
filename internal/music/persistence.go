@@ -95,6 +95,8 @@ func validateState(s queueState, limit int) error {
 }
 
 func (q *Queue) PersistenceError() error {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	return q.lastSaveErr
@@ -104,19 +106,26 @@ func (q *Queue) persistLocked() {
 	if q.statePath == "" {
 		return
 	}
-	q.lastSaveErr = q.saveLocked()
+	b, err := json.Marshal(queueState{1, q.sequence, q.waiting, q.order, q.current})
+	if err == nil {
+		write := q.writeState
+		if write == nil {
+			write = writeQueueState
+		}
+		// mutationMu preserves mutation/write order while readers use mu.
+		q.mu.Unlock()
+		err = write(q.statePath, b)
+		q.mu.Lock()
+	}
+	q.lastSaveErr = err
 	if q.lastSaveErr != nil {
 		slog.Error("queue checkpoint failed; restart may lose recent changes", "error", q.lastSaveErr)
 	}
 }
 
-func (q *Queue) saveLocked() error {
-	b, err := json.Marshal(queueState{1, q.sequence, q.waiting, q.order, q.current})
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(q.statePath)
-	if err = os.MkdirAll(dir, 0700); err != nil {
+func writeQueueState(path string, b []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	f, err := os.CreateTemp(dir, ".queue-*.tmp")
@@ -134,5 +143,5 @@ func (q *Queue) saveLocked() error {
 	if closeErr != nil {
 		return closeErr
 	}
-	return os.Rename(f.Name(), q.statePath)
+	return os.Rename(f.Name(), path)
 }

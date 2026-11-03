@@ -39,6 +39,7 @@ type Entry struct {
 // Queue is a concurrent-safe, per-guild round-robin queue. The active user
 // rejoins at the tail only when Finish is called (including stop/skip/failure).
 type Queue struct {
+	mutationMu  sync.Mutex // Mutations and their durable writes are ordered.
 	mu          sync.Mutex
 	limit       int
 	sequence    uint64
@@ -47,6 +48,7 @@ type Queue struct {
 	current     *Entry
 	statePath   string
 	lastSaveErr error
+	writeState  func(string, []byte) error // Optional deterministic storage boundary for tests.
 }
 
 func NewQueue(limit int) *Queue {
@@ -70,6 +72,8 @@ type Insertion struct {
 }
 
 func (q *Queue) AddAt(who Requester, tracks []Track, playlist, importID string, position Insertion) (int, string, error) {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
 	if who.ID == "" {
 		return 0, "", errors.New("requester ID is required")
 	}
@@ -127,6 +131,8 @@ func (q *Queue) AddAt(who Requester, tracks []Track, playlist, importID string, 
 
 // Start does not replace an active track. The caller must Finish it first.
 func (q *Queue) Start() (Entry, bool) {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if q.current != nil || len(q.order) == 0 {
@@ -143,6 +149,8 @@ func (q *Queue) Start() (Entry, bool) {
 
 // Finish checks the entry ID so a late callback cannot finish a newer track.
 func (q *Queue) Finish(id string) bool {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if q.current == nil || q.current.ID != id {
@@ -160,6 +168,8 @@ func (q *Queue) Finish(id string) bool {
 }
 
 func (q *Queue) Clear() {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.waiting = make(map[string][]Entry)
