@@ -119,11 +119,14 @@ func (a *App) Close() {
 	defer cancel()
 	for _, s := range sessions {
 		s.mu.Lock()
-		done := s.done
+		done, closing := s.done, s.closing
 		s.mu.Unlock()
-		if done != nil {
+		for _, wait := range []chan struct{}{done, closing} {
+			if wait == nil {
+				continue
+			}
 			select {
-			case <-done:
+			case <-wait:
 			case <-ctx.Done():
 				slog.Warn("playback shutdown timed out")
 			}

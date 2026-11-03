@@ -33,6 +33,7 @@ type session struct {
 	epoch                              uint64
 	trackCancel                        context.CancelFunc
 	done                               chan struct{}
+	closing                            chan struct{}
 	idleSince, emptySince              time.Time
 	position                           time.Duration
 	auto                               autoplay
@@ -89,7 +90,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	if s.channel != 0 && s.channel != channel {
 		return 0, "", errVoiceChanged
 	}
-	if s.stopped && s.running {
+	if s.closing != nil || (s.stopped && s.running) {
 		return 0, "", errStopping
 	}
 	n, entryID, err := s.queue.AddAt(who, tracks, playlist, importID, position)
@@ -120,6 +121,9 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 }
 
 func (s *session) startLocked(channel snowflake.ID) error {
+	if s.closing != nil {
+		return errStopping
+	}
 	_, pending := s.queue.Snapshot()
 	if len(pending) == 0 && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
 		return errQueueEmpty
@@ -398,10 +402,18 @@ func (s *session) stopLocked() {
 	s.emptySince = time.Time{}
 	s.idleSince = time.Time{}
 	if conn != nil {
-		ctx, c := context.WithTimeout(context.Background(), 5*time.Second)
-		conn.Close(ctx)
-		s.app.closeDave(conn)
-		c()
+		done := make(chan struct{})
+		s.closing = done
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			conn.Close(ctx)
+			s.app.closeDave(conn)
+			s.mu.Lock()
+			s.closing = nil
+			close(done)
+			s.mu.Unlock()
+		}()
 	}
 }
 
