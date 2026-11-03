@@ -12,17 +12,18 @@ import (
 
 // All autoplay state is protected by session.mu. History survives off/on.
 type autoplay struct {
-	enabled    bool
-	owner      music.Requester
-	seed       *music.Track
-	candidates []music.Track
-	history    []string
-	revision   uint64
-	fetching   bool
-	cancel     context.CancelFunc
-	failures   int
-	done       chan struct{}
-	attempts   int
+	enabled        bool
+	owner          music.Requester
+	seed           *music.Track
+	candidates     []music.Track
+	history        []string
+	revision       uint64
+	seedGeneration uint64
+	fetching       bool
+	cancel         context.CancelFunc
+	failures       int
+	done           chan struct{}
+	attempts       int
 }
 
 func (a *autoplay) invalidate() {
@@ -39,6 +40,7 @@ func (a *autoplay) invalidate() {
 	a.fetching = false
 }
 func (a *autoplay) off() {
+	a.seedGeneration++
 	a.invalidate()
 	a.enabled = false
 	a.seed = nil
@@ -61,6 +63,7 @@ func (a *autoplay) setSeed(t music.Track) {
 		return
 	}
 	a.invalidate()
+	a.seedGeneration++
 	a.candidates = nil
 	copy := t
 	a.seed = &copy
@@ -83,6 +86,14 @@ func (a *autoplay) take(pending []music.Entry) (music.Track, bool) {
 	a.candidates = a.candidates[1:]
 	a.attempts = 0
 	return t, true
+}
+
+// Return a selection displaced by manual work only while its seed still owns
+// the candidate batch. Fetch cancellation alone does not change that ownership.
+func (a *autoplay) putBack(t music.Track, generation uint64) {
+	if a.enabled && a.seedGeneration == generation {
+		a.candidates = append([]music.Track{t}, a.candidates...)
+	}
 }
 
 // available returns a filtered copy without consuming scheduling state.
@@ -194,6 +205,7 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			entry := *s.resumeAuto
 			s.resumeAuto = nil
 			s.selectionRevision = s.auto.revision
+			s.selectionSeed = s.auto.seedGeneration
 			s.mu.Unlock()
 			return entry, true, true
 		}
@@ -206,6 +218,7 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 		_, pending := s.queue.Snapshot()
 		if t, ok := s.auto.take(pending); ok {
 			s.selectionRevision = s.auto.revision
+			s.selectionSeed = s.auto.seedGeneration
 			e := music.Entry{Track: t, Requester: s.auto.owner, AddedAt: time.Now()}
 			s.mu.Unlock()
 			return e, true, true

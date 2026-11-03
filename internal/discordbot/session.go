@@ -40,6 +40,7 @@ type session struct {
 	resumeAuto                         *music.Entry
 	currentAuto, started               bool
 	selectionRevision, currentRevision uint64
+	selectionSeed                      uint64
 	fetchMix                           mixFetcher
 	playAudio                          func(context.Context, voice.Conn, audio.Producer) error
 }
@@ -166,6 +167,9 @@ func (s *session) loop(done chan struct{}) {
 		if automatic {
 			_, pending := s.queue.Snapshot()
 			if !s.auto.enabled || s.auto.revision != s.selectionRevision || len(pending) > 0 {
+				if len(pending) > 0 {
+					s.auto.putBack(entry.Track, s.selectionSeed)
+				}
 				s.mu.Unlock()
 				continue
 			}
@@ -189,6 +193,13 @@ func (s *session) loop(done chan struct{}) {
 		})
 		cancel()
 		s.mu.Lock()
+		if automatic && !s.started && !s.skipping && !s.stopped && !s.shuttingDown && s.app.ctx.Err() == nil &&
+			(errors.Is(err, context.Canceled) || errors.Is(err, errSuperseded)) {
+			_, pending := s.queue.Snapshot()
+			if len(pending) > 0 {
+				s.auto.putBack(entry.Track, s.selectionSeed)
+			}
+		}
 		if !automatic && !s.shuttingDown && s.app.ctx.Err() == nil {
 			s.queue.Finish(entry.ID)
 		}

@@ -213,6 +213,56 @@ func TestAutoplayThreeFailuresPreserveManualWork(t *testing.T) {
 	}
 }
 
+func TestAutoplayInterruptedPreparationReturnsCandidate(t *testing.T) {
+	for _, scenario := range []string{"manual", "fetch invalidated", "seed changed", "skip", "failure", "started"} {
+		t.Run(scenario, func(t *testing.T) {
+			s := autoSession()
+			candidate := autoTrack("bcdefghijkl")
+			s.auto.store([]music.Track{candidate})
+			calls := 0
+			s.playAudio = func(ctx context.Context, _ voice.Conn, _ audio.Producer) error {
+				calls++
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				if calls == 1 {
+					s.queue.Add(music.Requester{ID: "manual"}, []music.Track{{URL: "https://www.nicovideo.jp/watch/sm1", Site: "niconico"}}, "", "")
+					s.trackCancel()
+					switch scenario {
+					case "fetch invalidated":
+						s.auto.invalidate()
+					case "seed changed":
+						s.auto.setSeed(autoTrack("cdefghijklm"))
+					case "skip":
+						s.skipping = true
+					case "failure":
+						return errors.New("download failed")
+					case "started":
+						s.started = true
+					}
+					return ctx.Err()
+				}
+				if s.currentAuto {
+					t.Error("manual track did not take priority")
+				}
+				available := s.auto.available(nil)
+				wantReturn := scenario == "manual" || scenario == "fetch invalidated"
+				if wantReturn && (len(available) != 1 || available[0].URL != candidate.URL) {
+					t.Errorf("candidate lost: %#v", available)
+				}
+				if !wantReturn && len(available) != 0 {
+					t.Errorf("candidate incorrectly returned: %#v", available)
+				}
+				s.stopLocked()
+				return nil
+			}
+			s.loop(make(chan struct{}))
+			if calls != 2 {
+				t.Fatalf("play calls = %d", calls)
+			}
+		})
+	}
+}
+
 func TestAutoplayStopCancelsFetch(t *testing.T) {
 	s := autoSession()
 	entered := make(chan struct{})
