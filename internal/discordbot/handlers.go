@@ -12,7 +12,7 @@ import (
 
 func (a *App) edit(token, text string, components []discord.LayoutComponent) *discord.Message {
 	text = truncate(text, 1900)
-	m, _ := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, discord.MessageUpdate{Content: &text, Components: &components, AllowedMentions: &discord.AllowedMentions{}})
+	m, _ := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate(text, nil, components))
 	return m
 }
 
@@ -20,12 +20,22 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		return
 	}
-	if err := e.DeferCreateMessage(e.SlashCommandInteractionData().CommandName() == "queue" && e.SlashCommandInteractionData().String("action") != "clear"); err != nil {
-		return
-	}
 	s := a.getSession(*e.GuildID())
 	data := e.SlashCommandInteractionData()
 	user := e.User()
+	problem := s.commandPreflight(data, user.ID.String())
+	if problem == "" && !privateQuery(data) {
+		if _, err := s.authorize(user.ID); err != nil {
+			problem = userError(err)
+		}
+	}
+	if problem != "" {
+		_ = e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}})
+		return
+	}
+	if err := e.DeferCreateMessage(privateQuery(data)); err != nil {
+		return
+	}
 	reply := func(text string) { a.edit(e.Token(), text, nil) }
 	switch data.CommandName() {
 	case "autoplay":
@@ -35,7 +45,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 	case "play", "playnext":
 		front := data.CommandName() == "playnext"
 		if _, err := s.authorize(user.ID); err != nil {
-			reply(err.Error())
+			reply(userError(err))
 			return
 		}
 		epoch := s.version()
@@ -51,7 +61,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		if url == "" {
 			_, err := s.accept(user.ID, who, nil, "", "", e.Channel().ID(), epoch)
 			if err != nil {
-				reply(err.Error())
+				reply(userError(err))
 			} else {
 				reply("キューを再開しました。")
 			}
@@ -59,11 +69,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		result, err := a.source.Inspect(a.ctx, url)
 		if front && (err != nil || len(result.Tracks) != 1) {
-			reply(source.AuthMessage(err, "曲を取得できませんでした。キューは変更していません。"))
+			a.editFailure(e.Token(), source.AuthMessage(err, "曲を取得できませんでした。キューは変更していません。"))
 			return
 		}
 		if len(result.Tracks) == 0 {
-			reply(source.AuthMessage(err, "曲を取得できませんでした。公開状態とURLを確認してください。"))
+			a.editFailure(e.Token(), source.AuthMessage(err, "曲を取得できませんでした。公開状態とURLを確認してください。"))
 			return
 		}
 		playlist := ""
@@ -71,25 +81,25 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			playlist = result.Input.URL
 		}
 		n, entryID, addErr := s.acceptAt(user.ID, who, result.Tracks, playlist, "", e.Channel().ID(), epoch, music.Insertion{Front: front})
-		text := fmt.Sprintf("%d曲を追加しました（追加者：%s）。", n, user.Username)
-		if front && n > 0 {
-			text += "\n自分の待機曲の先頭に追加しました。他の追加者との交代順は維持されます。"
+		title := fmt.Sprintf("%d曲を追加しました", n)
+		body := listLink(playlist) + " · " + queueMention(user.ID.String())
+		if !result.Input.Playlist {
+			title = "キューに追加しました"
+			body = singleLink(result.Tracks[0]) + "\n" + queueDetail(result.Tracks[0], queueMention(user.ID.String()))
+		}
+		if front {
+			title = "自分の次の番に追加しました"
+		}
+		embed := resultEmbed(title, body, n, len(result.Tracks), err != nil || result.Partial || result.Skipped > 0, addErr)
+		if !result.Input.Playlist {
+			embed.Thumbnail = trackThumbnail(result.Tracks[0])
 		}
 		if result.Input.PlaylistNotice != "" {
-			text += "\n" + result.Input.PlaylistNotice
+			embed.Description += "\n\n" + result.Input.PlaylistNotice
 		}
-		if len(result.Tracks) == 1 {
-			text += "\n" + truncate(result.Tracks[0].Title, 200)
-		}
-		text += fmt.Sprintf("\n取得時の除外：%d件 / 容量による未追加：%d件", result.Skipped, len(result.Tracks)-n)
-		if err != nil || result.Partial || result.Skipped > 0 {
-			text += " 一部の項目は取得できませんでした。"
-		}
-		if result.LimitReached {
-			text += " プレイリストの読み込みは先頭100件までです。"
-		}
-		if addErr != nil {
-			text += "\n" + addErr.Error()
+		if result.Input.Playlist && result.LimitReached {
+			embed.Color = colorWarning
+			embed.Description += "\n\n先頭100件までを読み込みました。"
 		}
 		attached, label := result.Input.AttachedPlaylistURL, "プレイリストも取り込む"
 		if result.Input.AttachedMixURL != "" {
@@ -98,18 +108,23 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		if n > 0 && attached != "" {
 			o := a.offers.add(*e.GuildID(), user.ID, attached, result.Tracks[0].URL, music.Insertion{Front: front, AfterID: entryID})
-			text += "\nこのURLにはリストも付いています。下のボタンで追加できます（本人のみ・15分間）。"
-			m := a.edit(e.Token(), text, []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton(label, "playlist:"+o.ID))})
+			notice := "付属のプレイリストも追加できます。"
+			if result.Input.AttachedMixURL != "" {
+				notice = "付属のMixから最大20曲を追加できます。YouTube上の曲目・曲順とは異なる場合があります。"
+			}
+			embed.Description += "\n\n" + notice
+			embed.Footer = &discord.EmbedFooter{Text: "本人のみ操作可能 · 15分間有効"}
+			m := a.editEmbed(e.Token(), embed, []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton(label, "playlist:"+o.ID))})
 			if m != nil {
 				a.offers.bind(o.ID, m.ID)
 			}
 		} else {
-			reply(text)
+			a.editEmbed(e.Token(), embed, nil)
 		}
 	case "queue":
 		if data.String("action") == "clear" {
 			if _, err := s.authorize(user.ID); err != nil {
-				reply(err.Error())
+				reply(userError(err))
 				return
 			}
 			s.mu.Lock()
@@ -154,29 +169,36 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		if !started {
 			state = "再生準備中"
 		}
-		_, _ = a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, e.Token(), discord.MessageUpdate{Embeds: &[]discord.Embed{{Title: state, Description: queueLink(current.Track) + "\n" + queueDetail(current.Track, origin), Color: 0x527DA8, Thumbnail: trackThumbnail(current.Track), Footer: &discord.EmbedFooter{Text: fmt.Sprintf("経過 %s / 音量 %d%%", position.Truncate(time.Second), s.volume.Percent())}}}, AllowedMentions: &discord.AllowedMentions{}})
+		a.editEmbed(e.Token(), discord.Embed{Title: state, Description: singleLink(current.Track) + "\n" + queueDetail(current.Track, origin), Color: colorInfo, Thumbnail: trackThumbnail(current.Track), Footer: &discord.EmbedFooter{Text: fmt.Sprintf("表示時点 %s / %s · 音量 %d%%", queueDuration(int64(position/time.Second)), queueTrackDuration(current.Track), s.volume.Percent())}}, nil)
 	case "volume":
 		if p, ok := data.OptInt("percent"); ok {
 			if _, err := s.authorize(user.ID); err != nil {
-				reply(err.Error())
+				reply(userError(err))
 				return
 			}
 			if err := s.volume.Set(p); err != nil {
-				reply(err.Error())
+				reply(userError(err))
 				return
 			}
 		}
-		reply(fmt.Sprintf("音量：%d%%（初期値30%%、100%%で元音量）", s.volume.Percent()))
+		label := fmt.Sprintf("音量：%d%%", s.volume.Percent())
+		if _, set := data.OptInt("percent"); set {
+			label = fmt.Sprintf("音量を%d%%に変更しました。", s.volume.Percent())
+		}
+		if s.volume.Percent() == 0 {
+			label += "（ミュート）"
+		}
+		reply(label)
 	case "stop", "skip":
 		if _, err := s.authorize(user.ID); err != nil {
-			reply(err.Error())
+			reply(userError(err))
 			return
 		}
 		if data.CommandName() == "stop" {
 			s.stop()
 			reply("停止して切断しました。待機キューは保持しています。")
 		} else if err := s.skip(); err != nil {
-			reply(err.Error())
+			reply(userError(err))
 		} else {
 			reply("次の曲へ進みます。")
 		}
@@ -220,7 +242,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	a.edit(e.Token(), "プレイリストを取り込み中です…", []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("取り込み中", "playlist:"+id).WithDisabled(true))})
 	epoch := s.version()
 	result, inspectErr := a.source.Inspect(a.ctx, o.URL)
-	tracks, removed := excludeFirst(result.Tracks, o.TrackURL)
+	tracks, _ := excludeFirst(result.Tracks, o.TrackURL)
 	n := 0
 	var addErr error
 	if len(tracks) > 0 {
@@ -228,19 +250,17 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	}
 	used := n > 0 || (inspectErr == nil && len(result.Tracks) > 0 && len(tracks) == 0)
 	a.offers.finish(id, used)
-	text := fmt.Sprintf("プレイリストから%d曲を追加しました（最初に追加した曲を%d件除外）。", n, removed)
-	text += fmt.Sprintf("\n取得時の除外：%d件 / 未追加：%d件", result.Skipped, len(tracks)-n)
+	embed := resultEmbed(fmt.Sprintf("付属リストから%d曲を追加しました", n), listLink(o.URL)+" · "+queueMention(e.User().ID.String()), n, len(tracks), inspectErr != nil || result.Partial, addErr)
 	if result.LimitReached {
-		text += "\n取得範囲は先頭100件までです。"
+		embed.Description += "\n\n先頭100件までを読み込みました。"
+		if n > 0 {
+			embed.Color = colorWarning
+		}
 	}
-	if inspectErr != nil || result.Partial {
-		text += " 一部の項目は取得できませんでした。"
-	}
-	if addErr != nil {
-		text += "\n" + addErr.Error()
-	}
+	var components []discord.LayoutComponent
 	if !used {
-		text += "\n追加できませんでした。ボタンから再試行できます。"
+		embed.Description += "\n\n期限内なら再試行できます。"
+		components = []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("再試行", "playlist:"+id))}
 	}
-	a.edit(e.Token(), text, []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("プレイリストも取り込む", "playlist:"+id).WithDisabled(used))})
+	a.editEmbed(e.Token(), embed, components)
 }

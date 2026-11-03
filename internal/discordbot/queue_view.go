@@ -16,10 +16,16 @@ import (
 func queueText(s string) string {
 	s = strings.Join(strings.Fields(s), " ")
 	s = truncate(s, 60)
+	return escapeText(s)
+}
+func escapeText(s string) string {
 	return strings.NewReplacer("\\", "\\\\", "[", "\\[", "]", "\\]", "*", "\\*", "_", "\\_", "`", "\\`", "~", "\\~", "|", "\\|", "<", "‹", ">", "›", "@", "＠").Replace(s)
 }
 func queueLink(t music.Track) string {
-	title := queueText(t.Title)
+	return trackLink(t, 60)
+}
+func trackLink(t music.Track, limit int) string {
+	title := escapeText(truncate(strings.Join(strings.Fields(t.Title), " "), limit))
 	if title == "" {
 		title = "曲名不明"
 	}
@@ -115,7 +121,7 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 	}
 	pages := max(1, (len(entries)+9)/10)
 	page = min(max(1, page), pages)
-	embed := discord.Embed{Author: &discord.EmbedAuthor{Name: "♫ AsterinMusic"}, Title: "再生キュー", Color: 0x527DA8}
+	embed := discord.Embed{Title: "再生キュー", Color: colorInfo}
 	current := "再生中の曲はありません。"
 	label := "再生中"
 	if s.current != nil {

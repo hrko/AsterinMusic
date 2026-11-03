@@ -5,6 +5,7 @@ import (
 	"asterinmusic/internal/source"
 	"context"
 	"fmt"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"time"
 )
@@ -152,9 +153,33 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 			s.trackCancel()
 		}
 	}
-	text := s.auto.status()
+	text := "自動再生をOFFにしました。現在の曲はそのまま再生します。"
+	if action == "on" {
+		text = "自動再生をONにしました。"
+		if s.auto.seed == nil {
+			text += " 起点となるYouTube曲の再生待ちです。"
+		}
+	}
+	embed := discord.Embed{Title: "自動再生 OFF", Color: colorInfo}
+	if s.auto.enabled {
+		embed.Title = "自動再生 ON"
+		if s.auto.seed == nil {
+			embed.Description = "起点となるYouTube曲の再生待ちです。"
+		} else {
+			embed.Description = "起点：" + singleLink(*s.auto.seed)
+			if s.auto.fetching {
+				embed.Description += "\n候補を取得中です。"
+			} else {
+				embed.Description += "\n手動キューが空になると候補から再生します。"
+			}
+		}
+	}
 	s.mu.Unlock()
-	a.edit(e.Token(), text, nil)
+	if action == "status" {
+		a.editEmbed(e.Token(), embed, nil)
+	} else {
+		a.edit(e.Token(), text, nil)
+	}
 }
 
 // nextEntry is the sole scheduler. It releases the lock during network work,

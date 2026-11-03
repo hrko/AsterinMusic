@@ -65,7 +65,7 @@ func TestQueueViewLimitsAndEscaping(t *testing.T) {
 		t.Fatal("channel/thumbnail layout")
 	}
 	size := func(v string) int { return len(utf16.Encode([]rune(v))) }
-	total := size(e.Title) + size(e.Footer.Text) + size(e.Description) + size(e.Author.Name)
+	total := size(e.Title) + size(e.Footer.Text) + size(e.Description)
 	if size(e.Description) > 4096 || strings.Contains(e.Description, "@everyone") {
 		t.Fatal("description limit or escaping")
 	}

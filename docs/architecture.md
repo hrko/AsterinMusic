@@ -2,6 +2,8 @@
 
 ## 設定ロード
 
+Discordメッセージの共通生成は `internal/discordbot/messages.go` が担当する。操作結果と公開範囲の判定をネットワーク処理から分離し、テキストとEmbedの切り替え時は不要なContent/Embeds/Componentsを明示的に空にする。入力・VC条件を遅延応答より前に検証し、公開応答開始後は公開範囲を変えない。
+
 Data API補完器のキャッシュはタイトル・再生時間・チャンネル・サムネイルを一体で保持する。TrackにChannelID/ChannelTitle/ThumbnailURLを任意JSONフィールドとして保存する。チャンネルURLは検証済みIDから表示時に生成し、Discord EmbedにサムネイルURLを渡す。キュー表示はメタデータ取得を行わない。動画IDが返らなければ5分、取得済みメタデータは24時間キャッシュする。
 
 `source.Client.YouTubeData` は任意のタイトル補完器。共通の `inspect` がyt-dlp出力をTrackへ変換した後に呼ぶため、単曲・リスト・Mix・自動再生候補へ適用される。公式APIへのHTTP処理はGo標準ライブラリを使用し、キーはヘッダーで渡す。動画IDと言語のメモリキャッシュ、50件単位の取得、最大3秒の操作期限を持つ。ゲートで同時のキャッシュミスを直列化し、先行処理の結果を再利用する。表示時や音声取得時にAPIを呼ばない。TrackのTitleSource/TitleLanguageは任意JSONフィールドであり、古い保存状態も読める。実験用yt-dlpプラグインは本番にはロードしない。
