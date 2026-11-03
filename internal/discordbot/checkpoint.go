@@ -30,13 +30,18 @@ func (s *session) checkpoint(path string) error {
 	if s.shuttingDown {
 		return nil
 	}
+	// Explicit user termination wins over a later managed shutdown, even if
+	// the playback goroutine has not finished its cancellation cleanup yet.
+	if (s.skipping || s.stopped) && s.current != nil && !s.currentAuto {
+		s.queue.Finish(s.current.ID)
+	}
 	if err := s.queue.PersistenceError(); err != nil {
 		return err
 	}
 	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
 		Playing: !s.stopped && s.running, Volume: s.volume.Percent(),
 		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
-	if s.currentAuto && s.auto.enabled {
+	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
 		v.AutomaticTrack = s.current
 	}
 	b, err := json.Marshal(v)

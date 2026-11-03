@@ -8,6 +8,45 @@ import (
 	"testing"
 )
 
+func TestCheckpointExcludesExplicitlyEndedCurrent(t *testing.T) {
+	for _, action := range []string{"skip", "stop"} {
+		t.Run(action, func(t *testing.T) {
+			s := newSession(&App{ctx: context.Background()}, 1)
+			root := t.TempDir()
+			qpath := filepath.Join(root, "queue.json")
+			var err error
+			s.queue, err = music.OpenQueue(500, qpath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			s.queue.Add(music.Requester{ID: "a"}, []music.Track{{URL: "first"}, {URL: "second"}}, "", "")
+			entry, _ := s.queue.Start()
+			s.current = &entry
+			s.running = true
+			_, s.trackCancel = context.WithCancel(context.Background())
+			if action == "skip" {
+				if err := s.skip(); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				s.stop()
+			}
+			// Playback cleanup has not run when the management checkpoint arrives.
+			if err := s.checkpoint(filepath.Join(root, "playback.json")); err != nil {
+				t.Fatal(err)
+			}
+			q, err := music.OpenQueue(500, qpath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			next, ok := q.Start()
+			if !ok || next.Track.URL != "second" {
+				t.Fatal("explicitly ended track restored", next)
+			}
+		})
+	}
+}
+
 func TestPlaybackCheckpointRoundTrip(t *testing.T) {
 	for _, playing := range []bool{true, false} {
 		s := newSession(&App{ctx: context.Background()}, 1)
@@ -39,8 +78,14 @@ func TestPlaybackCheckpointRoundTrip(t *testing.T) {
 		}
 		restored := newSession(&App{ctx: context.Background()}, 1)
 		restored.restoreSettings(v)
-		if restored.volume.Percent() != 42 || !restored.auto.enabled || restored.auto.seed.URL != "seed" || len(restored.auto.history) != 1 || restored.resumeAuto.Track.URL != "automatic" {
+		if restored.volume.Percent() != 42 || !restored.auto.enabled || restored.auto.seed.URL != "seed" || len(restored.auto.history) != 1 {
 			t.Fatal("lost runtime state")
+		}
+		if playing && (restored.resumeAuto == nil || restored.resumeAuto.Track.URL != "automatic") {
+			t.Fatal("lost active automatic track")
+		}
+		if !playing && restored.resumeAuto != nil {
+			t.Fatal("restored explicitly stopped automatic track")
 		}
 		if restored.running || restored.channel != 0 {
 			t.Fatal("restore settings connected before READY")
