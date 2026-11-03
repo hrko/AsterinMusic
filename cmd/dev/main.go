@@ -40,6 +40,10 @@ func run() error {
 	}
 	var taskArgs []string
 	for _, arg := range os.Args[2:] {
+		if arg == "--apply" && os.Args[1] == "bot-cleanup" && !cleanupApply {
+			cleanupApply = true
+			continue
+		}
 		if arg == "--after-track" {
 			if os.Args[1] != "bot-restart" || restartAfterTrack {
 				return errors.New("--after-track is only valid once for bot-restart")
@@ -61,7 +65,7 @@ func run() error {
 	switch os.Args[1] {
 	case "serve":
 		return manage("start")
-	case "bot-start", "bot-stop", "bot-restart", "bot-status", "bot-logs":
+	case "bot-start", "bot-stop", "bot-restart", "bot-status", "bot-logs", "bot-cleanup":
 		return manage(strings.TrimPrefix(os.Args[1], "bot-"))
 	case "voice-check":
 		return exclusiveVoiceCheck()

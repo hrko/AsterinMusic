@@ -49,6 +49,8 @@ func manage(action string) error {
 		return err
 	}
 	switch action {
+	case "cleanup":
+		return cleanupArtifacts(root, state.Executable)
 	case "stop":
 		return stopBot(root)
 	case "start":

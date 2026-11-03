@@ -130,6 +130,10 @@ run = "go run ./cmd/dev bot-status"
 [tasks.bot-logs]
 run = "go run ./cmd/dev bot-logs"
 
+[tasks.bot-cleanup]
+description = "Preview old build/log cleanup; pass --apply to remove selected artifacts"
+run = "go run ./cmd/dev bot-cleanup"
+
 [tasks.dave-check]
 run = "go run ./cmd/dev dave-check"
 
