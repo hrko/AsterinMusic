@@ -30,9 +30,9 @@ func trackLink(t music.Track, limit int) string {
 		title = "曲名不明"
 	}
 	if input, err := source.Parse(t.URL); err == nil && !input.Playlist && len(input.URL) <= 160 {
-		return "[" + title + "](" + input.URL + ")"
+		return "**[" + title + "](" + input.URL + ")**"
 	}
-	return title
+	return "**" + title + "**"
 }
 func queueMention(id string) string {
 	n, err := strconv.ParseUint(id, 10, 64)
@@ -168,7 +168,8 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 			if mode == "manual" {
 				who = queueMention(entries[i].Requester.ID)
 			}
-			fmt.Fprintf(&description, "%02d. %s\n%s\n\n", i+1, queueLink(t), queueDetail(t, who))
+			number := fmt.Sprintf("%d. ", i+1)
+			fmt.Fprintf(&description, "%s%s\n%s%s\n", number, queueLink(t), strings.Repeat(" ", len(number)), queueDetail(t, who))
 		}
 	}
 	embed.Description = strings.TrimSpace(description.String())
@@ -209,11 +210,11 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 				unknown++
 			}
 		}
-		footer = fmt.Sprintf("%d / %dページ · 待機%d曲\n合計%s", page, pages, len(pending), queueTotalDuration(total))
+		footer = fmt.Sprintf("待機%d曲 · 合計%s", len(pending), queueTotalDuration(total))
 		if unknown > 0 {
-			footer = fmt.Sprintf("%d / %dページ · 待機%d曲\n既知分%s／時間不明%d曲", page, pages, len(pending), queueTotalDuration(total), unknown)
+			footer = fmt.Sprintf("待機%d曲 · 既知分%s · 時間不明%d曲", len(pending), queueTotalDuration(total), unknown)
 		}
-		footer += "\n再生予定順 · 操作時点の情報"
+		footer += fmt.Sprintf("\n%d / %dページ · 表示時点の再生予定順", page, pages)
 	}
 	embed.Footer = &discord.EmbedFooter{Text: footer}
 	id := func(p int) string { return fmt.Sprintf("queue:1:%s:%s:%d", owner, mode, p) }

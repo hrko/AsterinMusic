@@ -40,7 +40,8 @@ func (a *App) mixCommand(e *events.ApplicationCommandInteractionCreate, s *sessi
 	}
 	selection := source.SelectMix(result.Tracks, seed.Tracks[0], count, true)
 	n, addErr := s.accept(e.User().ID, music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, selection.Tracks, result.Input.URL, "", e.Channel().ID(), epoch)
-	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), singleLink(seed.Tracks[0])+"\n"+queueMention(e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", seed.Tracks[0], e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed.Thumbnail = trackThumbnail(seed.Tracks[0])
 	a.editEmbed(e.Token(), embed, nil)
 }
 
@@ -57,7 +58,8 @@ func (a *App) mixComponent(e *events.ComponentInteractionCreate, s *session, o o
 	}
 	used := n > 0 || (fetchErr == nil && len(result.Tracks) > 0 && len(selection.Tracks) == 0)
 	a.offers.finish(o.ID, used)
-	embed := resultEmbed(fmt.Sprintf("付属Mixから%d曲を追加しました", n), "[起点曲]("+o.TrackURL+") · "+queueMention(e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", o.Track, e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed.Thumbnail = trackThumbnail(o.Track)
 	var components []discord.LayoutComponent
 	if !used {
 		embed.Description += "\n\n期限内なら再試行できます。"

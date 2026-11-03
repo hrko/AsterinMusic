@@ -61,11 +61,18 @@ func resultEmbed(title, body string, n, wanted int, partial bool, err error) dis
 	}
 	return e
 }
-func listLink(raw string) string {
+func listLink(raw string, names ...string) string {
+	label := "プレイリストを開く"
+	if len(names) > 0 && strings.TrimSpace(names[0]) != "" {
+		label = escapeText(truncate(strings.Join(strings.Fields(names[0]), " "), 160))
+	}
 	if in, err := source.Parse(raw); err == nil {
-		return "[プレイリスト](" + in.URL + ")"
+		return "**[" + label + "](" + in.URL + ")**"
 	}
 	return "プレイリスト"
+}
+func originBody(label string, track music.Track, user string) string {
+	return label + "：" + singleLink(track) + "\n" + queueDetail(track, queueMention(user))
 }
 func userError(err error) string {
 	if err == nil {

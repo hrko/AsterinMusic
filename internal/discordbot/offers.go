@@ -13,12 +13,26 @@ import (
 )
 
 type offer struct {
+	Track                music.Track
 	ID, URL, TrackURL    string
 	Guild, User, Message snowflake.ID
 	Expires              time.Time
 	Busy, Used           bool
 	Insertion            music.Insertion
 }
+
+func (o *offers) rememberTrack(id string, track music.Track) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if v := o.items[id]; v != nil {
+		if track.Duration != nil {
+			seconds := *track.Duration
+			track.Duration = &seconds
+		}
+		v.Track = track
+	}
+}
+
 type offers struct {
 	mu    sync.Mutex
 	items map[string]*offer

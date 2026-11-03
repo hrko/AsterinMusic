@@ -81,8 +81,8 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			playlist = result.Input.URL
 		}
 		n, entryID, addErr := s.acceptAt(user.ID, who, result.Tracks, playlist, "", e.Channel().ID(), epoch, music.Insertion{Front: front})
-		title := fmt.Sprintf("%d曲を追加しました", n)
-		body := listLink(playlist) + " · " + queueMention(user.ID.String())
+		title := fmt.Sprintf("プレイリストから%d曲を追加しました", n)
+		body := listLink(playlist, result.PlaylistTitle) + "\n" + queueMention(user.ID.String())
 		if !result.Input.Playlist {
 			title = "キューに追加しました"
 			body = singleLink(result.Tracks[0]) + "\n" + queueDetail(result.Tracks[0], queueMention(user.ID.String()))
@@ -108,6 +108,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		if n > 0 && attached != "" {
 			o := a.offers.add(*e.GuildID(), user.ID, attached, result.Tracks[0].URL, music.Insertion{Front: front, AfterID: entryID})
+			a.offers.rememberTrack(o.ID, result.Tracks[0])
 			notice := "付属のプレイリストも追加できます。"
 			if result.Input.AttachedMixURL != "" {
 				notice = "付属のMixから最大20曲を追加できます。YouTube上の曲目・曲順とは異なる場合があります。"
@@ -250,7 +251,8 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	}
 	used := n > 0 || (inspectErr == nil && len(result.Tracks) > 0 && len(tracks) == 0)
 	a.offers.finish(id, used)
-	embed := resultEmbed(fmt.Sprintf("付属リストから%d曲を追加しました", n), listLink(o.URL)+" · "+queueMention(e.User().ID.String()), n, len(tracks), inspectErr != nil || result.Partial, addErr)
+	embed := resultEmbed(fmt.Sprintf("プレイリストから%d曲を追加しました", n), listLink(o.URL, result.PlaylistTitle)+"\n\n"+originBody("最初に追加した曲", o.Track, e.User().ID.String()), n, len(tracks), inspectErr != nil || result.Partial, addErr)
+	embed.Thumbnail = trackThumbnail(o.Track)
 	if result.LimitReached {
 		embed.Description += "\n\n先頭100件までを読み込みました。"
 		if n > 0 {

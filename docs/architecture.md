@@ -2,6 +2,8 @@
 
 ## 設定ロード
 
+リスト取り込み用offerに単曲のTrackを保持し、Durationをコピーして元のメタデータから独立させる。ボタン処理はこの情報を結果表示へ再利用する。source.ResultのPlaylistTitleは既存のyt-dlp出力から取得し、リスト名のための追加通信は行わない。
+
 連続失敗通知はセッションごとの `failureNotice` で管理する。通知専用mutexで更新を直列化し、音声・キューのmutexを保持したままDiscordへ送信しない。最初の音声パケットの送信成功で進むplaybackSequenceと通知先を用いて通知のまとまりを区切る。削除済みメッセージへの更新のみ再作成し、その他のRESTエラーはログへ残して再生処理を続ける。
 
 Discordメッセージの共通生成は `internal/discordbot/messages.go` が担当する。操作結果と公開範囲の判定をネットワーク処理から分離し、テキストとEmbedの切り替え時は不要なContent/Embeds/Componentsを明示的に空にする。入力・VC条件を遅延応答より前に検証し、公開応答開始後は公開範囲を変えない。

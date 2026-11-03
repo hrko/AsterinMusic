@@ -24,7 +24,7 @@ func TestQueueViewTotalsModesAndNoConsumption(t *testing.T) {
 	tracks[0].Duration = nil
 	s.queue.Add(music.Requester{ID: "123", Name: "must not display"}, tracks, "", "")
 	e, _ := s.queueView(123, 2, "")
-	if !strings.Contains(e.Footer.Text, "待機12曲\n既知分11分55秒／時間不明1曲") || !strings.Contains(e.Description, "11. [") || !strings.Contains(e.Description, "<@123>") {
+	if !strings.Contains(e.Footer.Text, "待機12曲 · 既知分11分55秒 · 時間不明1曲") || !strings.Contains(e.Description, "11. **[") || !strings.Contains(e.Description, "<@123>") {
 		t.Fatalf("unexpected view: %+v", e)
 	}
 	s.auto.store(tracks)
@@ -42,7 +42,7 @@ func TestQueueViewTotalsModesAndNoConsumption(t *testing.T) {
 	}
 	s.auto.off()
 	e, _ = s.queueView(123, 2, "auto")
-	if !strings.HasPrefix(e.Footer.Text, "1 / 1ページ") {
+	if !strings.Contains(e.Footer.Text, "1 / 1ページ") {
 		t.Fatal("empty view")
 	}
 }

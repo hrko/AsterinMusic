@@ -33,22 +33,24 @@ func New(executable string) *Client {
 }
 
 type Result struct {
-	Input        Input         `json:"input"`
-	Tracks       []music.Track `json:"tracks"`
-	Skipped      int           `json:"skipped"`
-	LimitReached bool          `json:"limit_reached"`
-	Partial      bool          `json:"partial"`
+	PlaylistTitle string        `json:"playlist_title,omitempty"`
+	Input         Input         `json:"input"`
+	Tracks        []music.Track `json:"tracks"`
+	Skipped       int           `json:"skipped"`
+	LimitReached  bool          `json:"limit_reached"`
+	Partial       bool          `json:"partial"`
 }
 
 type metadata struct {
-	ID           string   `json:"id"`
-	Title        string   `json:"title"`
-	URL          string   `json:"url"`
-	WebpageURL   string   `json:"webpage_url"`
-	Duration     *float64 `json:"duration"`
-	Availability string   `json:"availability"`
-	LiveStatus   string   `json:"live_status"`
-	IsLive       bool     `json:"is_live"`
+	PlaylistTitle string   `json:"playlist_title"`
+	ID            string   `json:"id"`
+	Title         string   `json:"title"`
+	URL           string   `json:"url"`
+	WebpageURL    string   `json:"webpage_url"`
+	Duration      *float64 `json:"duration"`
+	Availability  string   `json:"availability"`
+	LiveStatus    string   `json:"live_status"`
+	IsLive        bool     `json:"is_live"`
 }
 
 var baseArgs = []string{"--ignore-config", "--no-progress", "--no-colors", "--no-cache-dir", "--socket-timeout", "15", "--retries", "2", "--extractor-retries", "2"}
@@ -99,6 +101,9 @@ func (c *Client) inspect(ctx context.Context, input Input) (Result, error) {
 		if m.ID == "" || m.Title == "" || m.IsLive || m.LiveStatus == "is_live" || m.LiveStatus == "is_upcoming" || (m.Availability != "" && m.Availability != "public" && m.Availability != "unlisted") {
 			result.Skipped++
 			continue
+		}
+		if input.Playlist && result.PlaylistTitle == "" {
+			result.PlaylistTitle = m.PlaylistTitle
 		}
 		trackURL := input.URL
 		if input.Playlist {
