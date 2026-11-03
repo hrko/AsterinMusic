@@ -86,3 +86,5 @@ mise run update-rollback
 Botを再起動せず、mise run ui-preview -- a b c でレイアウトを指定の検証用Webhookへ送信する。aは番号の通常テキスト化、bは補足の字下げ、cは曲別フィールド。mise run ui-preview -- d e f は自動番号のまま、行末スペース2個・バックスラッシュ・subtext記法を比較する。引数省略時はa/b/cの3件を送る。
 
 Git管理外の .env.ui-preview に DISCORD_UI_PREVIEW_WEBHOOK を設定する。URL・応答本文・HTTPエラー原文は出力しない。実行には投稿先への送信許可が必要。サンプルは再生やキュー操作を行わず、通知メンションも抑止する。HTTP成功は投稿成功だけを意味し、レイアウトの採否はDiscord実画面で確認する。
+
+開始番号の検証には mise run ui-preview -- d11 を使う（D方式・11〜20番）。mise run ui-preview -- df11 は同じ開始番号で、行末スペース2個の改行と補足のsubtextを組み合わせる。

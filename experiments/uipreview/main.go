@@ -33,6 +33,18 @@ func sample(variant string) embed {
 	titles := []string{"藤井 風 - 青春病 (Live at Nissan Stadium) [Day2] — 長いタイトルの折り返し確認", "藤井 風 - 花 (Official Video)", "YOASOBI「アイドル」 Official Music Video", "短い曲名"}
 	ids := []string{"QPLviaYkuSs", "SfPkl7lol7g", "ZRtdQ81jPUQ", "TcLLpZBWsck"}
 	numbers := []int{1, 2, 9, 10}
+	combined := variant == "df11"
+	pageTwo := variant == "d11" || combined
+	if pageTwo {
+		originalTitles, originalIDs := titles, ids
+		titles, ids, numbers = nil, nil, nil
+		for i := 0; i < 10; i++ {
+			titles = append(titles, originalTitles[i%len(originalTitles)])
+			ids = append(ids, originalIDs[i%len(originalIDs)])
+			numbers = append(numbers, 11+i)
+		}
+		variant = "d"
+	}
 	switch variant {
 	case "a":
 		e.Title = "A：通常テキストの番号・補足は左揃え"
@@ -59,6 +71,9 @@ func sample(variant string) embed {
 			prefix := fmt.Sprintf("%d. ", numbers[i])
 			indent = strings.Repeat(" ", len(prefix))
 			lineEnd := "  "
+			if combined {
+				detail = "-# " + detail
+			}
 			if variant == "e" {
 				lineEnd = "\\"
 			}
@@ -80,6 +95,13 @@ func sample(variant string) embed {
 	if variant != "c" {
 		e.Description += "\n**自動再生 ON**\n待機キュー終了後に自動再生します。"
 	}
+	if pageTwo {
+		e.Title = "D方式：11〜20番のリスト"
+		if combined {
+			e.Title = "D＋F：強制改行とsubtext・11〜20番"
+		}
+		e.Footer["text"] = "2 / 2ページの表示検証 · サンプル音源を繰り返して配置"
+	}
 	return e
 }
 
@@ -89,8 +111,8 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
-		if len(v) != 1 || !strings.Contains("abcdef", v) {
-			return fmt.Errorf("choose a through f")
+		if v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
+			return fmt.Errorf("choose a through f, d11, or df11")
 		}
 	}
 	env, err := godotenv.Read(".env.ui-preview")
@@ -106,7 +128,7 @@ func run() error {
 	u.RawQuery = q.Encode()
 	client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	for _, v := range variants {
-		payload := map[string]any{"username": "AsterinMusic UI検証", "content": "レイアウト比較（番号1・2・9・10は桁数確認用）", "embeds": []embed{sample(v)}, "allowed_mentions": map[string]any{"parse": []string{}}}
+		payload := map[string]any{"username": "AsterinMusic UI検証", "content": "レイアウト比較（検証用サンプル）", "embeds": []embed{sample(v)}, "allowed_mentions": map[string]any{"parse": []string{}}}
 		b, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("cannot encode preview")
