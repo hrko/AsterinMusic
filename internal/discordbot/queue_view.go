@@ -169,7 +169,7 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 				who = queueMention(entries[i].Requester.ID)
 			}
 			number := fmt.Sprintf("%d. ", i+1)
-			fmt.Fprintf(&description, "%s%s\n\n%s%s\n", number, queueLink(t), strings.Repeat(" ", len(number)), queueDetail(t, who))
+			fmt.Fprintf(&description, "%s%s  \n%s-# %s\n", number, queueLink(t), strings.Repeat(" ", len(number)), queueDetail(t, who))
 		}
 	}
 	embed.Description = strings.TrimSpace(description.String())

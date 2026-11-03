@@ -29,7 +29,7 @@ func TestCompactQueueLayout(t *testing.T) {
 	tracks := []music.Track{autoTrack("abcdefghijk"), autoTrack("bcdefghijkl")}
 	s.queue.Add(music.Requester{ID: "123"}, tracks, "", "")
 	e, _ := s.queueView(123, 1, "")
-	if !strings.Contains(e.Description, "1. **[") || !strings.Contains(e.Description, "\n\n   時間不明") || strings.Contains(e.Description, "\n\n2.") {
+	if !strings.Contains(e.Description, "1. **[") || !strings.Contains(e.Description, "**  \n   -# 時間不明") || strings.Contains(e.Description, "\n\n2.") {
 		t.Fatal(e.Description)
 	}
 	if !strings.HasPrefix(e.Footer.Text, "待機2曲 · 既知分") || !strings.Contains(e.Footer.Text, "\n1 / 1ページ") {
@@ -38,7 +38,7 @@ func TestCompactQueueLayout(t *testing.T) {
 	s.queue.Clear()
 	s.auto.store(tracks)
 	e, _ = s.queueView(123, 1, "")
-	if !strings.Contains(e.Description, "1. **[") || strings.Contains(e.Footer.Text, "合計") || strings.Contains(e.Footer.Text, "待機") {
+	if !strings.Contains(e.Description, "1. **[") || !strings.Contains(e.Description, "**  \n   -# ") || strings.Contains(e.Footer.Text, "合計") || strings.Contains(e.Footer.Text, "待機") {
 		t.Fatal("autoplay layout")
 	}
 }
