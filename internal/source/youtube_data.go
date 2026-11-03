@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"asterinmusic/internal/music"
@@ -23,6 +24,7 @@ type YouTubeData struct {
 	http         *http.Client
 	endpoint     string
 	gate         chan struct{}
+	cacheMu      sync.Mutex
 	cache        map[string]titleCache
 	blockedUntil time.Time
 }
@@ -73,12 +75,6 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 	}
 	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
 	defer cancel()
-	select {
-	case d.gate <- struct{}{}:
-		defer func() { <-d.gate }()
-	case <-ctx.Done():
-		return
-	}
 	ids := []string{}
 	positions := map[string][]int{}
 	for i, t := range tracks {
@@ -120,14 +116,31 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 			}
 		}
 	}
-	missing := []string{}
-	for _, id := range ids {
-		if v, ok := d.cache[lang+":"+id]; ok && time.Now().Before(v.expires) {
-			apply(id, v.metadata)
-		} else {
-			missing = append(missing, id)
+	fromCache := func(ids []string) []string {
+		d.cacheMu.Lock()
+		defer d.cacheMu.Unlock()
+		var missing []string
+		for _, id := range ids {
+			if v, ok := d.cache[lang+":"+id]; ok && time.Now().Before(v.expires) {
+				apply(id, v.metadata)
+			} else {
+				missing = append(missing, id)
+			}
 		}
+		return missing
 	}
+	missing := fromCache(ids)
+	if len(missing) == 0 {
+		return
+	}
+	select {
+	case d.gate <- struct{}{}:
+		defer func() { <-d.gate }()
+	case <-ctx.Done():
+		return
+	}
+	// Another caller may have filled overlapping misses while we waited.
+	missing = fromCache(missing)
 	if time.Now().Before(d.blockedUntil) {
 		return
 	}
@@ -197,6 +210,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 			}
 			titles[item.ID] = m
 		}
+		d.cacheMu.Lock()
 		for _, id := range batch {
 			metadata, found := titles[id]
 			ttl := 24 * time.Hour
@@ -219,6 +233,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 			d.cache[lang+":"+id] = titleCache{metadata, time.Now().Add(ttl)}
 			apply(id, metadata)
 		}
+		d.cacheMu.Unlock()
 		slog.Debug("YouTube title API request completed", "videos", len(batch))
 	}
 }

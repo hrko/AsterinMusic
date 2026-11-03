@@ -15,6 +15,37 @@ import (
 	"time"
 )
 
+func TestDataCacheHitDoesNotWaitForNetwork(t *testing.T) {
+	entered, release := make(chan struct{}), make(chan struct{})
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(entered)
+		<-release
+		fmt.Fprint(w, `{"items":[]}`)
+	}))
+	defer s.Close()
+	d := NewYouTubeData("secret")
+	d.endpoint = s.URL
+	d.cache["ja:TcLLpZBWsck"] = titleCache{metadata: apiMetadata{Title: "cached"}, expires: time.Now().Add(time.Hour)}
+	missDone := make(chan struct{})
+	defer func() { close(release); <-missDone }()
+	go func() {
+		d.Enrich(context.Background(), []music.Track{{URL: "https://www.youtube.com/watch?v=abcdefghijk", Site: "youtube"}}, "ja")
+		close(missDone)
+	}()
+	<-entered
+	hit := []music.Track{{URL: "https://www.youtube.com/watch?v=TcLLpZBWsck", Site: "youtube"}}
+	done := make(chan struct{})
+	go func() { d.Enrich(context.Background(), hit, "ja"); close(done) }()
+	select {
+	case <-done:
+		if hit[0].Title != "cached" {
+			t.Fatal("cache hit not applied")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("cache hit waited for unrelated HTTP request")
+	}
+}
+
 func TestDataInspectPaths(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{"items":[{"id":"TcLLpZBWsck","snippet":{"localized":{"title":"きらり"}}}]}`)
