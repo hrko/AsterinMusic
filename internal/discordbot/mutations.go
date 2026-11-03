@@ -1,11 +1,9 @@
 package discordbot
 
-import "errors"
-
 // Check at mutation time under mu, not only at command receipt.
 func (s *session) mutableLocked() error {
 	if s.shuttingDown {
-		return errors.New("再起動処理中です。")
+		return errRestarting
 	}
 	return nil
 }

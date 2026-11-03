@@ -3,6 +3,7 @@ package discordbot
 import (
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
+	"errors"
 	"fmt"
 	"github.com/disgoorg/disgo/discord"
 	"strings"
@@ -79,12 +80,9 @@ func userError(err error) string {
 	if err == nil {
 		return ""
 	}
-	// These are application-authored errors. Never expose arbitrary upstream text.
-	text := err.Error()
-	for _, allowed := range []string{"音声チャンネルへ参加してください。", "Botと同じ音声チャンネルで操作してください。", "再起動処理中です。", "取得中に停止・キュー消去が行われました。もう一度追加してください。", "音声チャンネルが変更されました。", "停止処理中です。少し待って再実行してください。", "キューが満杯です。", "キューは空です。", "再生中の曲はありません。", "音声接続に失敗しました。追加した曲はキューに保持しています。", "キューはメモリ上に保持していますが、保存に失敗しました。再起動前にログと保存先を確認してください。"} {
-		if text == allowed {
-			return text
-		}
+	var application operationError
+	if errors.As(err, &application) {
+		return application.Error()
 	}
 	return source.AuthMessage(err, "処理を完了できませんでした。しばらく待って再実行してください。")
 }

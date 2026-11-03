@@ -57,12 +57,12 @@ func newSession(a *App, guild snowflake.ID) *session {
 func (s *session) authorize(user snowflake.ID) (snowflake.ID, error) {
 	state, ok := s.app.client.Caches.VoiceState(s.guild, user)
 	if !ok || state.ChannelID == nil {
-		return 0, errors.New("音声チャンネルへ参加してください。")
+		return 0, errJoinVoice
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.channel != 0 && s.channel != *state.ChannelID {
-		return 0, errors.New("Botと同じ音声チャンネルで操作してください。")
+		return 0, errSameVoice
 	}
 	return *state.ChannelID, nil
 }
@@ -80,27 +80,27 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.shuttingDown {
-		return 0, "", errors.New("再起動処理中です。")
+	if err := s.mutableLocked(); err != nil {
+		return 0, "", err
 	}
 	if s.epoch != epoch {
-		return 0, "", errors.New("取得中に停止・キュー消去が行われました。もう一度追加してください。")
+		return 0, "", errQueueChanged
 	}
 	if s.channel != 0 && s.channel != channel {
-		return 0, "", errors.New("音声チャンネルが変更されました。")
+		return 0, "", errVoiceChanged
 	}
 	if s.stopped && s.running {
-		return 0, "", errors.New("停止処理中です。少し待って再実行してください。")
+		return 0, "", errStopping
 	}
 	n, entryID, err := s.queue.AddAt(who, tracks, playlist, importID, position)
 	if err != nil {
 		return 0, "", err
 	}
 	if len(tracks) > 0 && n == 0 {
-		return 0, "", errors.New("キューが満杯です。")
+		return 0, "", errQueueFull
 	}
 	if err := s.queue.PersistenceError(); err != nil {
-		return n, entryID, errors.New("キューはメモリ上に保持していますが、保存に失敗しました。再起動前にログと保存先を確認してください。")
+		return n, entryID, errQueueSave
 	}
 	s.text = text
 	if n > 0 {
@@ -122,7 +122,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 func (s *session) startLocked(channel snowflake.ID) error {
 	_, pending := s.queue.Snapshot()
 	if len(pending) == 0 && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
-		return errors.New("キューは空です。")
+		return errQueueEmpty
 	}
 	if s.conn == nil {
 		conn := s.app.client.VoiceManager.CreateConn(s.guild)
@@ -135,7 +135,7 @@ func (s *session) startLocked(channel snowflake.ID) error {
 			conn.Close(closeCtx)
 			s.app.closeDave(conn)
 			c()
-			return errors.New("音声接続に失敗しました。追加した曲はキューに保持しています。")
+			return errVoiceConnection
 		}
 		s.conn = conn
 		s.channel = channel
@@ -412,7 +412,7 @@ func (s *session) skip() error {
 		return err
 	}
 	if s.trackCancel == nil {
-		return errors.New("再生中の曲はありません。")
+		return errNotPlaying
 	}
 	s.skipping = true
 	s.trackCancel()
