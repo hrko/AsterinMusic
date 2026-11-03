@@ -19,9 +19,10 @@ type AuthError string
 func (e AuthError) Error() string { return string(e) }
 
 const (
-	AuthRequired AuthError = "ニコニコ動画のログインが必要です。管理者が認証設定を確認してください。"
-	AuthCookies  AuthError = "ニコニコ動画のCookieを読み込めないか、期限切れです。管理者がCookieファイルを更新してください。"
-	AuthLogin    AuthError = "ニコニコ動画へのログインに失敗しました。認証設定を確認してBotを再起動してください。追加認証が必要な場合はCookie方式を使用してください。"
+	AuthRequired  AuthError = "ニコニコ動画のログインが必要です。管理者が認証設定を確認してください。"
+	AuthCookies   AuthError = "ニコニコ動画のCookieを読み込めないか、期限切れです。管理者がCookieファイルを更新してください。"
+	AuthLogin     AuthError = "ニコニコ動画へのログインに失敗しました。認証設定を確認してBotを再起動してください。追加認証が必要な場合はCookie方式を使用してください。"
+	AuthTemporary AuthError = "ニコニコ動画へのログインを一時的に完了できませんでした。1分ほど待って再実行してください。"
 )
 
 func AuthMessage(err error, fallback string) string {
@@ -61,6 +62,20 @@ type nicoAuth struct {
 	cookies    []byte
 	generation uint64
 	blocked    bool
+	retryAfter time.Time
+	now        func() time.Time
+}
+
+func (a *nicoAuth) clock() time.Time {
+	if a.now != nil {
+		return a.now()
+	}
+	return time.Now()
+}
+
+func (a *nicoAuth) temporaryFailure() error {
+	a.retryAfter = a.clock().Add(time.Minute)
+	return AuthTemporary
 }
 
 // ConfigureAuth must be called before the client is used concurrently.
@@ -189,13 +204,18 @@ func (a *nicoAuth) session(ctx context.Context, c *Client, url string, stale *ui
 	if a.blocked {
 		return nil, 0, AuthLogin
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, 0, err
+	}
+	if a.clock().Before(a.retryAfter) {
+		return nil, 0, AuthTemporary
+	}
 	if stale != nil && *stale == a.generation {
 		a.cookies = nil
 	}
 	if hasSession(a.cookies) {
 		return append([]byte(nil), a.cookies...), a.generation, nil
 	}
-	relogin := stale != nil || a.generation > 0
 	dir, jar, err := privateFiles([]byte("# Netscape HTTP Cookie File\n"))
 	if err != nil {
 		return nil, 0, err
@@ -213,21 +233,22 @@ func (a *nicoAuth) session(ctx context.Context, c *Client, url string, stale *ui
 	err = c.Run(loginCtx, c.Executable, args, nil, io.Discard)
 	cookies, readErr := readCookies(jar)
 	if loginCtx.Err() != nil {
-		if relogin && ctx.Err() == nil {
-			a.blocked = true
+		if ctx.Err() != nil {
+			return nil, 0, ctx.Err()
 		}
-		return nil, 0, loginCtx.Err()
+		return nil, 0, a.temporaryFailure()
 	}
 	if readErr == nil && hasSession(cookies) {
 		a.cookies = cookies
 		a.generation++
+		a.retryAfter = time.Time{}
 		return append([]byte(nil), cookies...), a.generation, nil
 	}
-	if err == nil || loginFailure(err) || sessionExpired(err) || relogin {
+	if err == nil || loginFailure(err) || sessionExpired(err) {
 		a.blocked = true
 		return nil, 0, AuthLogin
 	}
-	return nil, 0, safeNicoError(ctx, err)
+	return nil, 0, a.temporaryFailure()
 }
 
 func (c *Client) runSource(ctx context.Context, input Input, args []string, out io.Writer) error {

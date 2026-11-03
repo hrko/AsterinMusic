@@ -316,6 +316,60 @@ func TestNetrcReadableByPython(t *testing.T) {
 	}
 }
 
+func TestReloginTransientFailureCooldown(t *testing.T) {
+	for _, failure := range []string{"network", "timeout", "parent cancellation"} {
+		t.Run(failure, func(t *testing.T) {
+			c := newPasswordClient(t)
+			c.auth.generation = 1
+			now := time.Now()
+			c.auth.now = func() time.Time { return now }
+			calls := 0
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			c.Run = func(loginCtx context.Context, _ string, args []string, _ io.Reader, _ io.Writer) error {
+				calls++
+				if calls > 1 {
+					return writeSession(args)
+				}
+				switch failure {
+				case "timeout":
+					<-loginCtx.Done()
+					return loginCtx.Err()
+				case "parent cancellation":
+					cancel()
+					return ctx.Err()
+				default:
+					return errors.New("network failure containing private details")
+				}
+			}
+			c.Timeout = time.Millisecond
+			_, _, err := c.auth.session(ctx, c, authURL, nil)
+			if c.auth.blocked {
+				t.Fatal("transient failure permanently blocked login")
+			}
+			if failure == "parent cancellation" {
+				if !errors.Is(err, context.Canceled) {
+					t.Fatal(err)
+				}
+			} else {
+				if !errors.Is(err, AuthTemporary) {
+					t.Fatal(err)
+				}
+				_, _, err = c.auth.session(context.Background(), c, authURL, nil)
+				if !errors.Is(err, AuthTemporary) || calls != 1 {
+					t.Fatal("cooldown did not suppress retry", calls, err)
+				}
+				now = now.Add(time.Minute)
+			}
+			c.Timeout = time.Second
+			cookies, generation, err := c.auth.session(context.Background(), c, authURL, nil)
+			if err != nil || !hasSession(cookies) || generation != 2 || calls != 2 {
+				t.Fatal("recovery failed", generation, calls, err)
+			}
+		})
+	}
+}
+
 func TestPartialAudioIsNeverRetried(t *testing.T) {
 	c := newPasswordClient(t)
 	calls := 0
