@@ -433,9 +433,14 @@ func (s *session) tick() {
 	} else if s.emptySince.IsZero() {
 		s.emptySince = now
 	}
-	shouldStop := (!s.idleSince.IsZero() && now.Sub(s.idleSince) >= time.Minute) || (!s.emptySince.IsZero() && now.Sub(s.emptySince) >= time.Minute)
+	shouldStop := s.shouldDisconnect(now)
 	if shouldStop {
 		s.stopLocked()
 	}
 	s.mu.Unlock()
+}
+
+func (s *session) shouldDisconnect(now time.Time) bool {
+	return (s.app.config.DisconnectWhenIdle && !s.idleSince.IsZero() && now.Sub(s.idleSince) >= time.Minute) ||
+		(!s.emptySince.IsZero() && now.Sub(s.emptySince) >= time.Minute)
 }

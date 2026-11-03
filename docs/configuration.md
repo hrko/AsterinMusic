@@ -16,6 +16,7 @@ AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してか�
 | `tools.ffmpeg.path` | `ffmpeg` |
 | `playback.default_volume` | `30`、0〜100 |
 | `playback.queue_limit` | `500`、正の整数 |
+| `playback.disconnect_when_idle` | `false`。`true`の場合のみ再生待ち60秒で退出。無人60秒での退出は設定に関係なく有効 |
 | `sources.youtube.metadata_language` | `ja`。YouTube / YouTube Musicのメタデータ優先言語。`provider_default`または`auto`でyt-dlpの既定動作 |
 | `sources.niconico.auth.method` | `none`（省略時）、`cookies`、`password` |
 | `sources.niconico.auth.cookies_file` | `cookies`時のみ必須。設定ファイル基準のパス |

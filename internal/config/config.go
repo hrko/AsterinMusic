@@ -18,6 +18,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	DisconnectWhenIdle                                    bool
 	YouTubeMetadataLanguage                               string
 	NiconicoAuth                                          source.AuthConfig
 	Token                                                 string
@@ -49,8 +50,9 @@ type Document struct {
 		FFmpeg Tool `koanf:"ffmpeg"`
 	} `koanf:"tools"`
 	Playback struct {
-		DefaultVolume int `koanf:"default_volume"`
-		QueueLimit    int `koanf:"queue_limit"`
+		DisconnectWhenIdle bool `koanf:"disconnect_when_idle"`
+		DefaultVolume      int  `koanf:"default_volume"`
+		QueueLimit         int  `koanf:"queue_limit"`
 	} `koanf:"playback"`
 	Bots    map[string]Bot    `koanf:"bots"`
 	Servers map[string]Server `koanf:"servers"`
@@ -147,6 +149,7 @@ func (d Document) resolve(base string) (Config, error) {
 	}
 	c := Config{StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
 	c.YouTubeMetadataLanguage = "ja"
+	c.DisconnectWhenIdle = d.Playback.DisconnectWhenIdle
 	if value := d.Sources.YouTube.MetadataLanguage; value != nil {
 		c.YouTubeMetadataLanguage = *value
 	}

@@ -7,6 +7,7 @@ tools:
   ffmpeg:
     path: ffmpeg
 playback:
+  disconnect_when_idle: false
   default_volume: 30
   queue_limit: 500
 sources:
