@@ -98,3 +98,5 @@ Git管理外の .env.ui-preview に DISCORD_UI_PREVIEW_WEBHOOK を設定する�
 `mise run ui-preview -- digits91fixed digits91` は91〜100番で、補足インデント4スペース固定と、100番だけ5スペースに増やす方式を比較する。
 
 `mise run ui-preview -- image-none image-split image-bottom image-icon` は同じ曲一覧で、画像なし・再生中と一覧のEmbed分離・下部画像・見出しアイコンを比較する。スマホでの本文幅と縦の長さを確認する。補足のインデントはページ内で固定する。
+
+`mise run ui-preview -- width-current width-standard width-compact` は画像なしで、現行の文字数制限・Unicode幅56/24・幅40/18（曲名/チャンネル名）を比較する。幅計算にはdisplaywidthを使い、曖昧幅は1に固定し、書記素の境界で省略する。幅はDiscordのピクセル幅ではなく等幅表示に基づく目安。架空の多言語・絵文字タイトルを含み、リンクはYouTubeトップへの表示検証用リンク。

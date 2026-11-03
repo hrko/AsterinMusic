@@ -50,6 +50,9 @@ func imageSamples(variant string) []embed {
 }
 
 func sample(variant string) embed {
+	if strings.HasPrefix(variant, "width-") {
+		return widthSample(variant)
+	}
 	if variant == "digits1" || variant == "digits11" || variant == "digits1fixed" || variant == "digits91" || variant == "digits91fixed" {
 		e := sample("end0")
 		e.Title = "B：11〜20番・番号幅に合わせたインデント"
@@ -183,6 +186,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "width-current" || v == "width-standard" || v == "width-compact" {
+			continue
+		}
 		if v == "image-none" || v == "image-split" || v == "image-bottom" || v == "image-icon" {
 			continue
 		}
