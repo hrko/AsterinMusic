@@ -61,6 +61,10 @@ run = "go run ./experiments/titleplugin"
 description = "Compare localized public video titles using .env.youtube API key"
 run = "go run ./experiments/youtubedata"
 
+[tasks.ui-preview]
+description = "Send layout samples to the explicitly configured Discord test webhook"
+run = "go run ./experiments/uipreview"
+
 [tasks.capture]
 description = "Bounded source acquisition: mise run capture -- URL OUTPUT"
 run = "go run ./cmd/asterinmusic capture"
