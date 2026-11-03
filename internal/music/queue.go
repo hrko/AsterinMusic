@@ -80,15 +80,20 @@ func (q *Queue) AddAt(who Requester, tracks []Track, playlist, importID string, 
 	}
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	defer q.persistLocked()
 	count := 0
 	for _, entries := range q.waiting {
 		count += len(entries)
 	}
 	n := min(len(tracks), max(0, q.limit-count))
 	if n == 0 {
+		// A rejected/empty batch does not change state, but can retry a
+		// previous failed save after the storage becomes available again.
+		if q.lastSaveErr != nil {
+			q.persistLocked()
+		}
 		return 0, "", nil
 	}
+	defer q.persistLocked()
 	if len(q.waiting[who.ID]) == 0 && (q.current == nil || q.current.Requester.ID != who.ID) {
 		q.order = append(q.order, who.ID)
 	}

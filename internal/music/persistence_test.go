@@ -1,11 +1,81 @@
 package music
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
+
+func TestNoopAddDoesNotRewriteCheckpoint(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "queue.json")
+	q, err := OpenQueue(1, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	who := Requester{ID: "a"}
+	q.Add(who, []Track{{URL: "first"}}, "", "")
+	if err := q.PersistenceError(); err != nil {
+		t.Fatal(err)
+	}
+	stamp := time.Unix(1000000000, 0)
+	if err := os.Chtimes(path, stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	for _, tracks := range [][]Track{nil, {{URL: "overflow"}}} {
+		if n, err := q.Add(who, tracks, "", ""); n != 0 || err != nil {
+			t.Fatalf("add: %d %v", n, err)
+		}
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !info.ModTime().Equal(stamp) {
+			t.Fatal("unchanged queue was rewritten")
+		}
+	}
+}
+
+func TestNoopAddRetriesFailedCheckpoint(t *testing.T) {
+	for _, empty := range []bool{false, true} {
+		t.Run(fmt.Sprint(empty), func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "storage")
+			if err := os.WriteFile(dir, []byte("unavailable"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			q := NewQueue(1)
+			q.statePath = filepath.Join(dir, "queue.json")
+			who := Requester{ID: "a"}
+			q.Add(who, []Track{{URL: "first"}}, "", "")
+			if q.PersistenceError() == nil {
+				t.Fatal("expected save failure")
+			}
+			if err := os.Remove(dir); err != nil {
+				t.Fatal(err)
+			}
+			tracks := []Track{{URL: "overflow"}}
+			if empty {
+				tracks = nil
+			}
+			if n, err := q.Add(who, tracks, "", ""); n != 0 || err != nil {
+				t.Fatalf("add: %d %v", n, err)
+			}
+			if err := q.PersistenceError(); err != nil {
+				t.Fatal(err)
+			}
+			restored, err := OpenQueue(1, q.statePath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, waiting := restored.Snapshot()
+			if len(waiting) != 1 || waiting[0].Track.URL != "first" {
+				t.Fatalf("unsaved entry lost: %#v", waiting)
+			}
+		})
+	}
+}
 
 func TestCheckpointRestartFairOrder(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "state", "queue.json")
