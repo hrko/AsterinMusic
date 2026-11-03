@@ -55,7 +55,7 @@ func Address(root string, operation bool) string {
 	return fmt.Sprintf("127.0.0.1:%d", port)
 }
 func Path(root string) string { return filepath.Join(root, ".dev", "run", "control.json") }
-func Start(ctx context.Context, root string, cancel context.CancelFunc) (context.Context, *Control, error) {
+func Start(ctx context.Context, root string, cancel context.CancelFunc, arguments ...string) (context.Context, *Control, error) {
 	listener, err := net.Listen("tcp", Address(root, false))
 	if err != nil {
 		return ctx, nil, fmt.Errorf("another instance or port conflict: %w", err)
@@ -70,7 +70,7 @@ func Start(ctx context.Context, root string, cancel context.CancelFunc) (context
 		listener.Close()
 		return ctx, nil, err
 	}
-	c := &Control{listener: listener, path: Path(root), state: State{Arguments: os.Args[1:], PID: os.Getpid(), Executable: exe, Address: listener.Addr().String(), Token: hex.EncodeToString(token)}}
+	c := &Control{listener: listener, path: Path(root), state: State{Arguments: append([]string(nil), arguments...), PID: os.Getpid(), Executable: exe, Address: listener.Addr().String(), Token: hex.EncodeToString(token)}}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		if !c.authorize(w, r) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -12,11 +13,14 @@ func TestFailedCheckpointRejectsStop(t *testing.T) {
 	root := t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ctx, c, err := Start(ctx, root, cancel)
+	args := []string{"serve", "--config", "config.yaml", "--env-file", "private.env"}
+	wantArgs := append([]string(nil), args...)
+	ctx, c, err := Start(ctx, root, cancel, args...)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
+	args[0] = "modified"
 	Ready(ctx)
 	BeforeStop(ctx, func() error { return errors.New("disk failure") })
 	if _, err := Request(root, "stop"); err == nil {
@@ -28,6 +32,9 @@ func TestFailedCheckpointRejectsStop(t *testing.T) {
 	state, err := Request(root, "status")
 	if err != nil || !state.Ready {
 		t.Fatal(state.Ready, err)
+	}
+	if !reflect.DeepEqual(state.Arguments, wantArgs) {
+		t.Fatal("restart arguments were lost or aliased")
 	}
 	BeforeStop(ctx, func() error {
 		if ctx.Err() != nil {

@@ -27,16 +27,15 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	os.Args = append([]string{os.Args[0]}, append(args, o.Args()...)...)
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	if len(os.Args) > 1 && os.Args[1] == "serve" {
+	if len(args) > 0 && args[0] == "serve" {
 		root, err := os.Getwd()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
 		}
-		controlled, control, err := runcontrol.Start(ctx, root, cancel)
+		controlled, control, err := runcontrol.Start(ctx, root, cancel, append(append([]string(nil), args...), o.Args()...)...)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -44,18 +43,13 @@ func main() {
 		defer control.Close()
 		ctx = controlled
 	}
-	if err := run(ctx, os.Args[1:]); err != nil {
+	if err := run(ctx, args, o); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, args []string) error {
-	opts, remaining, err := config.ExtractOptions(args)
-	if err != nil {
-		return err
-	}
-	args = remaining
+func run(ctx context.Context, args []string, opts config.Options) error {
 	if len(args) == 0 {
 		return errors.New("usage: asterinmusic doctor | inspect URL | capture URL OUTPUT | render INPUT OUTPUT.ogg")
 	}
