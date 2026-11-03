@@ -83,6 +83,8 @@ mise run update-rollback
 
 ## WebhookによるUI検証
 
+外部モデルによるコード点検は [Agyレビュー手順](agy-review.md) を参照する。Botの実行管理とは別の読み取りレビューとして扱う。
+
 `mise run ui-preview -- brackets` はリンク名の角括弧を、バックスラッシュ・そのまま・HTML文字参照・全角置換で比較する。入れ子と片側だけの括弧も含め、文字表示とリンク範囲を実画面で確認する。
 
 Botを再起動せず、mise run ui-preview -- a b c でレイアウトを指定の検証用Webhookへ送信する。aは番号の通常テキスト化、bは補足の字下げ、cは曲別フィールド。mise run ui-preview -- d e f は自動番号のまま、行末スペース2個・バックスラッシュ・subtext記法を比較する。引数省略時はa/b/cの3件を送る。
