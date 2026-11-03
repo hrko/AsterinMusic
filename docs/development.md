@@ -96,3 +96,5 @@ Git管理外の .env.ui-preview に DISCORD_UI_PREVIEW_WEBHOOK を設定する�
 `mise run ui-preview -- digits1 digits11 digits1fixed` は同じ10曲で、1〜10番・11〜20番・1〜10番の補足インデント3スペース固定を比較する。前2つは各番号の幅に補足インデントを合わせる。本文末尾の改行なし、自動再生説明は別フィールドで統一する。
 
 `mise run ui-preview -- digits91fixed digits91` は91〜100番で、補足インデント4スペース固定と、100番だけ5スペースに増やす方式を比較する。
+
+`mise run ui-preview -- image-none image-split image-bottom image-icon` は同じ曲一覧で、画像なし・再生中と一覧のEmbed分離・下部画像・見出しアイコンを比較する。スマホでの本文幅と縦の長さを確認する。補足のインデントはページ内で固定する。

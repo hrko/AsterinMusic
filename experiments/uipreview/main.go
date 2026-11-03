@@ -25,6 +25,28 @@ type embed struct {
 	Color       int               `json:"color"`
 	Fields      []field           `json:"fields,omitempty"`
 	Footer      map[string]string `json:"footer"`
+	Thumbnail   map[string]string `json:"thumbnail,omitempty"`
+	Image       map[string]string `json:"image,omitempty"`
+	Author      map[string]string `json:"author,omitempty"`
+}
+
+func imageSamples(variant string) []embed {
+	e := sample("digits1fixed")
+	e.Title = "再生キュー"
+	e.Footer["text"] = "表示確認用サンプル · 曲の追加・再生は行いません"
+	art := map[string]string{"url": "https://i.ytimg.com/vi/TcLLpZBWsck/hqdefault.jpg"}
+	switch variant {
+	case "image-split":
+		current, queue, _ := strings.Cut(e.Description, "\n\n**次の再生予定**\n")
+		e.Description = "**次の再生予定**\n" + queue
+		return []embed{{Title: "再生中", Description: strings.TrimPrefix(current, "**再生中**\n"), Color: e.Color, Thumbnail: art}, e}
+	case "image-bottom":
+		e.Image = art
+	case "image-icon":
+		e.Author = map[string]string{"name": "再生キュー", "icon_url": art["url"]}
+		e.Title = ""
+	}
+	return []embed{e}
 }
 
 func sample(variant string) embed {
@@ -161,6 +183,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "image-none" || v == "image-split" || v == "image-bottom" || v == "image-icon" {
+			continue
+		}
 		if v != "digits91" && v != "digits91fixed" && v != "digits1" && v != "digits11" && v != "digits1fixed" && v != "end0" && v != "end1" && v != "end2" && v != "d11" && v != "df11" && (len(v) != 1 || !strings.Contains("abcdef", v)) {
 			return fmt.Errorf("choose a through f, d11, df11, or end0 through end2")
 		}
@@ -178,14 +203,22 @@ func run() error {
 	u.RawQuery = q.Encode()
 	client := &http.Client{Timeout: 20 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	for _, v := range variants {
-		preview := sample(v)
+		previews := []embed{sample(v)}
+		content := "レイアウト比較（検証用サンプル）"
+		if strings.HasPrefix(v, "image-") {
+			previews = imageSamples(v)
+			labels := map[string]string{"image-none": "A：画像なし", "image-split": "B：再生中と一覧を別Embedに分離", "image-bottom": "C：本文下部に画像", "image-icon": "D：見出し横の小さなアイコン"}
+			content += "\n" + labels[v]
+		}
 		if userID := os.Getenv("UI_PREVIEW_USER_ID"); userID != "" {
 			if len(userID) < 17 || len(userID) > 20 || strings.Trim(userID, "0123456789") != "" {
 				return fmt.Errorf("invalid UI_PREVIEW_USER_ID")
 			}
-			preview.Description = strings.ReplaceAll(preview.Description, "サンプルユーザー", "<@"+userID+">")
+			for i := range previews {
+				previews[i].Description = strings.ReplaceAll(previews[i].Description, "サンプルユーザー", "<@"+userID+">")
+			}
 		}
-		payload := map[string]any{"username": "AsterinMusic UI検証", "content": "レイアウト比較（検証用サンプル）", "embeds": []embed{preview}, "allowed_mentions": map[string]any{"parse": []string{}}}
+		payload := map[string]any{"username": "AsterinMusic UI検証", "content": content, "embeds": previews, "allowed_mentions": map[string]any{"parse": []string{}}}
 		b, err := json.Marshal(payload)
 		if err != nil {
 			return fmt.Errorf("cannot encode preview")
