@@ -10,26 +10,8 @@ import (
 	"strings"
 )
 
-func native(action string) error {
-	return nativeTarget(action, "")
-}
-
-func nativeTarget(action, target string) error {
-	if action == "dave-check" {
-		return pureDave(action, target)
-	}
-	if action == "build-voice" || action == "bot-start" || action == "bot-restart" || action == "voice-check" || action == "dave-check" {
-		backend := os.Getenv("ASTERINMUSIC_DAVE_BACKEND")
-		if backend == "" || backend == "go" {
-			return pureDave(action, target)
-		}
-		if backend != "native" {
-			return fmt.Errorf("ASTERINMUSIC_DAVE_BACKEND must be go or native")
-		}
-	}
-	if action == "native-audio-check" {
-		return command([]string{"CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3", "ASTERINMUSIC_AUDIO_TEST=1"}, "go", "test", "-tags", "opus", "./internal/audio", "-count=1", "-v")
-	}
+// comparison runs optional native-library experiments, never Bot lifecycle tasks.
+func comparison(action string) error {
 	out, err := exec.Command("mise", "where", "github:discord/libdave").Output()
 	if err != nil {
 		return fmt.Errorf("locate libdave: %w", err)
@@ -94,42 +76,5 @@ func nativeTarget(action, target string) error {
 		}
 		return command(env, "go", args...)
 	}
-	if action == "race-test" {
-		env = append(env, "GOEXPERIMENT=simd", "GOAMD64=v3")
-		if runtime.GOOS == "windows" {
-			env = append(env, "CGO_LDFLAGS=-lapi-ms-win-core-synch-l1-2-0")
-		}
-		return command(env, "go", "test", "-tags", "davego,opus", "-race", "./...")
-	}
-	binary := filepath.Join(dir, "asterinmusic-voice"+ext)
-	if target != "" {
-		binary = target
-	}
-	env = append(env, "GOEXPERIMENT=simd", "GOAMD64=v3")
-	if err = command(env, "go", "build", "-tags", "dave,opus", "-o", binary, "./cmd/asterinmusic"); err != nil {
-		return err
-	}
-	if action == "build-voice" {
-		return nil
-	}
-	if action == "bot-restart" {
-		if err := command(env, binary, append([]string{"discord-check"}, launchArgs...)...); err != nil {
-			return fmt.Errorf("preflight failed; current bot retained: %w", err)
-		}
-		root, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		if err = waitRestartBoundary(root); err != nil {
-			return err
-		}
-		if err = stopBot(root); err != nil {
-			return err
-		}
-	}
-	if action == "bot-start" || action == "bot-restart" {
-		env = append(env, fmt.Sprintf("ASTERINMUSIC_RESUME=%t", action == "bot-restart"))
-		return launchBot(env, binary)
-	}
-	return command(env, binary, append([]string{action}, launchArgs...)...)
+	return fmt.Errorf("unknown comparison task: %s", action)
 }

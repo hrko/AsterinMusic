@@ -42,7 +42,7 @@ flowchart LR
     Encrypt --> Discord[Discordへ送信]
 ```
 
-取得・復号は外部コマンド、音量適用・エンコード・DAVE暗号化はGoで処理する。現在の標準Botにlibopus/libdaveの動的ライブラリーは不要。比較検証と切り戻し用の構成は別に維持する。
+取得・復号は外部コマンド、音量適用・エンコード・DAVE暗号化はGoで処理する。現在の標準Botにlibopus/libdaveの動的ライブラリーは不要。旧実装との比較実験は本番の起動経路とは分離する。
 
 ライブ再生のOpus目標ビットレートはチャンネル設定に追従する。音声ループがdisgoのチャンネルキャッシュを参照し、変更時のみ同じエンコーダーへ適用する。音声ループ内でREST通信は行わない。キャッシュ欠損・不正値は直前値を維持し、初回の既定値は96kbps。診断用FFmpeg経路は引き続き96kbps固定とする。
 
@@ -52,9 +52,9 @@ flowchart LR
 
 `serve`と`build-voice`は既定で`davego,opus`タグ、`CGO_ENABLED=0`、`GOEXPERIMENT=simd`、`GOAMD64=v3`でビルドします。実行にはamd64 v3対応CPUが必要です。gopusは96kbpsでViSQOL検証済みのコミットに固定し、48kHzステレオ・20ms・チャンネル設定のビットレート・complexity 9・CVBRを指定します。DAVEには`dave-go v0.5.1`を使います。Bot本体のビルドからC/C++依存がなくなりました。音声取得・デコードには引き続きyt-dlp・FFmpegなどの外部コマンドを使います。
 
-`ASTERINMUSIC_DAVE_BACKEND=native`または`bot-restart-native`で従来のlibdave版（`dave,opus`・CGOあり）へ切り戻せます。鍵交換中は送信を保留し、15秒以内に完了しない場合は再生エラーにします。接続破棄時にはDAVEの監視処理も終了させます。[DAVE移行の検証記録](dave-go-migration.md)を参照してください。libopusとlibdaveは比較・切り戻し用の開発依存として残しています。
+旧libdaveのBot起動経路は廃止した。鍵交換中は送信を保留し、15秒以内に完了しない場合は再生エラーにする。接続破棄時にはDAVEの監視処理も終了させる。比較・相互運用の記録は[DAVE移行の検証記録](dave-go-migration.md)に残す。
 
-通常ビルドの`render`・`stream-check`は従来のFFmpeg変換経路を使う診断用です。ライブ経路の検証には`native-audio-check`を使ってください。停止時には取得・変換・送信をキャンセルし、遅れたフレームを取り戻すための連続送信はしません。曲の終了時に`audio pacing`ログへ送信数、20msを超える遅延の件数と最大値を出力します。
+通常ビルドの`render`・`stream-check`は従来のFFmpeg変換経路を使う診断用です。ライブ経路の検証には`opus-audio-check`を使ってください。停止時には取得・変換・送信をキャンセルし、遅れたフレームを取り戻すための連続送信はしません。曲の終了時に`audio pacing`ログへ送信数、20msを超える遅延の件数と最大値を出力します。
 
 ## アクティビティ表示
 

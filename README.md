@@ -29,7 +29,7 @@ mise 2026.10.3で動作確認しています。タスク本体はGoで実装し�
 | --- | --- |
 | Go | Bot・開発タスクのビルド |
 | yt-dlp、Deno、FFmpeg | サイト対応、音源取得、入力音声のデコード |
-| Zig、公式libdave | libdave版への切り戻し、相互運用・比較検証。標準Botのビルドには不要 |
+| Zig、公式libdave | Zigはrace検証、公式libdaveは相互運用・比較検証用。標準Botのビルドには不要 |
 | Python、Bazel | ViSQOL検証用。標準Botの実行には不要 |
 
 上の`mise install --locked`は比較検証用も含むプロジェクトの開発依存を導入します。ViSQOL本体のビルドなど、追加の準備は[ViSQOL検証記録](docs/visqol-comparison.md)を参照してください。
@@ -74,4 +74,4 @@ mise run bot-logs
 
 `bot-restart`は新版のビルドが成功してから旧版の状態を保存し、新版を起動します。キュー、音量、自動再生設定を復元し、再生中だった場合は再接続して曲の先頭から再開します。停止中は停止を維持します。旧版からの初回移行や接続失敗時は、URLなしの`/play`で再開してください。
 
-停止は`mise run bot-stop`、libdave版への切り戻しは`mise run bot-restart-native`、Pure Go版へ戻す操作は`mise run bot-restart-go`です。プロセス調査の失敗や管理外Botを検出した場合は、追加起動や強制終了で回避せず、[開発・運用手順](docs/development.md)に従って確認してください。
+停止は`mise run bot-stop`、再起動は`mise run bot-restart`です。プロセス調査の失敗や管理外Botを検出した場合は、追加起動や強制終了で回避せず、[開発・運用手順](docs/development.md)に従って確認してください。

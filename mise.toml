@@ -77,9 +77,9 @@ run = "go run ./cmd/asterinmusic render"
 description = "Verify local FFmpeg conversion without Discord or network"
 run = "go run ./cmd/dev audio-check"
 
-[tasks.native-audio-check]
-description = "Verify paced native Opus audio and volume latency"
-run = "go run ./cmd/dev native-audio-check"
+[tasks.opus-audio-check]
+description = "Verify paced Pure Go Opus audio and volume latency"
+run = "go run ./cmd/dev opus-audio-check"
 
 [tasks.opus-compare]
 description = "Compare pinned Pure Go Opus encoders against libopus offline"
@@ -140,18 +140,6 @@ run = "go run ./cmd/dev dave-check"
 
 [tasks.dave-interop]
 run = "go run ./cmd/dev dave-interop"
-
-[tasks.bot-restart-go]
-env = { ASTERINMUSIC_DAVE_BACKEND = "go" }
-run = "go run ./cmd/dev bot-restart"
-
-[tasks.bot-restart-native]
-env = { ASTERINMUSIC_DAVE_BACKEND = "native" }
-run = "go run ./cmd/dev bot-restart"
-
-[tasks.build-voice-native]
-env = { ASTERINMUSIC_DAVE_BACKEND = "native" }
-run = "go run ./cmd/dev build-voice"
 
 [tasks.voice-check]
 run = "go run ./cmd/dev voice-check"

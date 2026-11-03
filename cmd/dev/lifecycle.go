@@ -72,7 +72,7 @@ func manage(action string) error {
 		suffix = ".exe"
 	}
 	target := filepath.Join(root, "bin", fmt.Sprintf("asterinmusic-voice-%d%s", time.Now().UnixNano(), suffix))
-	return nativeTarget("bot-"+action, target)
+	return pureDave("bot-"+action, target)
 }
 
 func waitRestartBoundary(root string) error {
@@ -137,7 +137,7 @@ func exclusiveVoiceCheck() error {
 	} else if running {
 		return errors.New("stop the Bot with mise run bot-stop before voice-check")
 	}
-	return native("voice-check")
+	return pureDave("voice-check", "")
 }
 
 func botState(root string) (runcontrol.State, bool, error) {

@@ -2,7 +2,7 @@
 
 曲の切り替わりで再起動する場合は`mise run bot-restart -- --after-track`を使う。ビルドと事前検証を先に完了し、その時点の曲から次の曲の最初の音声パケットが送信されるまで待機する。管理状態を100ms間隔で確認するため厳密な同時実行ではなく、検知直後に停止・再接続する。次曲はチェックポイントから先頭へ戻って再開する。待機中に再生が停止・終了した場合、または最初から再生していない場合はその時点で再起動する。
 
-待機中はタスクを実行した端末を維持する。Ctrl+Cで待機を取り消すと旧Botは継続する。`bot-status`と`bot-logs`は待機中も実行でき、他の起動・停止操作は排他ガードで拒否する。状態取得失敗・プロセス変更時は再起動しない。この機能に未対応の旧Botは通常再起動で一度更新する必要がある。`bot-restart-go`と`bot-restart-native`にも同じ引数を渡せる。
+待機中はタスクを実行した端末を維持する。Ctrl+Cで待機を取り消すと旧Botは継続する。`bot-status`と`bot-logs`は待機中も実行でき、他の起動・停止操作は排他ガードで拒否する。状態取得失敗・プロセス変更時は再起動しない。この機能に未対応の旧Botは通常再起動で一度更新する必要がある。
 
 キュー表示を確認する際はDiscordで`/queue`を実行し、本人専用表示・メンション・前後ページ・更新を確認する。自動再生ONで最後の手動曲が再生開始した後、更新すると先行取得された候補一覧を表示する。手動追加後の更新では手動キューの1ページ目へ戻る。コマンド説明を変更した場合は`mise run register`で反映する。
 
@@ -23,8 +23,6 @@
 | `mise run bot-restart` | 新版を別ファイルへビルドしてから旧版を正常終了し、新版の接続完了を確認 |
 | `mise run bot-status` | PID・実行ファイル・Discord接続準備完了状態を確認 |
 | `mise run bot-logs` | 最新の起動ログの末尾を表示 |
-| `mise run bot-restart-go` | Pure Go DAVE版へ切り替えて再起動（既定） |
-| `mise run bot-restart-native` | 従来のlibdave版へ切り戻して再起動 |
 
 `bot-restart`は再生中なら自動再接続して曲の先頭から再開し、停止中なら停止を維持します。音量・自動再生設定も保存します。`bot-stop`後の`bot-start`、旧版からの初回移行、接続失敗時はURLなしの`/play`で再開してください。ビルドまたは状態保存に失敗した場合は旧版を停止しません。正常終了が45秒以内に完了しない場合は、強制終了や追加起動をせずエラーにします。起動確認が60秒でタイムアウトした場合も、再実行前に`bot-status`と`bot-logs`で確認してください。
 
@@ -46,10 +44,9 @@
 | `mise run check` | 整形、通常構成と本番構成（`davego,opus`・SIMD・CGO無効）のvet・単体テスト、両構成のLinux/Windowsクロスビルド |
 | `mise run race-test` | 並行処理の競合検出 |
 | `mise run audio-check` | FFmpeg変換、音量、ミュート、キャンセル |
-| `mise run native-audio-check` | ライブ用gopus SIMD経路、音量反映時間、送信間隔、キャンセル（CGO無効） |
+| `mise run opus-audio-check` | ライブ用gopus SIMD経路、音量反映時間、送信間隔、キャンセル（CGO無効） |
 | `mise run dave-check` | Pure Go DAVE組み込み・上流DAVEテスト（CGO無効） |
 | `mise run dave-interop` | Go MLSと公式libdaveのWelcome・双方向暗号フレーム相互運用（CGOあり） |
-| `mise run build-voice-native` | 切り戻し用libdave版をビルド |
 | `mise run opus-compare` | 独立モジュールでPure Go Opusとlibopusを比較（[結果](opus-comparison.md)） |
 | `mise run opus-pure-check` | CGO無効でPure Go候補を実行 |
 | `mise run opus-simd-compare` | Go 1.27・amd64 v3でgopus通常版／SIMD版を3回ずつ比較（[結果](opus-simd-comparison.md)） |

@@ -74,8 +74,18 @@ func run() error {
 			return err
 		}
 		return command([]string{"CGO_ENABLED=0"}, "go", "-C", "experiments/opusbench", "run", ".", "-pure", "-out", output)
-	case "build-voice", "race-test", "native-audio-check", "opus-compare", "opus-simd-compare", "dave-check", "dave-interop":
-		return native(os.Args[1])
+	case "build-voice", "dave-check":
+		return pureDave(os.Args[1], "")
+	case "opus-audio-check":
+		return command([]string{"CGO_ENABLED=0", "GOEXPERIMENT=simd", "GOAMD64=v3", "ASTERINMUSIC_AUDIO_TEST=1"}, "go", "test", "-tags", "opus", "./internal/audio", "-count=1", "-v")
+	case "race-test":
+		env := []string{"CGO_ENABLED=1", "CC=zig cc", "CXX=zig c++", "GOEXPERIMENT=simd", "GOAMD64=v3"}
+		if runtime.GOOS == "windows" {
+			env = append(env, "CGO_LDFLAGS=-lapi-ms-win-core-synch-l1-2-0")
+		}
+		return command(env, "go", "test", "-tags", "davego,opus", "-race", "./...")
+	case "opus-compare", "opus-simd-compare", "dave-interop":
+		return comparison(os.Args[1])
 	case "fmt", "check":
 		var files []string
 		err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {

@@ -1,4 +1,4 @@
-//go:build !dave && !davego
+//go:build !davego
 
 package discordbot
 
