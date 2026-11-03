@@ -22,6 +22,8 @@ type session struct {
 	failureNotice                      failureNotice
 	playbackSequence                   uint64
 	queueViewMu                        sync.Mutex
+	checkpointMu                       sync.Mutex
+	prepareCheckpoint                  func(string, []byte) (string, error)
 	mu                                 sync.Mutex
 	app                                *App
 	guild, channel, text               snowflake.ID

@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"asterinmusic/internal/music"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,6 +44,8 @@ func (s *session) recordStartedLocked() {
 
 // Called by the authenticated lifecycle endpoint before app cancellation.
 func (s *session) checkpoint(path string) error {
+	s.checkpointMu.Lock()
+	defer s.checkpointMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.waitQueueLocked()
@@ -58,42 +61,34 @@ func (s *session) checkpoint(path string) error {
 	if err := s.queue.PersistenceError(); err != nil {
 		return err
 	}
-	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
-		Playing: !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
-		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
-	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
-		v.AutomaticTrack = s.current
-	}
-	if !s.skipping && !s.stopped {
-		v.RecordedPlayback = s.historyResume
-		if s.current != nil && s.started {
-			v.RecordedPlayback = &recordedPlayback{Entry: *s.current, Automatic: s.currentAuto}
-		}
-	}
-	b, err := json.Marshal(v)
+	epoch, revision := s.epoch, s.auto.revision
+	b, err := s.checkpointBytesLocked()
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return err
+	prepare := s.prepareCheckpoint
+	if prepare == nil {
+		prepare = preparePlaybackCheckpoint
 	}
-	f, err := os.CreateTemp(filepath.Dir(path), ".playback-*.tmp")
+	s.mu.Unlock()
+	temporary, err := prepare(path, b)
+	s.mu.Lock()
 	if err != nil {
 		return err
 	}
-	defer os.Remove(f.Name())
-	_, err = f.Write(b)
-	if err == nil {
-		err = f.Sync()
+	defer os.Remove(temporary)
+	s.waitQueueLocked()
+	if err := s.queue.PersistenceError(); err != nil {
+		return err
 	}
-	closeErr := f.Close()
+	latest, err := s.checkpointBytesLocked()
 	if err != nil {
 		return err
 	}
-	if closeErr != nil {
-		return closeErr
+	if s.epoch != epoch || s.auto.revision != revision || !bytes.Equal(latest, b) {
+		return errors.New("playback changed during checkpoint; bot retained, retry restart")
 	}
-	if err = os.Rename(f.Name(), path); err != nil {
+	if err := os.Rename(temporary, path); err != nil {
 		return err
 	}
 	// Freeze queue selection and additions only after the checkpoint succeeds.
@@ -108,6 +103,50 @@ func (s *session) checkpoint(path string) error {
 	}
 	s.auto.invalidate()
 	return nil
+}
+
+func (s *session) checkpointBytesLocked() ([]byte, error) {
+	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
+		Playing: !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
+		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
+	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
+		v.AutomaticTrack = s.current
+	}
+	if v.AutomaticTrack == nil && s.auto.enabled && !s.stopped {
+		v.AutomaticTrack = s.resumeAuto
+	}
+	if !s.skipping && !s.stopped {
+		v.RecordedPlayback = s.historyResume
+		if s.current != nil && s.started {
+			v.RecordedPlayback = &recordedPlayback{Entry: *s.current, Automatic: s.currentAuto}
+		}
+	}
+	return json.Marshal(v)
+}
+
+// Write and sync the private temporary file outside the session mutex. Only
+// the final rename is serialized with state validation and shutdown freeze.
+func preparePlaybackCheckpoint(path string, b []byte) (string, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return "", err
+	}
+	f, err := os.CreateTemp(filepath.Dir(path), ".playback-*.tmp")
+	if err != nil {
+		return "", err
+	}
+	_, err = f.Write(b)
+	if err == nil {
+		err = f.Sync()
+	}
+	closeErr := f.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		os.Remove(f.Name())
+		return "", err
+	}
+	return f.Name(), nil
 }
 
 func readPlaybackCheckpoint(path string, guild snowflake.ID) (*playbackCheckpoint, error) {

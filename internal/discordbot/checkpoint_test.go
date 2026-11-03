@@ -58,6 +58,46 @@ func TestManagedResumeRecordsPlaybackOnlyOnce(t *testing.T) {
 	}
 }
 
+func TestCheckpointDiskWaitAllowsMutationAndRejectsStaleState(t *testing.T) {
+	s := newSession(&App{ctx: context.Background()}, 1)
+	path := filepath.Join(t.TempDir(), "playback.json")
+	entered, release := make(chan struct{}), make(chan struct{})
+	s.prepareCheckpoint = func(path string, b []byte) (string, error) {
+		close(entered)
+		<-release
+		return preparePlaybackCheckpoint(path, b)
+	}
+	result := make(chan error, 1)
+	go func() { result <- s.checkpoint(path) }()
+	<-entered
+	changed := make(chan struct{})
+	go func() { s.setVolume(55); s.playbackStatus(); close(changed) }()
+	select {
+	case <-changed:
+	case <-time.After(time.Second):
+		close(release)
+		t.Fatal("checkpoint disk wait held state mutex")
+	}
+	close(release)
+	if err := <-result; err == nil {
+		t.Fatal("stale snapshot committed")
+	}
+	if s.shuttingDown || s.volume.Percent() != 55 {
+		t.Fatal("failed checkpoint lost live mutation")
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatal("stale checkpoint file published")
+	}
+	s.prepareCheckpoint = nil
+	if err := s.checkpoint(path); err != nil {
+		t.Fatal(err)
+	}
+	v, err := readPlaybackCheckpoint(path, 1)
+	if err != nil || v.Volume != 55 {
+		t.Fatal("retry did not preserve new state", err)
+	}
+}
+
 func TestCheckpointExcludesExplicitlyEndedCurrent(t *testing.T) {
 	for _, action := range []string{"skip", "stop"} {
 		t.Run(action, func(t *testing.T) {
