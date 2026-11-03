@@ -12,7 +12,8 @@ import (
 
 func (a *App) edit(token, text string, components []discord.LayoutComponent) *discord.Message {
 	text = truncate(text, 1900)
-	m, _ := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate(text, nil, components))
+	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate(text, nil, components))
+	logOperationFailure("interaction.update_text", err)
 	return m
 }
 
@@ -34,6 +35,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		return
 	}
 	if err := e.DeferCreateMessage(privateQuery(data)); err != nil {
+		logOperationFailure("interaction.defer_command", err)
 		return
 	}
 	reply := func(text string) { a.edit(e.Token(), text, nil) }

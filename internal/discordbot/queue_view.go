@@ -264,7 +264,8 @@ func (a *App) editQueue(token string, s *session, owner snowflake.ID, page int, 
 	embed, components := s.queueView(owner, page, previous)
 	embeds := []discord.Embed{embed}
 	empty := ""
-	_, _ = a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}})
+	_, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}})
+	logOperationFailure("interaction.update_queue", err)
 }
 func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 	parts := strings.Split(e.Data.CustomID(), ":")
@@ -281,6 +282,7 @@ func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
+		logOperationFailure("interaction.defer_queue", err)
 		return
 	}
 	s := a.getSession(*e.GuildID())

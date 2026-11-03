@@ -27,7 +27,8 @@ func messageUpdate(text string, embed *discord.Embed, components []discord.Layou
 	return discord.MessageUpdate{Content: &text, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}}
 }
 func (a *App) editEmbed(token string, embed discord.Embed, components []discord.LayoutComponent) *discord.Message {
-	m, _ := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate("", &embed, components))
+	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate("", &embed, components))
+	logOperationFailure("interaction.update_embed", err)
 	return m
 }
 func (a *App) editFailure(token, text string) {

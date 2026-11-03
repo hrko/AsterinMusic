@@ -270,7 +270,8 @@ func (s *session) fetchCandidatesLocked() {
 		fetch = s.app.source.InspectMix
 	}
 	go func() {
-		result, _ := fetch(ctx, url)
+		result, err := fetch(ctx, url)
+		logOperationFailure("autoplay.fetch_candidates", err)
 		cancel()
 		s.mu.Lock()
 		defer s.mu.Unlock()
