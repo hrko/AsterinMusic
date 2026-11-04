@@ -124,6 +124,8 @@ YouTube Data APIのフォールバックも所有者・原因・HTTPステータ
 
 ## 公開資料との関係
 
+実環境への反映で、dave-goがMLSクライアントへ注入ロガーを渡さず、既定ロガーからJSON以外の詳細ログを出す経路を確認した。CLIの起動時に互換用の既定ロガーを無出力にし、明示的に注入した依存ロガーと自前の状態・結果ログだけを出力する。暗号処理の詳細を全体DEBUG設定で有効化しない。実FFmpeg・gopus SIMDによるファイルログ付き5秒再生、音量変更・キャンセルの音声検証は通過した。既定ロガー対策の再反映と実VC往復確認は未完了である。
+
 以下は判断の参考資料であり、本Botのイベント名、レベルの具体例、設定方式は本書で定める。
 
 - [Go：Structured Logging with slog](https://go.dev/blog/slog)、[slogのContexts](https://pkg.go.dev/log/slog#hdr-Contexts)：Handler・Withの利用、Contextがある場合の出力API。

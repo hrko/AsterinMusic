@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/disgoorg/snowflake/v2"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"time"
@@ -185,6 +186,11 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 		if err != nil {
 			return err
 		}
+		// dave-go does not forward its injected logger to MLS and also calls
+		// slog.Default directly. Disable this unscoped compatibility path:
+		// its crypto details are neither safe nor useful as application events.
+		// Explicitly injected dependency loggers remain enabled.
+		slog.SetDefault(slog.New(slog.DiscardHandler))
 		a, err := discordbot.New(ctx, c, logger)
 		if err != nil {
 			if args[0] == "serve" {
