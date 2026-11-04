@@ -33,6 +33,8 @@ type historyView struct {
 	rows                         []history.Record
 	selected                     int64
 	revision                     uint64
+	originalToken                string
+	retryMessage                 snowflake.ID
 }
 
 func (a *App) historyVoice(guild, user snowflake.ID) (snowflake.ID, error) {
@@ -86,6 +88,13 @@ func (a *App) historyAction(custom string, user snowflake.ID, guild *snowflake.I
 		return nil, "", errors.New("処理中です。少し待って操作してください。")
 	}
 	voice, err := a.historyVoice(*guild, user)
+	if parts[3] == "retry" || parts[3] == "resubmit" {
+		if message == 0 || message != v.retryMessage {
+			v.mu.Unlock()
+			return nil, "", errHistoryView
+		}
+		message = v.message
+	}
 	if err != nil || !v.valid(user, *guild, voice, message, rev, time.Now()) {
 		v.mu.Unlock()
 		return nil, "", errHistoryView
@@ -153,12 +162,15 @@ func (v *historyView) render() (discord.Embed, []discord.LayoutComponent) {
 	return embed, components
 }
 
-func (a *App) showHistory(token string, v *historyView) {
+func (a *App) showHistory(token string, v *historyView) bool {
 	v.revision++
+	v.retryMessage = 0
 	embed, components := v.render()
 	if m := a.editEmbed(token, embed, components); m != nil {
 		v.message = m.ID
+		return true
 	}
+	return false
 }
 
 func historyProblem(err error) string {
@@ -189,7 +201,7 @@ func (a *App) historyCommand(e *events.ApplicationCommandInteractionCreate) {
 		a.edit(e.Token(), historyProblem(err), nil)
 		return
 	}
-	v := &historyView{id: rand.Text(), owner: e.User().ID, guild: *e.GuildID(), voice: voice, expires: time.Now().Add(historyViewTTL)}
+	v := &historyView{id: rand.Text(), originalToken: e.Token(), owner: e.User().ID, guild: *e.GuildID(), voice: voice, expires: time.Now().Add(historyViewTTL)}
 	if err = v.load(ctx, a.historyStore, snap, 1); err != nil {
 		a.edit(e.Token(), historyProblem(err), nil)
 		return
@@ -224,12 +236,16 @@ func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	defer v.mu.Unlock()
-	if action == "jump" {
+	if action == "jump" || action == "retry" {
 		if len(v.rows) == 0 {
 			logOperationFailure("history.empty_page", e.CreateMessage(ephemeral("このVCの再生履歴はまだありません。")))
 			return
 		}
-		modal := discord.NewModalCreate(v.componentID("submit"), "ページを指定", discord.NewLabel("ページ番号", discord.NewShortTextInput("page").WithValue(strconv.Itoa(v.page))))
+		submit := "submit"
+		if action == "retry" {
+			submit = "resubmit"
+		}
+		modal := v.pageModal(submit)
 		logOperationFailure("history.modal", e.Modal(modal))
 		return
 	}
@@ -308,8 +324,19 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 	}
 	defer v.mu.Unlock()
 	page, err := strconv.Atoi(strings.TrimSpace(e.Data.Text("page")))
-	if action != "submit" || err != nil || page < 1 || int64(page) > max(int64(1), (v.snapshot.Count+9)/10) {
-		logOperationFailure("history.invalid_page", e.CreateMessage(ephemeral(historyProblem(history.ErrPage))))
+	if action != "submit" && action != "resubmit" {
+		logOperationFailure("history.invalid_modal", e.CreateMessage(ephemeral(errHistoryView.Error())))
+		return
+	}
+	if err != nil || page < 1 || int64(page) > v.pageCount() {
+		if err := e.DeferCreateMessage(true); err != nil {
+			logOperationFailure("history.invalid_page", err)
+			return
+		}
+		v.retryMessage = 0
+		if m := a.edit(e.Token(), fmt.Sprintf("1〜%dの整数を入力してください。", v.pageCount()), []discord.LayoutComponent{discord.NewActionRow(discord.NewSecondaryButton("入力し直す", v.componentID("retry")))}); m != nil {
+			v.retryMessage = m.ID
+		}
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
@@ -326,7 +353,23 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 		a.historyReply(e.Token(), errHistoryView.Error())
 		return
 	}
-	a.showHistory(e.Token(), v)
+	if action == "resubmit" {
+		if a.showHistory(v.originalToken, v) {
+			a.edit(e.Token(), "指定したページを表示しました。", nil)
+		} else {
+			a.edit(e.Token(), "履歴画面を更新できませんでした。/historyを実行し直してください。", nil)
+		}
+	} else {
+		a.showHistory(e.Token(), v)
+	}
+}
+
+func (v *historyView) pageCount() int64 {
+	return max(int64(1), (v.snapshot.Count+history.PageSize-1)/history.PageSize)
+}
+
+func (v *historyView) pageModal(action string) discord.ModalCreate {
+	return discord.NewModalCreate(v.componentID(action), "ページを指定", discord.NewLabel(fmt.Sprintf("ページ番号（1〜%d）", v.pageCount()), discord.NewShortTextInput("page").WithValue(strconv.Itoa(v.page))))
 }
 
 func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView, front bool) {
