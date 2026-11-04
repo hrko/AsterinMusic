@@ -14,6 +14,7 @@ import (
 
 	"asterinmusic/internal/config"
 	"asterinmusic/internal/history"
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
@@ -29,6 +30,7 @@ import (
 )
 
 type App struct {
+	logger           *slog.Logger
 	historyViews     map[string]*historyView
 	historyStore     *history.Store
 	historyWriter    *history.Writer
@@ -45,7 +47,7 @@ type App struct {
 	daveClosers      sync.Map
 }
 
-func New(ctx context.Context, c config.Config) (*App, error) {
+func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error) {
 	executable := c.YTDLP
 	if executable == "yt-dlp" {
 		var err error
@@ -61,16 +63,19 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	a.logger = logging.Component(logger, "app")
 	if c.YouTubeMetadataLanguage != "" {
 		a.source.MetadataLanguage = c.YouTubeMetadataLanguage
 	}
 	if c.YouTubeDataEnabled {
 		a.source.YouTubeData = source.NewYouTubeData(c.YouTubeDataAPIKey)
+		a.source.YouTubeData.Logger = logging.Component(logger, "source")
 	}
 	if err := a.source.ConfigureAuth(c.NiconicoAuth); err != nil {
 		return nil, err
 	}
 	opts := []bot.ConfigOpt{
+		bot.WithLogger(logging.Dependency(logger, "discord")),
 		// Voice Open waits for subsequent Gateway events; listeners must not
 		// block the Gateway event dispatcher while resolving or connecting.
 		bot.WithEventManagerConfigOpts(eventOptions()...),
@@ -101,6 +106,7 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		return nil, errors.New("token belongs to a different application")
 	}
 	a.config.ApplicationID = application.ID
+	a.logger = a.logger.With("bot_id", application.ID.String())
 	return a, nil
 }
 
@@ -134,7 +140,7 @@ func (a *App) Close() {
 			select {
 			case <-wait:
 			case <-ctx.Done():
-				slog.Warn("playback shutdown timed out")
+				logging.OrDiscard(a.logger).WarnContext(ctx, "playback shutdown timed out", "event", "app.shutdown.timeout")
 			}
 		}
 	}
@@ -255,7 +261,7 @@ func (a *App) Serve() error {
 	runcontrol.BeforeStop(a.ctx, func() error {
 		err := s.checkpoint(checkpointPath)
 		if err != nil {
-			slog.Error("playback checkpoint failed; refusing stop", "error", a.safeError(err))
+			logging.OrDiscard(a.logger).ErrorContext(a.ctx, "playback checkpoint failed; refusing stop", "event", "state.checkpoint.failed", "reason", failureClass(err), "action", "retain_playback")
 		} else {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			logOperationFailure("history.flush", a.historyWriter.Flush(ctx))
@@ -264,7 +270,7 @@ func (a *App) Serve() error {
 		return err
 	})
 	_, pending := queue.Snapshot()
-	slog.Info("manual queue restored; use /play to resume", "tracks", len(pending))
+	logging.OrDiscard(a.logger).InfoContext(a.ctx, "manual queue restored", "event", "state.queue.restored", "tracks", len(pending), "guild_id", a.config.GuildID.String())
 	if err := a.Check(); err != nil {
 		return err
 	}
@@ -277,13 +283,13 @@ func (a *App) Serve() error {
 		}
 		if os.Getenv("ASTERINMUSIC_RESUME") == "true" {
 			if err := s.resumeCheckpoint(restored); err != nil {
-				slog.Warn("playback restore could not reconnect; queue retained", "error", a.safeError(err))
+				logging.OrDiscard(a.logger).ErrorContext(a.ctx, "playback restore could not reconnect", "event", "state.playback.restore_failed", "reason", failureClass(err), "queue_retained", true)
 			} else {
-				slog.Info("playback state restored", "playing", restored.Playing, "autoplay", restored.AutoEnabled)
+				logging.OrDiscard(a.logger).InfoContext(a.ctx, "playback state restored", "event", "state.playback.restored", "playing", restored.Playing, "autoplay", restored.AutoEnabled)
 			}
 		}
 	}
-	slog.Info("AsterinMusic connected; waiting for commands", "dave", daveBackend)
+	logging.OrDiscard(a.logger).InfoContext(a.ctx, "AsterinMusic connected; waiting for commands", "event", "app.ready", "dave", daveBackend)
 	runcontrol.Ready(a.ctx)
 	go a.checkUpdates()
 	go a.runPresence()

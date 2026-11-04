@@ -1,11 +1,11 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"context"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/snowflake/v2"
-	"log/slog"
 	"strings"
 	"time"
 )
@@ -88,16 +88,24 @@ func (a *App) runPresence() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 	p := presencePublisher{}
+	var failures logging.Repetition
+	logger := logging.Component(a.logger, "app")
+	defer failures.Close(context.Background(), logger)
 	for {
 		if a.ctx.Err() != nil {
 			return
 		}
 		ctx, cancel := context.WithTimeout(a.ctx, 3*time.Second)
-		err := p.update(ctx, time.Now(), a.presenceRevision.Load(), a.activitySnapshot, a.publishActivity)
+		_ = p.update(ctx, time.Now(), a.presenceRevision.Load(), a.activitySnapshot, func(ctx context.Context, title string) error {
+			err := a.publishActivity(ctx, title)
+			if err == nil {
+				failures.ResolveAll(ctx, logger)
+			} else if a.ctx.Err() == nil {
+				failures.Failure(ctx, logger, failureClass(err), "activity update failed; will retry", "event", "app.presence.failed", "reason", failureClass(err), "action", "retry")
+			}
+			return err
+		})
 		cancel()
-		if err != nil && a.ctx.Err() == nil {
-			slog.Warn("activity update failed; will retry")
-		}
 		select {
 		case <-a.ctx.Done():
 			return

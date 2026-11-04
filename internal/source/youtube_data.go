@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"math"
@@ -14,12 +15,15 @@ import (
 	"sync"
 	"time"
 
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
 )
 
 // YouTubeData owns a bounded cache and serializes cache misses, including
 // overlapping requests. Waiting for another caller counts toward the budget.
 type YouTubeData struct {
+	// Logger must be set before Enrich is called; nil disables diagnostics.
+	Logger       *slog.Logger
 	key          string
 	http         *http.Client
 	endpoint     string
@@ -159,7 +163,13 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 		resp, err := d.http.Do(req)
 		if err != nil {
 			d.blockedUntil = time.Now().Add(30 * time.Second)
-			slog.Warn("YouTube title API unavailable", "reason", "transport")
+			level, reason := slog.LevelWarn, "transport"
+			if errors.Is(err, context.Canceled) {
+				level, reason = slog.LevelDebug, "canceled"
+			} else if errors.Is(err, context.DeadlineExceeded) {
+				reason = "timeout"
+			}
+			logging.OrDiscard(d.Logger).Log(ctx, level, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", reason, "action", "use_extractor_metadata")
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
@@ -169,7 +179,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 				delay = 15 * time.Minute
 			}
 			d.blockedUntil = time.Now().Add(delay)
-			slog.Warn("YouTube title API unavailable", "http_status", resp.StatusCode)
+			logging.OrDiscard(d.Logger).WarnContext(ctx, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", "http_status", "http_status", resp.StatusCode, "action", "use_extractor_metadata")
 			return
 		}
 		var body struct {
@@ -194,7 +204,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 		resp.Body.Close()
 		if err != nil {
 			d.blockedUntil = time.Now().Add(30 * time.Second)
-			slog.Warn("YouTube title API unavailable", "reason", "invalid_response")
+			logging.OrDiscard(d.Logger).WarnContext(ctx, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", "invalid_response", "action", "use_extractor_metadata")
 			return
 		}
 		titles := map[string]apiMetadata{}
@@ -234,6 +244,6 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 			apply(id, metadata)
 		}
 		d.cacheMu.Unlock()
-		slog.Debug("YouTube title API request completed", "videos", len(batch))
+		logging.OrDiscard(d.Logger).DebugContext(ctx, "YouTube metadata API request completed", "event", "source.metadata.completed", "videos", len(batch))
 	}
 }

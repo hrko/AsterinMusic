@@ -15,6 +15,7 @@ import (
 	"asterinmusic/internal/audio"
 	"asterinmusic/internal/config"
 	"asterinmusic/internal/discordbot"
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/process"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
@@ -73,6 +74,11 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 		c.MetadataLanguage = cfg.YouTubeMetadataLanguage
 		if cfg.YouTubeDataEnabled {
 			c.YouTubeData = source.NewYouTubeData(cfg.YouTubeDataAPIKey)
+			logger, logErr := logging.New(os.Stderr, cfg.Logging)
+			if logErr != nil {
+				return logErr
+			}
+			c.YouTubeData.Logger = logging.Component(logger, "source")
 		}
 		if err = c.ConfigureAuth(cfg.NiconicoAuth); err != nil {
 			return err
@@ -169,7 +175,11 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 			fmt.Println("configuration: valid (authentication is checked by discord-check)")
 			return nil
 		}
-		a, err := discordbot.New(ctx, c)
+		logger, err := logging.New(os.Stderr, c.Logging)
+		if err != nil {
+			return err
+		}
+		a, err := discordbot.New(ctx, c, logger)
 		if err != nil {
 			return err
 		}
