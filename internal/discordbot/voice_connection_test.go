@@ -173,7 +173,6 @@ func TestVoiceMoveEventPermutationsAndRoundTrips(t *testing.T) {
 						t.Fatal(err)
 					}
 					c.transportClosed(gen, errors.New("late old close"), false)
-					c.HandleVoiceServerUpdate(serverEvent("initial"))
 					c.mu.Lock()
 					phase := c.phase
 					c.mu.Unlock()
@@ -183,6 +182,56 @@ func TestVoiceMoveEventPermutationsAndRoundTrips(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestVoiceMovesWithUnchangedToken(t *testing.T) {
+	orders := [][]int{{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}}
+	for _, order := range orders {
+		t.Run(fmt.Sprint(order), func(t *testing.T) {
+			c := testVoiceController(t)
+			var created atomic.Int32
+			c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
+				created.Add(1)
+				return newFakeVoiceTransport(), nil
+			}
+			c.HandleVoiceStateUpdate(stateEvent(3))
+			c.HandleVoiceServerUpdate(serverEvent("shared"))
+			waitVoice(t, c)
+			for _, channel := range []snowflake.ID{4, 3, 4} {
+				c.mu.Lock()
+				old, gen := c.active.(*fakeVoiceTransport), c.generation
+				c.mu.Unlock()
+				for _, event := range order {
+					switch event {
+					case 0:
+						c.HandleVoiceStateUpdate(stateEvent(channel))
+					case 1:
+						c.HandleVoiceServerUpdate(serverEvent("shared"))
+					case 2:
+						c.transportClosed(gen, &websocket.CloseError{Code: 4022}, false)
+					}
+				}
+				waitVoice(t, c)
+				if !old.invalid.Load() {
+					t.Fatal("old resources retained")
+				}
+				if err := c.WriteAudio(context.Background(), []byte{1}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if created.Load() != 4 {
+				t.Fatalf("fresh transports: %d", created.Load())
+			}
+			// A duplicate notification alone must not interrupt audio or reconnect.
+			c.HandleVoiceServerUpdate(serverEvent("shared"))
+			c.HandleVoiceServerUpdate(serverEvent("shared"))
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			if c.phase != voiceReady || created.Load() != 4 {
+				t.Fatal("duplicate reconnected")
+			}
+		})
 	}
 }
 

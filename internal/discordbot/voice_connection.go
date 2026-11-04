@@ -50,7 +50,6 @@ type voiceConnection struct {
 	state         *gateway.EventVoiceStateUpdate
 	server        *gateway.EventVoiceServerUpdate
 	lastToken     string
-	retiredTokens []string
 	statePending  bool
 	removed       bool
 	resuming      bool
@@ -139,10 +138,6 @@ func (c *voiceConnection) launchLocked() {
 		return
 	}
 	c.lastToken = state.Token
-	c.retiredTokens = append(c.retiredTokens, state.Token)
-	if len(c.retiredTokens) > 128 {
-		c.retiredTokens = c.retiredTokens[len(c.retiredTokens)-128:]
-	}
 	c.server = nil
 	c.statePending = false
 	c.discardLocked()
@@ -240,19 +235,24 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 		c.beginLocked(false, voiceRecovering)
 		return
 	}
-	if e.Token == c.lastToken || (c.server != nil && c.server.Token == e.Token) {
-		disposition = "duplicate_token"
+	if c.server != nil && c.server.Token == e.Token && c.server.Endpoint != nil && *c.server.Endpoint == *e.Endpoint {
+		disposition = "duplicate_pending_notification"
 		return
 	}
-	for _, token := range c.retiredTokens {
-		if token == e.Token {
-			disposition = "retired_token"
-			return
-		}
+	if !c.statePending && c.phase == voiceConnecting && e.Token == c.lastToken {
+		disposition = "duplicate_connecting_notification"
+		return
 	}
 	endpoint := *e.Endpoint
 	e.Endpoint = &endpoint
 	c.server = &e
+	// A fresh server notification may carry the same token across VC moves.
+	// If it precedes membership, retain it without disturbing the ready socket.
+	// Never reuse the consumed notification merely because membership changed.
+	if !c.statePending && e.Token == c.lastToken {
+		disposition = "awaiting_membership"
+		return
+	}
 	if c.phase == voiceReady || c.phase == voiceConnecting {
 		c.beginLocked(false, voiceWaiting)
 	}
