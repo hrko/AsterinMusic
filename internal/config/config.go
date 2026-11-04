@@ -1,6 +1,7 @@
 package config
 
 import (
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/source"
 	"errors"
 	"github.com/disgoorg/snowflake/v2"
@@ -18,6 +19,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	Logging                                               logging.Options
 	HistoryLimit                                          int
 	YouTubeDataEnabled                                    bool
 	YouTubeDataAPIKey                                     string
@@ -31,6 +33,7 @@ type Config struct {
 	DefaultVolume, QueueLimit                             int
 }
 type Document struct {
+	Logging logging.Options `koanf:"logging"`
 	History struct {
 		LimitPerVoice int `koanf:"limit_per_voice"`
 	} `koanf:"history"`
@@ -145,6 +148,9 @@ func parseID(s string) (snowflake.ID, error) {
 }
 func (d Document) resolve(base string) (Config, error) {
 	fail := func(message string) (Config, error) { return Config{}, errors.New(message) }
+	if err := d.Logging.Validate(); err != nil {
+		return Config{}, err
+	}
 	if d.Version != 1 {
 		return fail("unsupported or missing configuration version")
 	}
@@ -162,6 +168,7 @@ func (d Document) resolve(base string) (Config, error) {
 	}
 	c := Config{HistoryLimit: d.History.LimitPerVoice, StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
 	c.YouTubeMetadataLanguage = "ja"
+	c.Logging = d.Logging
 	c.YouTubeDataEnabled = d.Sources.YouTube.DataAPI.Enabled
 	c.YouTubeDataAPIKey = d.Sources.YouTube.DataAPI.APIKey
 	if c.YouTubeDataEnabled && (strings.TrimSpace(c.YouTubeDataAPIKey) == "" || strings.ContainsAny(c.YouTubeDataAPIKey, "\r\n\x00")) {
