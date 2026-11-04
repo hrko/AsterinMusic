@@ -5,8 +5,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +20,7 @@ import (
 )
 
 type session struct {
+	playbackLog                        *playbackLog
 	logger                             *slog.Logger
 	historySessionID                   string
 	playbackHistory                    *history.Record
@@ -282,6 +281,8 @@ func (s *session) loop(done chan struct{}) {
 		s.started = false
 		s.currentRevision = s.auto.revision
 		ctx, cancel := context.WithCancel(s.app.ctx)
+		playLog := newPlaybackLog(ctx, s.logger, rand.Text(), automatic)
+		s.playbackLog = playLog
 		s.trackCancel = cancel
 		s.position = 0
 		s.skipping = false
@@ -294,10 +295,13 @@ func (s *session) loop(done chan struct{}) {
 		err := play(ctx, conn, func(ctx context.Context, w io.Writer) error {
 			return s.app.source.BufferedStream(ctx, entry.Track.URL, w)
 		})
+		playLog.join()
 		cancel()
 		s.mu.Lock()
 		s.waitQueueLocked()
 		text := s.text
+		position := s.position
+		s.playbackLog = nil
 		if !s.skipping && !s.shuttingDown && s.app.ctx.Err() == nil && (s.recoveryHeld || errors.Is(err, errVoiceRecovery) || errors.Is(err, errVoiceRemoved)) {
 			s.suspendVoiceLocked()
 			s.current = nil
@@ -305,6 +309,7 @@ func (s *session) loop(done chan struct{}) {
 			s.trackCancel = nil
 			s.running = false
 			s.mu.Unlock()
+			playLog.finish(s.app.ctx, slog.LevelError, "voice_connection_failed", "hold_playback", position)
 			s.notifyFailure(text, &entry.Track, "音声接続を復旧できなかったため、再生を停止しました。曲とキューは保持しています。/playで再開できます。", true)
 			return
 		}
@@ -325,10 +330,10 @@ func (s *session) loop(done chan struct{}) {
 		if stopped {
 			s.running = false
 			s.mu.Unlock()
+			playLog.finish(s.app.ctx, slog.LevelInfo, "stopped", "stop", position)
 			return
 		}
 		if err != nil && !skipped {
-			slog.Warn("playback failed", "position", s.position, "error", s.app.safeError(err))
 			failures++
 		} else {
 			failures = 0
@@ -345,6 +350,7 @@ func (s *session) loop(done chan struct{}) {
 			if s.auto.enabled && s.auto.failures >= 3 {
 				s.auto.off()
 				s.mu.Unlock()
+				playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "disable_autoplay", position)
 				s.notifyFailure(text, &entry.Track, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。", true)
 				continue
 			}
@@ -356,10 +362,18 @@ func (s *session) loop(done chan struct{}) {
 			s.haltPlaybackLocked()
 			s.running = false
 			s.mu.Unlock()
+			playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "stop_retain_queue", position)
 			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため、再生を停止しました。\n残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		s.mu.Unlock()
+		if skipped {
+			playLog.finish(s.app.ctx, slog.LevelInfo, "skipped", "advance", position)
+		} else if err != nil {
+			playLog.finish(s.app.ctx, slog.LevelWarn, failureClass(err), "advance", position)
+		} else {
+			playLog.finish(s.app.ctx, slog.LevelInfo, "completed", "advance", position)
+		}
 		if err != nil && !skipped {
 			s.notifyFailure(text, &entry.Track, source.AuthMessage(err, "曲の取得または再生に失敗しました。")+"\n次の曲へ進みます。", false)
 		}
@@ -374,6 +388,12 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 		return errors.New("unmanaged voice connection")
 	}
 	next := time.Now()
+	s.mu.Lock()
+	logger := s.logger
+	if s.playbackLog != nil {
+		logger = s.playbackLog.logger
+	}
+	s.mu.Unlock()
 	err := audio.StreamOpusWithOptions(ctx, s.app.config.FFmpeg, produce, s.volume, func(packet []byte) error {
 		if wait := time.Until(next); !audio.StreamPaced && wait > 0 {
 			timer := time.NewTimer(wait)
@@ -397,7 +417,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			next = now.Add(20 * time.Millisecond)
 		}
 		return nil
-	}, audio.StreamOptions{Bitrate: s.channelBitrate, Logger: s.logger})
+	}, audio.StreamOptions{Bitrate: s.channelBitrate, Logger: logger})
 	cancel()
 	stopCtx, stop := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stop()
@@ -412,20 +432,8 @@ func (s *session) playbackStatus() runcontrol.Playback {
 	return runcontrol.Playback{Active: !s.stopped && (s.connecting || s.running || s.current != nil), Started: s.started, Sequence: s.playbackSequence}
 }
 
-var diagnosticURL = regexp.MustCompile(`https?://[^\s]+`)
 var errSuperseded = errors.New("automatic candidate superseded")
 var errDaveNotReady = errors.New("DAVE key exchange in progress")
-
-func (a *App) safeError(err error) string {
-	if err == nil {
-		return ""
-	}
-	s := err.Error()
-	if a.config.Token != "" {
-		s = strings.ReplaceAll(s, a.config.Token, "[token]")
-	}
-	return truncate(diagnosticURL.ReplaceAllString(s, "[URL]"), 1200)
-}
 
 func (s *session) stop() error {
 	s.mu.Lock()

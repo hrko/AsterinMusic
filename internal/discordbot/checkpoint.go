@@ -37,14 +37,13 @@ type recordedPlayback struct {
 	Automatic bool
 }
 
-func (s *session) recordStartedLocked() {
+func (s *session) recordStartedLocked() bool {
 	r := s.historyResume
 	s.historyResume = nil
 	if r != nil && r.Automatic == s.currentAuto && r.Entry.ID == s.current.ID &&
 		r.Entry.Track.URL == s.current.Track.URL && r.Entry.AddedAt.Equal(s.current.AddedAt) {
 		s.playbackHistory = r.History
-		s.enqueueHistoryLocked()
-		return
+		return s.enqueueHistoryLocked()
 	}
 	botID := s.app.config.ApplicationID
 	if s.app.client != nil {
@@ -52,16 +51,16 @@ func (s *session) recordStartedLocked() {
 	}
 	s.playbackHistory = &history.Record{OccurrenceID: rand.Text(), GuildID: s.guild.String(), VoiceID: s.channel.String(), SessionID: s.historySessionID,
 		BotID: botID.String(), StartedAt: time.Now(), Entry: *s.current, Automatic: s.currentAuto}
-	s.enqueueHistoryLocked()
+	queued := s.enqueueHistoryLocked()
 	s.auto.started(s.current.Track, s.currentAuto)
+	return queued
 }
 
-func (s *session) enqueueHistoryLocked() {
+func (s *session) enqueueHistoryLocked() bool {
 	if s.app.historyWriter != nil && s.playbackHistory != nil {
-		if !s.app.historyWriter.Enqueue(*s.playbackHistory) {
-			s.logOperationFailure("history.queue_full", errors.New("history queue unavailable"))
-		}
+		return s.app.historyWriter.Enqueue(*s.playbackHistory)
 	}
+	return true
 }
 
 // Called by the authenticated lifecycle endpoint before app cancellation.

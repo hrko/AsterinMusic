@@ -46,7 +46,10 @@ func (s *session) sendPacket(ctx context.Context, write func() error) error {
 		}
 		s.started = true
 		s.playbackSequence++
-		s.recordStartedLocked()
+		queued := s.recordStartedLocked()
+		if p := s.playbackLog; p != nil {
+			p.started <- playbackStart{channel: s.channel.String(), at: time.Now(), historyFailed: !queued}
+		}
 		s.prefetchLocked()
 	}
 	s.position += 20 * time.Millisecond

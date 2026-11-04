@@ -212,7 +212,7 @@ func (a *App) Register() error {
 	// Upsert only AsterinMusic's commands; do not delete unrelated registrations.
 	for _, cmd := range Commands() {
 		if _, err := a.client.Rest.CreateGuildCommand(a.config.ApplicationID, a.config.GuildID, cmd, rest.WithCtx(ctx)); err != nil {
-			return fmt.Errorf("could not register /%s: %s", cmd.CommandName(), a.safeError(err))
+			return fmt.Errorf("could not register /%s: %s", cmd.CommandName(), failureClass(err))
 		}
 	}
 	return nil
