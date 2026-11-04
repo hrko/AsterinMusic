@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: sqlite
+    schema: internal/history/schema.sql
+    queries: internal/history/queries.sql
+    gen:
+      go:
+        package: historydb
+        out: internal/history/historydb
+        emit_empty_slices: true

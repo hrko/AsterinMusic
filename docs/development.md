@@ -44,6 +44,7 @@
 | `mise run check` | 整形、通常構成と本番構成（`davego,opus`・SIMD・CGO無効）のvet・単体テスト、両構成のLinux/Windowsクロスビルド |
 | `mise run bot-cleanup` | 古い開発バイナリ・ログの削除候補を表示。最新3バイナリ・10ログと稼働中ファイルを保持し、`-- --apply`を付けた場合だけ削除。状態・設定ファイルは対象外 |
 | `mise run race-test` | 本番タグ・SIMDで並行処理の競合検出（CGO・Zig使用）。WindowsでThreadSanitizerが起動できない場合はLinuxで補完。確認範囲は[保守性改善の記録](maintenance-plan.md#対応状況と完了監査)を参照 |
+| `mise run sql-generate` | 履歴用SQLからGoコードを生成。SQLと生成結果を同時にコミットし、生成コードは手編集しない。`check`の`sqlc diff`で生成漏れを検出 |
 | `mise run audio-check` | FFmpeg変換、音量、ミュート、キャンセル |
 | `mise run opus-audio-check` | ライブ用gopus SIMD経路、音量反映時間、送信間隔、キャンセル（CGO無効） |
 | `mise run dave-check` | Pure Go DAVE組み込み・上流DAVEテスト（CGO無効） |

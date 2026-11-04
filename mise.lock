@@ -1141,7 +1141,6 @@ url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/8158039
 [[tools."github:bazelbuild/bazel"]]
 version = "5.3.2"
 backend = "github:bazelbuild/bazel"
-specifiers = ["5.3.2"]
 
 [tools."github:bazelbuild/bazel".options]
 asset_pattern = "bazel-5.3.2-linux-x86_64"
@@ -1150,6 +1149,31 @@ asset_pattern = "bazel-5.3.2-linux-x86_64"
 checksum = "sha256:973e213b1e9207ccdd3ea4730c0f92cbef769ec112ac2b84980583220d8db845"
 url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64"
 url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580360"
+
+[[tools."github:sqlc-dev/sqlc"]]
+version = "1.31.1"
+backend = "github:sqlc-dev/sqlc"
+specifiers = ["1.31.1"]
+
+[tools."github:sqlc-dev/sqlc".options]
+asset_pattern = "sqlc_1.31.1_windows_amd64.zip"
+
+[tools."github:sqlc-dev/sqlc"."platforms.windows-x64"]
+checksum = "sha256:352711fa7dcb05dcdfefca0ad71b2c9a74fd090f8d7fc609419de4cbc725429f"
+url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_windows_amd64.zip"
+url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402612157"
+
+[[tools."github:sqlc-dev/sqlc"]]
+version = "1.31.1"
+backend = "github:sqlc-dev/sqlc"
+
+[tools."github:sqlc-dev/sqlc".options]
+asset_pattern = "sqlc_1.31.1_linux_amd64.tar.gz"
+
+[tools."github:sqlc-dev/sqlc"."platforms.linux-x64"]
+checksum = "sha256:497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354"
+url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402611992"
 
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
@@ -1168,7 +1192,6 @@ provenance = "github-attestations"
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
 backend = "github:yt-dlp/yt-dlp"
-specifiers = ["latest"]
 
 [tools."github:yt-dlp/yt-dlp".options]
 asset_pattern = "yt-dlp_linux"

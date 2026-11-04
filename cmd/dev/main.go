@@ -118,6 +118,9 @@ func run() error {
 		if len(bytes.TrimSpace(out)) > 0 {
 			return fmt.Errorf("run mise run fmt:\n%s", out)
 		}
+		if err := command(nil, "sqlc", "diff"); err != nil {
+			return err
+		}
 		if err := command(nil, "go", "vet", "./..."); err != nil {
 			return err
 		}
