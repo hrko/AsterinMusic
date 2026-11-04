@@ -91,7 +91,7 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal(ctx.Err())
 	}
-	if err := g.Open(ctx, state); err != nil {
+	if err := g.Resume(ctx, state); err != nil {
 		t.Fatal(err)
 	}
 	if first, second := <-ops, <-ops; first != 0 || second != 7 {
@@ -127,6 +127,27 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	case err := <-closed:
 		t.Fatalf("local close notified controller: %v", err)
 	default:
+	}
+}
+
+func TestVoiceSequencePresenceAndWrap(t *testing.T) {
+	for _, tc := range []struct {
+		kind    int
+		payload []byte
+		want    int
+		present bool
+	}{
+		{websocket.TextMessage, []byte(`{"op":8,"d":{}}`), 0, false},
+		{websocket.TextMessage, []byte(`{"s":0}`), 0, true},
+		{websocket.TextMessage, []byte(`{"seq":0}`), 0, true},
+		{websocket.TextMessage, []byte(`{"s":65535}`), 65535, true},
+		{websocket.BinaryMessage, []byte{0, 0, 25}, 0, true},
+		{websocket.BinaryMessage, []byte{255, 255, 25}, 65535, true},
+	} {
+		got, present := voiceSequence(tc.kind, tc.payload)
+		if got != tc.want || present != tc.present {
+			t.Fatalf("sequence: %d/%v want %d/%v", got, present, tc.want, tc.present)
+		}
 	}
 }
 

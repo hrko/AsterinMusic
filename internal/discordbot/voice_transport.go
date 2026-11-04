@@ -41,7 +41,20 @@ func (t *discordVoiceTransport) Resume(ctx context.Context) error {
 	if t.invalid.Load() {
 		return context.Canceled
 	}
-	return t.conn.Gateway().Open(ctx, t.state)
+	if err := t.conn.Gateway().(*voiceSocket).Resume(ctx, t.state); err != nil {
+		return err
+	}
+	t.mu.Lock()
+	t.speaking = false // Re-announce speaking before sending on the resumed socket.
+	t.mu.Unlock()
+	for !t.Ready() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	return nil
 }
 func (t *discordVoiceTransport) Close() {
 	t.Invalidate()

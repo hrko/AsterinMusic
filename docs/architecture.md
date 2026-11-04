@@ -50,6 +50,8 @@ session.muは現在曲・接続先・自動再生・操作世代を保護する�
 
 音声WebSocketには`voice_socket.go`の実装を使う。disgo v0.19.6のGatewayはHeartbeat開始・終了に競合があり、Heartbeat異常時の内部再接続も接続管理の判断を迂回するため使用しない。プロトコルの型・デコードとUDPはdisgoを利用し、WebSocketの読取り・Heartbeat・送信は接続単位で終了できるようにする。Resumeでも旧接続の処理から新接続を閉じられない。DAVE通知は`voice_dave_events.go`で転送し、通信側のmutexで音声送信・資源解放と直列化する。
 
+通信層の新規接続とResumeは別のメソッドで指定する。シーケンス未受信は-1で表し、番号0や折り返しと区別する。Resume成功後はSpeakingを次の送信前に再通知し、DAVEの準備も確認する。新規接続では前のSSRC・シーケンス・接続成立状態を初期化する。
+
 接続管理のWriteAudioは切り替え中に同じOpusフレームを待機させる。有限の先読みバッファで生成側にも待ちを伝え、送信成功時だけ再生位置を進める。復旧失敗は曲の失敗と区別し、再生側のsuspendVoiceLockedで現在曲・自動再生設定・履歴の同一性を保持して停止する。手動曲はキューのcurrentをFinishせず、自動曲は再開用の参照を保持する。管理保存ではRecoveryHeldを記録し、停止状態のまま復元する。明示的な /play は現在曲を先頭から再開する。
 
 `haltPlaybackLocked`は曲の連続失敗・明示停止用で自動再生もOFFにし、`stopLocked`はVC接続も終了する。接続復旧失敗による停止とは分ける。移動後の権限・通知先・無人タイマーの更新は`voice_state.go`で行う。

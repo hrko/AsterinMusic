@@ -18,17 +18,18 @@ import (
 // reconnects itself: the connection controller owns those decisions. Every
 // reader and heartbeat belongs to a particular run, including across Resume.
 type voiceSocket struct {
-	mu      sync.Mutex
-	run     *voiceSocketRun
-	ssrc    uint32
-	seq     int
-	status  voice.Status
-	latency time.Duration
-	state   voice.State
-	dave    godave.Session
-	event   voice.EventHandlerFunc
-	closed  voice.CloseHandlerFunc
-	dialer  *websocket.Dialer
+	mu          sync.Mutex
+	run         *voiceSocketRun
+	ssrc        uint32
+	seq         int
+	status      voice.Status
+	latency     time.Duration
+	state       voice.State
+	established bool
+	dave        godave.Session
+	event       voice.EventHandlerFunc
+	closed      voice.CloseHandlerFunc
+	dialer      *websocket.Dialer
 }
 
 type voiceSocketRun struct {
@@ -39,6 +40,7 @@ type voiceSocketRun struct {
 	ready            chan error
 	readyOnce        sync.Once
 	heartbeatStarted bool // protected by voiceSocket.mu
+	resume           bool
 	awaiting         bool
 	nonce            int64
 	sent             time.Time
@@ -47,7 +49,7 @@ type voiceSocketRun struct {
 func (r *voiceSocketRun) complete(err error) { r.readyOnce.Do(func() { r.ready <- err }) }
 
 func newVoiceSocket(dave godave.Session, event voice.EventHandlerFunc, closed voice.CloseHandlerFunc, dialer *websocket.Dialer) *voiceSocket {
-	return &voiceSocket{dave: dave, event: event, closed: closed, dialer: dialer}
+	return &voiceSocket{dave: dave, event: event, closed: closed, dialer: dialer, seq: -1}
 }
 
 func (g *voiceSocket) SSRC() uint32           { g.mu.Lock(); defer g.mu.Unlock(); return g.ssrc }
@@ -55,13 +57,28 @@ func (g *voiceSocket) Status() voice.Status   { g.mu.Lock(); defer g.mu.Unlock()
 func (g *voiceSocket) Latency() time.Duration { g.mu.Lock(); defer g.mu.Unlock(); return g.latency }
 
 func (g *voiceSocket) Open(ctx context.Context, state voice.State) error {
+	return g.open(ctx, state, false)
+}
+
+func (g *voiceSocket) Resume(ctx context.Context, state voice.State) error {
+	return g.open(ctx, state, true)
+}
+
+func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) error {
 	g.mu.Lock()
 	if g.run != nil {
 		g.mu.Unlock()
 		return voice.ErrGatewayAlreadyConnected
 	}
+	if resume && !g.established {
+		g.mu.Unlock()
+		return errors.New("voice session cannot resume before establishment")
+	}
+	if !resume {
+		g.ssrc, g.seq, g.established = 0, -1, false
+	}
 	rctx, cancel := context.WithCancel(context.Background())
-	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1)}
+	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1), resume: resume}
 	g.run, g.state, g.status = r, state, voice.StatusConnecting
 	g.mu.Unlock()
 	// Cancellation of either Open or Close must also cancel an in-flight dial.
@@ -132,7 +149,7 @@ func (g *voiceSocket) CloseWithCode(code int, reason string) {
 	g.mu.Lock()
 	r := g.run
 	if code == websocket.CloseNormalClosure || code == websocket.CloseGoingAway {
-		g.ssrc, g.seq = 0, 0
+		g.ssrc, g.seq, g.established = 0, -1, false
 	}
 	g.mu.Unlock()
 	if r != nil {
@@ -238,8 +255,8 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			g.mu.Unlock()
 			return
 		}
-		if message.Seq > 0 {
-			g.seq = message.Seq
+		if seq, present := voiceSequence(kind, payload); present {
+			g.seq = seq
 		}
 		g.mu.Unlock()
 		switch message.Op {
@@ -261,7 +278,7 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			}
 			r.heartbeatStarted = true
 			state, seq := g.state, g.seq
-			resume := g.ssrc != 0 && seq != 0
+			resume := r.resume
 			g.mu.Unlock()
 			go g.heartbeat(r, interval)
 			if resume {
@@ -283,6 +300,7 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 				g.ssrc = d.SSRC
 			}
 			g.status = voice.StatusReady
+			g.established = true
 			g.mu.Unlock()
 			r.complete(nil)
 		case voice.OpcodeHeartbeatACK:
@@ -299,4 +317,29 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			g.event(g, message.Op, message.Seq, message.D)
 		}
 	}
+}
+
+// The dependency's int field loses the distinction between absent and zero.
+// Preserve zero after sequence wrap; binary messages always carry a sequence.
+func voiceSequence(kind int, payload []byte) (int, bool) {
+	if kind == websocket.BinaryMessage {
+		if len(payload) < 2 {
+			return 0, false
+		}
+		return int(payload[0])<<8 | int(payload[1]), true
+	}
+	var envelope struct {
+		S   *int `json:"s"`
+		Seq *int `json:"seq"`
+	}
+	if json.Unmarshal(payload, &envelope) != nil {
+		return 0, false
+	}
+	if envelope.Seq != nil {
+		return *envelope.Seq, true
+	}
+	if envelope.S != nil {
+		return *envelope.S, true
+	}
+	return 0, false
 }
