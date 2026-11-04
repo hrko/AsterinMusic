@@ -6,6 +6,24 @@ import "strings"
 func helpSample(variant string) embed {
 	e := embed{Color: 0x527DA8, Footer: map[string]string{"text": "使い方の表示サンプル · コマンド実行・カテゴリ切替はできません"}}
 	switch variant {
+	case "help-detail-heading":
+		e.Title = "詳細D：コマンド名を見出しに"
+		e.Description = "VCに参加して使います。YouTube・YouTube Music・ニコニコ動画に対応しています。\n\n" +
+			"**/play**\n曲の追加・キューの再開\n- `url` に動画URLを指定すると、曲をキューに追加\n- YouTube・YouTube MusicのプレイリストURLなら、まとめて追加\n- URLなしで実行すると、保持しているキューを再開\n\n" +
+			"**/playnext**\n自分の待機曲の先頭に追加\n- `url` に動画URLを指定\n- 他の人の順番は維持し、再生中の曲は中断しません\n\n" +
+			"**付属リストの取り込み**\nリスト付き動画URLでは、まずその曲だけを追加します。追加結果のボタンから、付属プレイリストやMixも取り込めます。"
+	case "help-detail-hybrid":
+		e.Title = "詳細E：コマンド名＋目的を見出しに"
+		e.Description = "VCに参加して使います。YouTube・YouTube Music・ニコニコ動画に対応しています。\n\n" +
+			"**/play — 曲の追加・再開**\n- **動画URLあり**：曲をキューに追加\n- **プレイリストURLあり**：まとめて追加（YouTube・YouTube Music）\n- **URLなし**：保持しているキューを再開\n\n" +
+			"**/playnext — 自分の待機曲の先頭に追加**\n`url` に動画URLを指定します。他の人の順番は維持し、再生中の曲は中断しません。\n\n" +
+			"**付属リストも追加したいとき**\nリスト付き動画URLでは、まずその曲だけを追加します。追加結果のボタンから、付属プレイリストやMixを取り込めます。"
+	case "help-detail-reference":
+		e.Title = "詳細F：入力例ごとの早見表"
+		e.Description = "VCに参加して使います。YouTube・YouTube Music・ニコニコ動画に対応しています。\n\n" +
+			"**/play**\n`/play url:動画URL`\n曲をキューに追加\n\n`/play url:プレイリストURL`\n複数曲をまとめて追加（YouTube・YouTube Music）\n\n`/play`\n保持しているキューを再開\n\n" +
+			"**/playnext**\n`/playnext url:動画URL`\n自分の待機曲の先頭に追加。他の人の順番は維持し、再生中の曲は中断しません。\n\n" +
+			"**リスト付き動画URLの場合**\nまず単曲を追加 → 追加結果のボタンから付属プレイリストやMixを取り込み"
 	case "help-detail-bullets":
 		e.Title = "詳細A：目的別の箇条書き"
 		e.Description = "YouTube・YouTube Music・ニコニコ動画のURLに対応しています。\n\n" +

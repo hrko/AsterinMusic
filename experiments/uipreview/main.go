@@ -192,6 +192,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "help-detail-heading" || v == "help-detail-hybrid" || v == "help-detail-reference" {
+			continue
+		}
 		if v == "help-detail-bullets" || v == "help-detail-commands" || v == "help-detail-prose" {
 			continue
 		}
