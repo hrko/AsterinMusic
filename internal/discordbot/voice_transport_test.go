@@ -52,6 +52,8 @@ func TestVoiceTransportHandshakeAndFreshResources(t *testing.T) {
 				return
 			}
 			switch message.Op {
+			case 7:
+				_ = ws.WriteJSON(map[string]any{"op": 9, "d": nil})
 			case 0:
 				_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 			case 1:
@@ -93,6 +95,19 @@ func TestVoiceTransportHandshakeAndFreshResources(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal("speaking not sent")
 		}
+		live := transport.(*discordVoiceTransport)
+		live.conn.Gateway().CloseWithCode(4015, "local test")
+		if err := live.Resume(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if err := live.Write(ctx, []byte{2}); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case <-speaking:
+		case <-ctx.Done():
+			t.Fatal("Resume did not reannounce speaking")
+		}
 		transport.Invalidate()
 		if err = transport.Write(ctx, []byte{2}); err == nil {
 			t.Fatal("retired transport admitted audio")
@@ -104,7 +119,7 @@ func TestVoiceTransportHandshakeAndFreshResources(t *testing.T) {
 		t.Fatal("reused per-channel resources")
 	}
 	for _, u := range udp {
-		if !u.closed.Load() || u.written.Load() != 1 {
+		if !u.closed.Load() || u.written.Load() != 2 {
 			t.Fatal("teardown or send failed")
 		}
 	}
