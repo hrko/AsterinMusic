@@ -198,7 +198,13 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		return
 	}
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	var diagnostic func()
+	defer func() {
+		c.mu.Unlock()
+		if diagnostic != nil {
+			diagnostic()
+		}
+	}()
 	if c.phase == voiceClosed {
 		return
 	}
@@ -215,7 +221,8 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	e.ChannelID = &id
 	moved := c.channel != id
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
-	logging.OrDiscard(c.logger).Debug("voice membership received", "event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil)
+	attrs := []any{"event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil}
+	diagnostic = func() { logging.OrDiscard(c.logger).Debug("voice membership received", attrs...) }
 	c.channel = id
 	c.state = &e
 	if c.removed || c.phase == voiceFailed {
@@ -232,11 +239,12 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 		return
 	}
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	// Only comparisons are logged; credentials and endpoint values stay private.
 	disposition := "accepted"
 	defer func() {
-		logging.OrDiscard(c.logger).Debug("voice server update received", "event", "voice.server.received", "channel_id", c.channel.String(), "generation", c.generation, "phase", string(c.phase), "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending)
+		attrs := []any{"event", "voice.server.received", "channel_id", c.channel.String(), "generation", c.generation, "phase", string(c.phase), "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending}
+		c.mu.Unlock()
+		logging.OrDiscard(c.logger).Debug("voice server update received", attrs...)
 	}()
 	if c.phase == voiceClosed || c.phase == voiceFailed {
 		disposition = "terminal_state"

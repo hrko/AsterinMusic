@@ -8,7 +8,44 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
+
+type blockingVoiceDiagnostic struct{ entered, release chan struct{} }
+
+func (w blockingVoiceDiagnostic) Write(p []byte) (int, error) {
+	if bytes.Contains(p, []byte("voice.membership.received")) {
+		close(w.entered)
+		<-w.release
+	}
+	return len(p), nil
+}
+
+func TestMembershipDiagnosticDoesNotHoldStateLock(t *testing.T) {
+	w := blockingVoiceDiagnostic{make(chan struct{}), make(chan struct{})}
+	logger, _ := logging.New(w, logging.Options{Format: "json", Level: "debug"})
+	c := newVoiceConnection(1, 2)
+	c.phase = voiceReady
+	c.channel = 3
+	e := stateEvent(3)
+	c.state = &e
+	c.logger = logging.Component(logger, "voice")
+	finished := make(chan struct{})
+	go func() { c.HandleVoiceStateUpdate(e); close(finished) }()
+	defer func() { close(w.release); <-finished }()
+	select {
+	case <-w.entered:
+	case <-time.After(time.Second):
+		t.Fatal("missing diagnostic")
+	}
+	read := make(chan struct{})
+	go func() { c.ChannelID(); close(read) }()
+	select {
+	case <-read:
+	case <-time.After(time.Second):
+		t.Fatal("diagnostic held state lock")
+	}
+}
 
 type logBuffer struct {
 	mu   sync.Mutex
