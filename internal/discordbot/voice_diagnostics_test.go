@@ -3,10 +3,31 @@ package discordbot
 import (
 	"asterinmusic/internal/logging"
 	"encoding/json"
+	"github.com/gorilla/websocket"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestTerminalVoiceFailureRetainsSafeCause(t *testing.T) {
+	var out logBuffer
+	l, _ := logging.New(&out, logging.Options{Format: "json"})
+	c := testVoiceController(t)
+	c.logger = l
+	c.phase = voiceReady
+	c.channel = 3
+	c.transportClosed(c.generation, &websocket.CloseError{Code: 4006, Text: "PRIVATE_TOKEN"}, false)
+	c.flushDiagnostics()
+	text := out.String()
+	for _, value := range []string{`"stage":"transport"`, `"reason":"websocket_closed"`, `"close_code":4006`, `"action":"hold_playback"`} {
+		if !strings.Contains(text, value) {
+			t.Fatalf("missing outcome attribute: %s", text)
+		}
+	}
+	if strings.Contains(text, "PRIVATE_TOKEN") {
+		t.Fatal("close text leaked")
+	}
+}
 
 func TestVoiceTransitionCaptureNeverWritesUnderLock(t *testing.T) {
 	w := blockingLogWriter{make(chan struct{}), make(chan struct{})}

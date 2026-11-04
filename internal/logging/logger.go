@@ -173,6 +173,12 @@ func safeAttr(a slog.Attr) slog.Attr {
 		return slog.Attr{}
 	}
 	a.Value = a.Value.Resolve()
+	switch a.Key {
+	case "bot_id", "guild_id", "channel_id", "operation_id", "playback_id":
+		if a.Value.Kind() == slog.KindString && (a.Value.String() == "" || a.Value.String() == "0") {
+			return slog.Attr{}
+		}
+	}
 	switch a.Value.Kind() {
 	case slog.KindString:
 		a.Value = slog.StringValue(clean(a.Value.String()))

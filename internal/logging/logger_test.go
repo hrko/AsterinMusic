@@ -48,6 +48,15 @@ func TestReservedAndDuplicateKeys(t *testing.T) {
 	}
 }
 
+func TestUnknownIdentifiersAreOmitted(t *testing.T) {
+	var out bytes.Buffer
+	l, _ := New(&out, Options{Format: "json"})
+	l.Info("record", "channel_id", "0", "bot_id", "", "guild_id", "3")
+	if strings.Contains(out.String(), "channel_id") || strings.Contains(out.String(), "bot_id") || !strings.Contains(out.String(), `"guild_id":"3"`) {
+		t.Fatalf("invalid identity fields: %s", out.String())
+	}
+}
+
 func TestComponentLevelsAndGroups(t *testing.T) {
 	var out bytes.Buffer
 	l, err := New(&out, Options{Format: "json", Components: map[string]string{"voice": "debug"}})

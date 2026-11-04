@@ -35,6 +35,9 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
+	failureStage       string
+	failureReason      string
+	failureCode        int
 	diagnosticMu       sync.Mutex
 	diagnostics        []voiceDiagnostic
 	diagnosticOverflow map[string]voiceDiagnostic
@@ -97,11 +100,26 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 			if c.removed {
 				c.recordDiagnosticLocked(slog.LevelInfo, "voice membership removed", "event", "voice.membership.removed", "generation", c.generation, "action", "hold_playback", "queue_retained", true)
 			} else {
-				c.recordDiagnosticLocked(slog.LevelError, "voice connection failed", "event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true)
+				attrs := []any{"event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true}
+				if c.failureStage != "" {
+					attrs = append(attrs, "stage", c.failureStage)
+				}
+				if c.failureReason != "" {
+					attrs = append(attrs, "reason", c.failureReason)
+				}
+				if c.failureCode != 0 {
+					attrs = append(attrs, "close_code", c.failureCode)
+				}
+				c.recordDiagnosticLocked(slog.LevelError, "voice connection failed", attrs...)
 			}
 		}
 	}
 	c.phase = phase
+	if phase == voiceReady {
+		c.failureStage = ""
+		c.failureReason = ""
+		c.failureCode = 0
+	}
 	if phase == voiceReady && !c.recoveryStart.IsZero() {
 		c.recordDiagnosticLocked(slog.LevelInfo, "voice recovery complete", "event", "voice.recovery.completed", "channel_id", c.channel.String(), "generation", c.generation, "duration_ms", c.now().Sub(c.recoveryStart).Milliseconds())
 		c.recoveryStart = time.Time{}
@@ -141,6 +159,8 @@ func (c *voiceConnection) armLocked() {
 // expireLocked is also called by tests with a deterministic clock.
 func (c *voiceConnection) expireLocked() {
 	if c.phase != voiceReady && c.phase != voiceClosed && c.phase != voiceFailed && !c.deadline.IsZero() && !c.now().Before(c.deadline) {
+		c.failureStage = "recovery"
+		c.failureReason = "timeout"
 		c.discardLocked()
 		c.signalLocked(voiceFailed)
 	}
@@ -179,6 +199,8 @@ func (c *voiceConnection) launchLocked() {
 			if errors.As(err, &detail) {
 				stage = detail.stage
 			}
+			c.failureStage = stage
+			c.failureReason = failureClass(err)
 			c.discardLocked()
 			c.signalLocked(voiceFailed)
 			c.mu.Unlock()
@@ -296,6 +318,9 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	if errors.As(err, &ws) {
 		code = ws.Code
 	}
+	c.failureStage = "transport"
+	c.failureReason = failureClass(err)
+	c.failureCode = code
 	c.recordDiagnosticLocked(slog.LevelDebug, "voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
 	if code == 4015 && c.active != nil {
 		if resumable, ok := c.active.(interface{ Resume(context.Context) error }); ok {
@@ -320,6 +345,8 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 					return
 				}
 				if err != nil {
+					c.failureStage = "resume"
+					c.failureReason = failureClass(err)
 					c.discardLocked()
 					c.signalLocked(voiceFailed)
 				} else {
@@ -367,6 +394,9 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 		return context.Canceled
 	}
 	c.removed = false
+	c.failureStage = ""
+	c.failureReason = ""
+	c.failureCode = 0
 	c.statePending = true
 	c.state = nil // explicit join must pair with its new membership notification
 	c.server = nil
