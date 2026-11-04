@@ -11,9 +11,18 @@ import (
 
 type testMoveGateway struct {
 	voice.Gateway
-	event   voice.EventHandlerFunc
-	onClose voice.CloseHandlerFunc
-	closed  bool
+	event    voice.EventHandlerFunc
+	onClose  voice.CloseHandlerFunc
+	closed   bool
+	speaking int
+}
+
+func (g *testMoveGateway) SSRC() uint32 { return 42 }
+func (g *testMoveGateway) Send(_ context.Context, op voice.Opcode, data voice.GatewayMessageData) error {
+	if op == voice.OpcodeSpeaking && data.(voice.GatewayMessageDataSpeaking).SSRC == 42 {
+		g.speaking++
+	}
+	return nil
 }
 
 func (g *testMoveGateway) Open(context.Context, voice.State) error { return nil }
@@ -44,7 +53,15 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 	if delivered != 1 || g.Status() != voice.StatusReady {
 		t.Fatal("initial open")
 	}
+	send := func() error { return nil }
+	if err := withReadyVoiceGateway(context.Background(), g, send); err != nil {
+		t.Fatal(err)
+	}
 	target = 4 // Move state can arrive before a new voice-server update.
+	// Audio may still be admitted on the old transport after the channel event.
+	if err := withReadyVoiceGateway(context.Background(), g, send); err != nil {
+		t.Fatal(err)
+	}
 	bases[0].onClose(bases[0], &websocket.CloseError{Code: 4014}, false)
 	if closed != 0 || g.Status() == voice.StatusReady {
 		t.Fatal("move disconnected VC or retained ready flag")
@@ -57,6 +74,14 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 		}
 		current := bases[len(bases)-1]
 		current.event(current, voice.OpcodeSessionDescription, 2, voice.GatewayMessageDataSessionDescription{})
+		for range 2 {
+			if err := withReadyVoiceGateway(context.Background(), g, send); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if current.speaking != 1 {
+			t.Fatal("new transport must announce speaking once", current.speaking)
+		}
 		// Old close/events may arrive after the new gateway has become ready.
 		bases[0].onClose(bases[0], errors.New("late close"), false)
 		bases[0].event(bases[0], voice.OpcodeSessionDescription, 3, voice.GatewayMessageDataSessionDescription{})

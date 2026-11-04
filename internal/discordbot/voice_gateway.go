@@ -3,6 +3,7 @@ package discordbot
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -51,6 +52,7 @@ type movingGateway struct {
 	closed         bool
 	described      bool
 	ready          bool
+	speaking       bool
 	factory        func(voice.EventHandlerFunc, voice.CloseHandlerFunc) voice.Gateway
 	event          voice.EventHandlerFunc
 	onClose        voice.CloseHandlerFunc
@@ -84,6 +86,7 @@ func (g *movingGateway) Open(ctx context.Context, state voice.State) error {
 	generation := g.generation
 	g.state = state
 	g.ready = false
+	g.speaking = false
 	base := g.factory(func(v voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 		g.handleEvent(generation, v, op, seq, data)
 	}, func(v voice.Gateway, err error, reconnect bool) { g.handleClose(generation, v, err, reconnect) })
@@ -109,10 +112,22 @@ func (g *movingGateway) Open(ctx context.Context, state voice.State) error {
 
 // Serialize audio with UDP reopening/key installation. The upstream UDP
 // implementation does not protect all encryption/header fields across Open.
-func withReadyVoiceGateway(gateway voice.Gateway, send func() error) error {
+func withReadyVoiceGateway(ctx context.Context, gateway voice.Gateway, send func() error) error {
 	if g, ok := gateway.(*movingGateway); ok {
 		g.events.Lock()
 		defer g.events.Unlock()
+		if g.Status() != voice.StatusReady {
+			return errDaveNotReady
+		}
+		// A move notification may arrive while the old gateway can still send.
+		// Announce speaking once per transport generation, not per channel event.
+		if !g.speaking {
+			if err := g.Send(ctx, voice.OpcodeSpeaking, voice.GatewayMessageDataSpeaking{SSRC: g.SSRC(), Speaking: voice.SpeakingFlagMicrophone}); err != nil {
+				return err
+			}
+			g.speaking = true
+			slog.Info("voice transport ready for audio")
+		}
 	}
 	if gateway.Status() != voice.StatusReady {
 		return errDaveNotReady

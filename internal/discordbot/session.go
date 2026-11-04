@@ -353,7 +353,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			return err
 		}
 		err := s.sendVoicePacket(ctx, func() error {
-			return withReadyVoiceGateway(conn.Gateway(), func() error {
+			return withReadyVoiceGateway(ctx, conn.Gateway(), func() error {
 				s.mu.Lock()
 				reset, channel := s.moveSpeaking, s.channel
 				s.mu.Unlock()
