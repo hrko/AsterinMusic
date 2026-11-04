@@ -33,6 +33,7 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 	target := snowflake.ID(3)
 	var bases []*testMoveGateway
 	delivered, rekeys, closed, udpClosed := 0, 0, 0, 0
+	resets := 0
 	g := &movingGateway{factory: func(e voice.EventHandlerFunc, c voice.CloseHandlerFunc) voice.Gateway {
 		b := &testMoveGateway{event: e, onClose: c}
 		bases = append(bases, b)
@@ -41,6 +42,15 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 		event:   func(voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) { delivered++ },
 		onClose: func(voice.Gateway, error, bool) { closed++ }, currentChannel: func() snowflake.ID { return target },
 		rekey: func(voice.GatewayMessageDataSessionDescription) error { rekeys++; return nil }, closeUDP: func() { udpClosed++ },
+		resetDave: func(state voice.State) {
+			if !bases[len(bases)-2].closed || udpClosed != resets+1 {
+				t.Fatal("reset before old transport closed")
+			}
+			if state.ChannelID == nil || *state.ChannelID != target {
+				t.Fatal("wrong DAVE destination")
+			}
+			resets++
+		},
 	}
 	state := voice.State{ChannelID: &target, SessionID: "session", Endpoint: "endpoint", Token: "test"}
 	if err := g.Open(context.Background(), state); err != nil {
@@ -89,7 +99,7 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 			t.Fatal("old generation damaged new connection")
 		}
 	}
-	if delivered != 1 || rekeys != 3 || udpClosed != 3 || !bases[0].closed {
+	if delivered != 1 || rekeys != 3 || udpClosed != 3 || resets != 3 || !bases[0].closed {
 		t.Fatal(delivered, rekeys, udpClosed)
 	}
 	target = 0 // An actual removal must still reach the original close handler.

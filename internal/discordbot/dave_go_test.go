@@ -59,3 +59,32 @@ func TestDaveRetrySameFrame(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDaveMoveCreatesFreshSession(t *testing.T) {
+	factory := func() *davesession.Session { return davesession.New("1234", daveCallbacks{}) }
+	s := &guardedDave{Session: factory(), factory: factory}
+	defer s.Close()
+	s.SetChannelID(42)
+	s.OnSelectProtocolAck(1)
+	old := s.Session
+	s.ResetVoiceTransport(43)
+	if s.Session == old {
+		t.Fatal("move reused prior MLS session")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := old.WaitShutdown(ctx); err != nil {
+		t.Fatal("old session was not closed", err)
+	}
+	s.OnSelectProtocolAck(1)
+	s.AssignSsrcToCodec(7, 1)
+	if _, err := s.Encrypt(7, []byte{0xf8, 0xff, 0xfe}, make([]byte, 100)); !errors.Is(err, errDaveNotReady) {
+		t.Fatal("fresh session must wait for new keys", err)
+	}
+	s.Close()
+	last := s.Session
+	s.ResetVoiceTransport(44)
+	if s.Session != last {
+		t.Fatal("closed session resurrected")
+	}
+}

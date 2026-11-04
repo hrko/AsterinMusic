@@ -17,7 +17,8 @@ const daveBackend = "dave-go v0.5.1"
 
 func daveOptions(a *App) []bot.ConfigOpt {
 	return []bot.ConfigOpt{bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, callbacks godave.Callbacks) godave.Session {
-		s := &guardedDave{Session: davesession.New(user, callbacks, davesession.WithLogger(logger))}
+		factory := func() *davesession.Session { return davesession.New(user, callbacks, davesession.WithLogger(logger)) }
+		s := &guardedDave{Session: factory(), factory: factory}
 		a.daveClosers.Store(callbacks, s)
 		return s
 	}))}
@@ -27,7 +28,49 @@ func daveOptions(a *App) []bot.ConfigOpt {
 // this gate an epoch reset between the check and Encrypt could emit plaintext.
 type guardedDave struct {
 	*davesession.Session
-	mu sync.Mutex
+	mu      sync.Mutex
+	factory func() *davesession.Session
+	closed  bool
+}
+
+// A new voice transport must not inherit membership, pending transitions or
+// recovery watchdogs from the previous channel.
+func (s *guardedDave) ResetVoiceTransport(channel godave.ChannelID) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
+	_ = s.Session.Close()
+	s.Session = s.factory()
+	s.Session.SetChannelID(channel)
+}
+
+func (s *guardedDave) Ready() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.Session.Ready() }
+func (s *guardedDave) MaxSupportedProtocolVersion() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Session.MaxSupportedProtocolVersion()
+}
+func (s *guardedDave) AssignSsrcToCodec(id uint32, codec godave.Codec) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Session.AssignSsrcToCodec(id, codec)
+}
+func (s *guardedDave) MaxEncryptedFrameSize(n int) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Session.MaxEncryptedFrameSize(n)
+}
+func (s *guardedDave) MaxDecryptedFrameSize(id godave.UserID, n int) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Session.MaxDecryptedFrameSize(id, n)
+}
+func (s *guardedDave) Decrypt(id godave.UserID, p, out []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Session.Decrypt(id, p, out)
 }
 
 func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
@@ -48,6 +91,7 @@ func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 func (s *guardedDave) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.closed = true
 	stats := s.Stats()
 	slog.Info("DAVE session closed", "backend", daveBackend, "commits", stats.CommitsProcessed, "welcomes", stats.WelcomesJoined, "encrypt_failures", stats.EncryptFailures, "passthrough_frames", stats.PassthroughFrames)
 	return s.Session.Close()

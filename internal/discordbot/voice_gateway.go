@@ -35,6 +35,11 @@ func (a *App) voiceMoveOptions() bot.ConfigOpt {
 					return conn.UDP().SetSecretKey(d.Mode, d.SecretKey)
 				},
 				closeUDP: func() { _ = conn.UDP().Close() },
+				resetDave: func(state voice.State) {
+					if reset, ok := dave.(interface{ ResetVoiceTransport(godave.ChannelID) }); ok && state.ChannelID != nil {
+						reset.ResetVoiceTransport(godave.ChannelID(*state.ChannelID))
+					}
+				},
 			}
 		}))
 		conn = voice.NewConn(guild, user, update, remove, opts...)
@@ -59,6 +64,7 @@ type movingGateway struct {
 	currentChannel func() snowflake.ID
 	rekey          func(voice.GatewayMessageDataSessionDescription) error
 	closeUDP       func()
+	resetDave      func(voice.State)
 }
 
 func (g *movingGateway) Open(ctx context.Context, state voice.State) error {
@@ -97,6 +103,9 @@ func (g *movingGateway) Open(ctx context.Context, state voice.State) error {
 		old.Close()
 		if g.closeUDP != nil {
 			g.closeUDP()
+		}
+		if g.resetDave != nil {
+			g.resetDave(state)
 		}
 	}
 	err := base.Open(ctx, state)
