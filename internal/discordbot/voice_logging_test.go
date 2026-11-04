@@ -73,6 +73,7 @@ func TestVoiceLogsFollowChannelAndExcludeCredentials(t *testing.T) {
 		c.HandleVoiceStateUpdate(e)
 		c.HandleVoiceServerUpdate(serverEvent("PRIVATE_TOKEN"))
 		waitVoice(t, c)
+		c.flushDiagnostics()
 	}
 	text := out.String()
 	if strings.Contains(text, "PRIVATE_") {

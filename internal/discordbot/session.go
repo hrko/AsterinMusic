@@ -509,6 +509,12 @@ func (s *session) skip() error {
 
 func (s *session) tick() {
 	s.mu.Lock()
+	connection, _ := s.conn.(*voiceConnection)
+	s.mu.Unlock()
+	if connection != nil {
+		defer connection.flushDiagnostics()
+	}
+	s.mu.Lock()
 	if s.conn == nil {
 		s.mu.Unlock()
 		return

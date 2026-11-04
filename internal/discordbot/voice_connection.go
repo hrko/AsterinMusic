@@ -35,29 +35,32 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
-	logger        *slog.Logger
-	mu            sync.Mutex
-	guild, user   snowflake.ID
-	channel       snowflake.ID
-	phase         voicePhase
-	generation    uint64
-	deadline      time.Time
-	recoveryStart time.Time
-	now           func() time.Time
-	changed       chan struct{}
-	cancel        context.CancelFunc
-	timer         *time.Timer
-	sendMu        sync.Mutex
-	active        voiceTransport
-	state         *gateway.EventVoiceStateUpdate
-	server        *gateway.EventVoiceServerUpdate
-	lastToken     string
-	statePending  bool
-	removed       bool
-	resuming      bool
-	update        voice.StateUpdateFunc
-	remove        func()
-	factory       func(context.Context, voice.State, func(error, bool)) (voiceTransport, error)
+	diagnosticMu       sync.Mutex
+	diagnostics        []voiceDiagnostic
+	diagnosticOverflow map[string]voiceDiagnostic
+	logger             *slog.Logger
+	mu                 sync.Mutex
+	guild, user        snowflake.ID
+	channel            snowflake.ID
+	phase              voicePhase
+	generation         uint64
+	deadline           time.Time
+	recoveryStart      time.Time
+	now                func() time.Time
+	changed            chan struct{}
+	cancel             context.CancelFunc
+	timer              *time.Timer
+	sendMu             sync.Mutex
+	active             voiceTransport
+	state              *gateway.EventVoiceStateUpdate
+	server             *gateway.EventVoiceServerUpdate
+	lastToken          string
+	statePending       bool
+	removed            bool
+	resuming           bool
+	update             voice.StateUpdateFunc
+	remove             func()
+	factory            func(context.Context, voice.State, func(error, bool)) (voiceTransport, error)
 }
 
 type voiceTransport interface {
@@ -86,21 +89,21 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 
 func (c *voiceConnection) signalLocked(phase voicePhase) {
 	if c.phase != phase {
-		logging.OrDiscard(c.logger).Debug("voice state", "event", "voice.state.changed", "channel_id", c.channel.String(), "generation", c.generation, "from", string(c.phase), "to", string(phase))
+		c.recordDiagnosticLocked(slog.LevelDebug, "voice state", "event", "voice.state.changed", "channel_id", c.channel.String(), "generation", c.generation, "from", string(c.phase), "to", string(phase))
 		if phase == voiceReady {
-			logging.OrDiscard(c.logger).Info("voice connection ready", "event", "voice.connection.ready", "channel_id", c.channel.String(), "generation", c.generation)
+			c.recordDiagnosticLocked(slog.LevelInfo, "voice connection ready", "event", "voice.connection.ready", "channel_id", c.channel.String(), "generation", c.generation)
 		}
 		if phase == voiceFailed {
 			if c.removed {
-				logging.OrDiscard(c.logger).Info("voice membership removed", "event", "voice.membership.removed", "generation", c.generation, "action", "hold_playback", "queue_retained", true)
+				c.recordDiagnosticLocked(slog.LevelInfo, "voice membership removed", "event", "voice.membership.removed", "generation", c.generation, "action", "hold_playback", "queue_retained", true)
 			} else {
-				logging.OrDiscard(c.logger).Error("voice connection failed", "event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true)
+				c.recordDiagnosticLocked(slog.LevelError, "voice connection failed", "event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true)
 			}
 		}
 	}
 	c.phase = phase
 	if phase == voiceReady && !c.recoveryStart.IsZero() {
-		logging.OrDiscard(c.logger).Info("voice recovery complete", "event", "voice.recovery.completed", "channel_id", c.channel.String(), "generation", c.generation, "duration_ms", c.now().Sub(c.recoveryStart).Milliseconds())
+		c.recordDiagnosticLocked(slog.LevelInfo, "voice recovery complete", "event", "voice.recovery.completed", "channel_id", c.channel.String(), "generation", c.generation, "duration_ms", c.now().Sub(c.recoveryStart).Milliseconds())
 		c.recoveryStart = time.Time{}
 	}
 	close(c.changed)
@@ -132,7 +135,7 @@ func (c *voiceConnection) armLocked() {
 	if c.timer != nil {
 		c.timer.Stop()
 	}
-	c.timer = time.AfterFunc(max(0, c.deadline.Sub(c.now())), func() { c.mu.Lock(); defer c.mu.Unlock(); c.expireLocked() })
+	c.timer = time.AfterFunc(max(0, c.deadline.Sub(c.now())), func() { c.mu.Lock(); c.expireLocked(); c.mu.Unlock(); c.flushDiagnostics() })
 }
 
 // expireLocked is also called by tests with a deterministic clock.
@@ -159,6 +162,7 @@ func (c *voiceConnection) launchLocked() {
 	c.cancel = cancel
 	c.signalLocked(voiceConnecting)
 	go func() {
+		defer c.flushDiagnostics()
 		t, err := c.factory(ctx, state, func(err error, reconnect bool) { c.transportClosed(generation, err, reconnect) })
 		c.mu.Lock()
 		c.expireLocked()
@@ -194,6 +198,7 @@ func (c *voiceConnection) launchLocked() {
 	}()
 }
 func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate) {
+	defer c.flushDiagnostics()
 	if e.GuildID != c.guild || e.UserID != c.user {
 		return
 	}
@@ -235,6 +240,7 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	c.launchLocked()
 }
 func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpdate) {
+	defer c.flushDiagnostics()
 	if e.GuildID != c.guild {
 		return
 	}
@@ -290,7 +296,7 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	if errors.As(err, &ws) {
 		code = ws.Code
 	}
-	logging.OrDiscard(c.logger).Debug("voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
+	c.recordDiagnosticLocked(slog.LevelDebug, "voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
 	if code == 4015 && c.active != nil {
 		if resumable, ok := c.active.(interface{ Resume(context.Context) error }); ok {
 			if c.resuming {
@@ -305,6 +311,7 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 			c.signalLocked(voiceRecovering)
 			c.armLocked()
 			go func() {
+				defer c.flushDiagnostics()
 				err := resumable.Resume(ctx)
 				c.mu.Lock()
 				defer c.mu.Unlock()
@@ -506,6 +513,7 @@ func (c *voiceConnection) Failed() bool {
 	return c.phase == voiceFailed
 }
 func (c *voiceConnection) Close(ctx context.Context) {
+	defer c.flushDiagnostics()
 	c.mu.Lock()
 	if c.phase == voiceClosed {
 		c.mu.Unlock()
