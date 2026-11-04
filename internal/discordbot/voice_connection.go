@@ -207,6 +207,7 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	e.ChannelID = &id
 	moved := c.channel != id
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
+	slog.Info("voice membership received", "guild", c.guild, "channel", id, "generation", c.generation, "phase", c.phase, "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil)
 	c.channel = id
 	c.state = &e
 	if c.removed || c.phase == voiceFailed {
@@ -224,19 +225,28 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	// Only comparisons are logged; credentials and endpoint values stay private.
+	disposition := "accepted"
+	defer func() {
+		slog.Info("voice server update received", "guild", c.guild, "channel", c.channel, "generation", c.generation, "phase", c.phase, "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending)
+	}()
 	if c.phase == voiceClosed || c.phase == voiceFailed {
+		disposition = "terminal_state"
 		return
 	}
 	if e.Endpoint == nil {
+		disposition = "endpoint_unavailable"
 		c.server = nil
 		c.beginLocked(false, voiceRecovering)
 		return
 	}
 	if e.Token == c.lastToken || (c.server != nil && c.server.Token == e.Token) {
+		disposition = "duplicate_token"
 		return
 	}
 	for _, token := range c.retiredTokens {
 		if token == e.Token {
+			disposition = "retired_token"
 			return
 		}
 	}
