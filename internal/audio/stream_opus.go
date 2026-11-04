@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/process"
 )
 
@@ -23,15 +24,12 @@ const StreamPaced = true
 // StreamOpus applies gain only when a frame is due. The encoder retains state
 // for the track; there is no queue of gain-adjusted PCM or encoded packets.
 // The sink must honor cancellation and consume the packet before returning.
-func StreamOpus(parent context.Context, ffmpeg string, produce Producer, volume *Volume, sink func([]byte) error, bitrate ...func() int) error {
+func StreamOpusWithOptions(parent context.Context, ffmpeg string, produce Producer, volume *Volume, sink func([]byte) error, options StreamOptions) error {
 	encoder, err := gopus.NewEncoder(gopus.EncoderConfig{SampleRate: 48000, Channels: 2, Application: gopus.ApplicationAudio})
 	if err != nil {
 		return fmt.Errorf("opus create: %w", err)
 	}
-	target := bitrateControl{}
-	if len(bitrate) > 0 {
-		target.read = bitrate[0]
-	}
+	target := bitrateControl{read: options.Bitrate}
 	for _, err := range []error{target.apply(encoder.SetBitrate), encoder.SetComplexity(9), encoder.SetBitrateMode(gopus.BitrateModeCVBR)} {
 		if err != nil {
 			return fmt.Errorf("opus configure: %w", err)
@@ -86,7 +84,7 @@ func StreamOpus(parent context.Context, ffmpeg string, produce Producer, volume 
 			return nil, fmt.Errorf("opus encode: %w", err)
 		}
 		return packet[:n], nil
-	}, sink)
+	}, sink, options.Logger)
 	if err != nil {
 		cancel()
 	}
@@ -101,7 +99,7 @@ func StreamOpus(parent context.Context, ffmpeg string, produce Producer, volume 
 	return errors.Join(err, stageErr)
 }
 
-func encodeFrames(ctx context.Context, input io.Reader, volume *Volume, tail int, encode func([]float32) ([]byte, error), sink func([]byte) error) error {
+func encodeFrames(ctx context.Context, input io.Reader, volume *Volume, tail int, encode func([]float32) ([]byte, error), sink func([]byte) error, loggers ...*slog.Logger) error {
 	buffer := make([]byte, 960*2*4)
 	samples := make([]float32, 960*2)
 	next := time.Now()
@@ -109,7 +107,13 @@ func encodeFrames(ctx context.Context, input io.Reader, volume *Volume, tail int
 	frames := 0
 	late := 0
 	var maxLate time.Duration
-	defer func() { slog.Info("audio pacing", "frames", frames, "late_frames", late, "max_lateness", maxLate) }()
+	var logger *slog.Logger
+	if len(loggers) > 0 {
+		logger = loggers[0]
+	}
+	defer func() {
+		logging.OrDiscard(logger).Log(ctx, pacingLevel(frames, late), "audio pacing", "event", "playback.pacing", "frames", frames, "late_frames", late, "max_lateness_ms", maxLate.Milliseconds())
+	}()
 	for {
 		clear(samples)
 		n := 0
@@ -175,4 +179,13 @@ func encodeFrames(ctx context.Context, input io.Reader, volume *Volume, tail int
 			next = time.Now().Add(20 * time.Millisecond)
 		}
 	}
+}
+
+// At least one second's worth of late frames and five percent of the stream
+// are needed for a quality warning. Isolated connection holds stay diagnostic.
+func pacingLevel(frames, late int) slog.Level {
+	if late >= 50 && frames > 0 && float64(late)/float64(frames) >= 0.05 {
+		return slog.LevelWarn
+	}
+	return slog.LevelDebug
 }

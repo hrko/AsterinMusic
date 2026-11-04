@@ -12,7 +12,7 @@ const StreamPaced = false
 
 // StreamOpus keeps subprocess backpressure in native pipes. A Go stdout-copy
 // goroutine can otherwise hit exec.WaitDelay during real-time packet pacing.
-func StreamOpus(ctx context.Context, ffmpeg string, produce Producer, volume *Volume, sink func([]byte) error, bitrate ...func() int) error {
+func StreamOpusWithOptions(ctx context.Context, ffmpeg string, produce Producer, volume *Volume, sink func([]byte) error, options StreamOptions) error {
 	// Diagnostic FFmpeg path has no live bitrate control. Live bots use opus.
 	parent := ctx
 	ctx, cancel := context.WithCancel(ctx)

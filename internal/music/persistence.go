@@ -1,6 +1,7 @@
 package music
 
 import (
+	"asterinmusic/internal/logging"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -102,6 +103,14 @@ func (q *Queue) PersistenceError() error {
 	return q.lastSaveErr
 }
 
+// SetLogger sets the queue's owner-scoped logger. Queue mutation and logging
+// configuration are serialized; no process-global logger is used.
+func (q *Queue) SetLogger(logger *slog.Logger) {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
+	q.logger = logging.Component(logger, "state")
+}
+
 func (q *Queue) persistLocked() {
 	if q.statePath == "" {
 		return
@@ -117,10 +126,22 @@ func (q *Queue) persistLocked() {
 		err = write(q.statePath, b)
 		q.mu.Lock()
 	}
+	previous := q.lastSaveErr
 	q.lastSaveErr = err
-	if q.lastSaveErr != nil {
-		slog.Error("queue checkpoint failed; restart may lose recent changes", "error", q.lastSaveErr)
+	logger := logging.OrDiscard(q.logger)
+	q.mu.Unlock()
+	if err != nil {
+		reason := "storage"
+		if errors.Is(err, os.ErrPermission) {
+			reason = "permission"
+		} else if errors.Is(err, os.ErrNotExist) {
+			reason = "not_found"
+		}
+		logger.Error("queue checkpoint failed", "event", "state.queue.save_failed", "reason", reason, "action", "retain_memory", "queue_retained", true)
+	} else if previous != nil {
+		logger.Info("queue persistence recovered", "event", "state.queue.save_recovered")
 	}
+	q.mu.Lock()
 }
 
 func writeQueueState(path string, b []byte) error {

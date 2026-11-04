@@ -3,6 +3,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"bytes"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/voice"
@@ -17,8 +18,11 @@ const daveBackend = "dave-go v0.5.1"
 
 func daveOptions(a *App) []bot.ConfigOpt {
 	return []bot.ConfigOpt{bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, callbacks godave.Callbacks) godave.Session {
-		factory := func() *davesession.Session { return davesession.New(user, callbacks, davesession.WithLogger(logger)) }
-		s := &guardedDave{Session: factory()}
+		ownLogger := logging.Component(a.logger, "dave")
+		factory := func() *davesession.Session {
+			return davesession.New(user, callbacks, davesession.WithLogger(logging.Dependency(ownLogger, "dave")))
+		}
+		s := &guardedDave{Session: factory(), logger: ownLogger}
 		a.daveClosers.Store(callbacks, s)
 		return s
 	}))}
@@ -27,6 +31,7 @@ func daveOptions(a *App) []bot.ConfigOpt {
 // Serialize protocol mutations with the readiness check and Encrypt. Without
 // this gate an epoch reset between the check and Encrypt could emit plaintext.
 type guardedDave struct {
+	logger *slog.Logger
 	*davesession.Session
 	mu sync.Mutex
 
@@ -81,11 +86,12 @@ func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 }
 func (s *guardedDave) Close() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.closed = true
 	stats := s.Stats()
-	slog.Info("DAVE session closed", "backend", daveBackend, "commits", stats.CommitsProcessed, "welcomes", stats.WelcomesJoined, "encrypt_failures", stats.EncryptFailures, "passthrough_frames", stats.PassthroughFrames)
-	return s.Session.Close()
+	err := s.Session.Close()
+	s.mu.Unlock()
+	logging.OrDiscard(s.logger).Debug("DAVE session closed", "event", "dave.session.closed", "backend", daveBackend, "commits", stats.CommitsProcessed, "welcomes", stats.WelcomesJoined, "encrypt_failures", stats.EncryptFailures, "passthrough_frames", stats.PassthroughFrames)
+	return err
 }
 func (s *guardedDave) SetChannelID(id godave.ChannelID) {
 	s.mu.Lock()

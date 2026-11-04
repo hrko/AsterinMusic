@@ -374,7 +374,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 		return errors.New("unmanaged voice connection")
 	}
 	next := time.Now()
-	err := audio.StreamOpus(ctx, s.app.config.FFmpeg, produce, s.volume, func(packet []byte) error {
+	err := audio.StreamOpusWithOptions(ctx, s.app.config.FFmpeg, produce, s.volume, func(packet []byte) error {
 		if wait := time.Until(next); !audio.StreamPaced && wait > 0 {
 			timer := time.NewTimer(wait)
 			select {
@@ -397,7 +397,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			next = now.Add(20 * time.Millisecond)
 		}
 		return nil
-	}, s.channelBitrate)
+	}, audio.StreamOptions{Bitrate: s.channelBitrate, Logger: s.logger})
 	cancel()
 	stopCtx, stop := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stop()

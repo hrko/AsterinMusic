@@ -4,6 +4,7 @@ package music
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -39,6 +40,7 @@ type Entry struct {
 // Queue is a concurrent-safe, per-guild round-robin queue. The active user
 // rejoins at the tail only when Finish is called (including stop/skip/failure).
 type Queue struct {
+	logger      *slog.Logger
 	mutationMu  sync.Mutex // Mutations and their durable writes are ordered.
 	mu          sync.Mutex
 	limit       int

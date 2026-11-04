@@ -249,6 +249,7 @@ func (a *App) Serve() error {
 	}
 	s := a.getSession(a.config.GuildID)
 	s.queue = queue // Before the Gateway can dispatch commands.
+	queue.SetLogger(s.logger)
 	checkpointPath := filepath.Join(stateDir, a.config.ApplicationID.String()+"-"+a.config.GuildID.String()+"-playback.json")
 	restored, err := readPlaybackCheckpoint(checkpointPath, s.guild)
 	if err != nil {
