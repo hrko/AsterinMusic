@@ -5,6 +5,7 @@ import "github.com/disgoorg/disgo/discord"
 func Commands() []discord.ApplicationCommandCreate {
 	zero, hundred, one, fifty := 0, 100, 1, 50
 	return []discord.ApplicationCommandCreate{
+		discord.SlashCommandCreate{Name: "help", Description: "使い方ガイドとコマンドの詳細を表示", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionString{Name: "page", Description: "直接開くガイド・コマンド詳細（候補から選択）", Autocomplete: true}}},
 		discord.SlashCommandCreate{Name: "history", Description: "参加中のVCの再生履歴を表示・再追加"},
 		discord.SlashCommandCreate{Name: "playnext", Description: "自分の次の番に再生する曲を追加", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionString{Name: "url", Description: "単曲URL（付属リストはボタンで追加）", Required: true}}},
 		discord.SlashCommandCreate{Name: "autoplay", Description: "手動キューが空のとき関連曲を自動再生", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionSubCommand{Name: "on", Description: "自動再生を有効化"}, discord.ApplicationCommandOptionSubCommand{Name: "off", Description: "自動補充を停止（現在の曲は継続）"}, discord.ApplicationCommandOptionSubCommand{Name: "status", Description: "自動再生の状態と起点を表示"}}},

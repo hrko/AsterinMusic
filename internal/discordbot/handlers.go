@@ -22,6 +22,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		return
 	}
 	defer a.observeOperation(e.ID(), "command")()
+	if e.SlashCommandInteractionData().CommandName() == "help" {
+		a.helpCommand(e)
+		return
+	}
 	s := a.getSession(*e.GuildID())
 	data := e.SlashCommandInteractionData()
 	user := e.User()
@@ -223,6 +227,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 
 func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	defer a.observeOperation(e.ID(), "component")()
+	if strings.HasPrefix(e.Data.CustomID(), "help:") {
+		a.helpComponent(e)
+		return
+	}
 	if strings.HasPrefix(e.Data.CustomID(), "history:") {
 		a.historyComponent(e)
 		return

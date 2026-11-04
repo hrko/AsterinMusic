@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"asterinmusic/internal/config"
+	"asterinmusic/internal/helpui"
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
@@ -30,6 +32,8 @@ import (
 )
 
 type App struct {
+	helpCatalog      *helpui.Catalog
+	helpEpoch        string
 	logger           *slog.Logger
 	historyViews     map[string]*historyView
 	historyStore     *history.Store
@@ -65,6 +69,12 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
 	a.logger = logging.Component(logger, "app")
+	a.helpEpoch = rand.Text()
+	var helpErr error
+	a.helpCatalog, helpErr = helpui.New(Commands(), nil)
+	if helpErr != nil {
+		return nil, helpErr
+	}
 	if c.YouTubeMetadataLanguage != "" {
 		a.source.MetadataLanguage = c.YouTubeMetadataLanguage
 	}
@@ -86,6 +96,7 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 		bot.WithEventListenerFunc(func(e *events.Resumed) { a.presenceRevision.Add(1) }),
 		bot.WithEventListenerFunc(a.onCommand), bot.WithEventListenerFunc(a.onComponent),
 		bot.WithEventListenerFunc(a.onHistoryModal),
+		bot.WithEventListenerFunc(a.onHelpAutocomplete),
 		bot.WithEventListenerFunc(a.onVoiceState),
 	}
 	opts = append(opts, daveOptions(a)...)
@@ -296,6 +307,7 @@ func (a *App) Serve() error {
 	if err := a.Check(); err != nil {
 		return err
 	}
+	a.loadHelpLinks()
 	if err := a.connect(); err != nil {
 		return err
 	}
