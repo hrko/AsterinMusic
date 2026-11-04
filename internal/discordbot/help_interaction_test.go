@@ -71,3 +71,37 @@ func TestHelpComponentUpdatesSameMessageAndRejectsOtherUser(t *testing.T) {
 		}
 	}
 }
+
+func TestHelpAutocompleteUsesSharedPagesWithoutPlayback(t *testing.T) {
+	c, err := helpui.New(Commands(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &App{ctx: t.Context(), helpCatalog: c}
+	a.config.GuildID = 2
+	for _, query := range []string{"", "再生", "play", "missing-page-xyz"} {
+		raw := fmt.Sprintf(`{"id":"10","application_id":"1","guild_id":"2","type":4,"user":{"id":"3","username":"test"},"data":{"id":"4","name":"help","type":1,"options":[{"name":"page","type":3,"value":%q,"focused":true}]}}`, query)
+		var interaction discord.AutocompleteInteraction
+		if err := json.Unmarshal([]byte(raw), &interaction); err != nil {
+			t.Fatal(err)
+		}
+		calls := 0
+		a.onHelpAutocomplete(&events.AutocompleteInteractionCreate{AutocompleteInteraction: interaction, Respond: func(kind discord.InteractionResponseType, data discord.InteractionResponseData, _ ...rest.RequestOpt) error {
+			calls++
+			result, ok := data.(discord.AutocompleteResult)
+			if !ok || kind != discord.InteractionResponseTypeAutocompleteResult || len(result.Choices) != len(c.Search(query)) {
+				t.Fatal("autocomplete response differs from catalog")
+			}
+			for _, choice := range result.Choices {
+				value := choice.(discord.AutocompleteChoiceString).Value
+				if _, ok := c.Find(value); !ok {
+					t.Fatal("unreachable autocomplete page")
+				}
+			}
+			return nil
+		}})
+		if calls != 1 || a.sessions != nil {
+			t.Fatal("autocomplete accessed playback")
+		}
+	}
+}
