@@ -11,8 +11,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/disgoorg/disgo/rest"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
 )
 
@@ -120,6 +122,38 @@ func (a *App) logOperationFailure(operation string, err error) {
 		logger = logger.With("guild_id", a.config.GuildID.String())
 	}
 	logFailure(ctx, logger, operation, err)
+}
+
+func (a *App) operationLogger(id snowflake.ID) *slog.Logger {
+	l := logging.Component(a.logger, "interaction")
+	if a.config.GuildID != 0 {
+		l = l.With("guild_id", a.config.GuildID.String())
+	}
+	if id != 0 {
+		l = l.With("operation_id", id.String())
+	}
+	return l
+}
+
+func (a *App) observeOperation(id snowflake.ID, kind string) func() {
+	l := a.operationLogger(id)
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	start := time.Now()
+	l.DebugContext(ctx, "interaction received", "event", "interaction.received", "kind", kind)
+	return func() {
+		l.DebugContext(ctx, "interaction handler returned", "event", "interaction.processed", "kind", kind, "duration_ms", time.Since(start).Milliseconds())
+	}
+}
+
+func (a *App) logInteractionFailure(id snowflake.ID, operation string, err error) {
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	logFailure(ctx, a.operationLogger(id), operation, err)
 }
 
 func logFailure(ctx context.Context, logger *slog.Logger, operation string, err error) {

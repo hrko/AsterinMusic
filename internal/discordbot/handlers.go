@@ -21,6 +21,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		return
 	}
+	defer a.observeOperation(e.ID(), "command")()
 	s := a.getSession(*e.GuildID())
 	data := e.SlashCommandInteractionData()
 	user := e.User()
@@ -31,11 +32,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 	}
 	if problem != "" {
-		a.logOperationFailure("interaction.reject_command", e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logInteractionFailure(e.ID(), "interaction.reject_command", e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 		return
 	}
 	if err := e.DeferCreateMessage(privateQuery(data)); err != nil {
-		a.logOperationFailure("interaction.defer_command", err)
+		a.logInteractionFailure(e.ID(), "interaction.defer_command", err)
 		return
 	}
 	s.bindNotificationChannel(user.ID, e.Channel().ID())
@@ -221,6 +222,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 }
 
 func (a *App) onComponent(e *events.ComponentInteractionCreate) {
+	defer a.observeOperation(e.ID(), "component")()
 	if strings.HasPrefix(e.Data.CustomID(), "history:") {
 		a.historyComponent(e)
 		return
@@ -234,7 +236,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	fail := func(text string) {
-		a.logOperationFailure("interaction.reject_import", e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logInteractionFailure(e.ID(), "interaction.reject_import", e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 	}
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		fail("このサーバーでは操作できません。")
@@ -251,7 +253,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err := e.DeferUpdateMessage(); err != nil {
-		a.logOperationFailure("interaction.defer_import", err)
+		a.logInteractionFailure(e.ID(), "interaction.defer_import", err)
 		a.offers.finish(id, false)
 		return
 	}

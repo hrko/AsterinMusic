@@ -270,7 +270,7 @@ func (a *App) editQueue(token string, s *session, owner snowflake.ID, page int, 
 func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 	parts := strings.Split(e.Data.CustomID(), ":")
 	fail := func() {
-		a.logOperationFailure("interaction.reject_queue", e.CreateMessage(discord.MessageCreate{Content: "この操作は利用できません。/queueを実行し直してください。", Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logInteractionFailure(e.ID(), "interaction.reject_queue", e.CreateMessage(discord.MessageCreate{Content: "この操作は利用できません。/queueを実行し直してください。", Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 	}
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID || len(parts) != 5 || parts[1] != "1" || parts[2] != e.User().ID.String() || (parts[3] != "auto" && parts[3] != "manual") {
 		fail()
@@ -282,7 +282,7 @@ func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
-		a.logOperationFailure("interaction.defer_queue", err)
+		a.logInteractionFailure(e.ID(), "interaction.defer_queue", err)
 		return
 	}
 	s := a.getSession(*e.GuildID())
