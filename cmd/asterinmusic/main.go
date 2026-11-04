@@ -33,19 +33,25 @@ func main() {
 	if len(args) > 0 && args[0] == "serve" {
 		root, err := os.Getwd()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
+			reportBootstrapFailure(os.Stderr, "working_directory")
+			os.Exit(1)
 		}
 		controlled, control, err := runcontrol.Start(ctx, root, cancel, append(append([]string(nil), args...), o.Args()...)...)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			reportBootstrapFailure(os.Stderr, "lifecycle_control")
 			os.Exit(1)
 		}
 		defer control.Close()
 		ctx = controlled
 	}
 	if err := run(ctx, args, o); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		if !errors.Is(err, errAlreadyLogged) {
+			if len(args) > 0 && args[0] == "serve" {
+				reportBootstrapFailure(os.Stderr, "configuration")
+			} else {
+				fmt.Fprintln(os.Stderr, err)
+			}
+		}
 		os.Exit(1)
 	}
 }
@@ -181,6 +187,10 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 		}
 		a, err := discordbot.New(ctx, c, logger)
 		if err != nil {
+			if args[0] == "serve" {
+				logging.Component(logger, "app").ErrorContext(ctx, "application initialization failed", "event", "app.startup.failed", "stage", "initialize")
+				return errAlreadyLogged
+			}
 			return err
 		}
 		defer a.Close()
@@ -190,7 +200,11 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 		case "register":
 			err = a.Register()
 		case "serve":
-			return a.Serve()
+			if err := a.Serve(); err != nil {
+				logging.Component(logger, "app").ErrorContext(ctx, "application could not continue", "event", "app.run.failed", "stage", "serve")
+				return errAlreadyLogged
+			}
+			return nil
 		case "voice-check":
 			return a.VoiceCheck()
 		}

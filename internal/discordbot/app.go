@@ -48,6 +48,7 @@ type App struct {
 }
 
 func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error) {
+	logging.Component(logger, "app").InfoContext(ctx, "application starting", append([]any{"event", "app.starting"}, logging.BuildAttributes()...)...)
 	executable := c.YTDLP
 	if executable == "yt-dlp" {
 		var err error
@@ -115,6 +116,10 @@ func eventOptions() []bot.EventManagerConfigOpt {
 }
 
 func (a *App) Close() {
+	logger := logging.OrDiscard(a.logger)
+	logger.Info("application stopping", "event", "app.stopping")
+	started := time.Now()
+	completed := true
 	a.mu.Lock()
 	sessions := make([]*session, 0, len(a.sessions))
 	for _, s := range a.sessions {
@@ -140,6 +145,7 @@ func (a *App) Close() {
 			select {
 			case <-wait:
 			case <-ctx.Done():
+				completed = false
 				logging.OrDiscard(a.logger).WarnContext(ctx, "playback shutdown timed out", "event", "app.shutdown.timeout")
 			}
 		}
@@ -148,12 +154,21 @@ func (a *App) Close() {
 	a.closeAllDave()
 	if a.historyWriter != nil {
 		flushCtx, c := context.WithTimeout(context.Background(), 10*time.Second)
-		a.logOperationFailure("history.shutdown", a.historyWriter.Shutdown(flushCtx))
+		err := a.historyWriter.Shutdown(flushCtx)
+		if err != nil {
+			completed = false
+		}
+		a.logOperationFailure("history.shutdown", err)
 		c()
 	}
 	if a.historyStore != nil {
-		a.logOperationFailure("history.close", a.historyStore.Close())
+		err := a.historyStore.Close()
+		if err != nil {
+			completed = false
+		}
+		a.logOperationFailure("history.close", err)
 	}
+	logger.Info("application shutdown finished", "event", "app.stopped", "complete", completed, "duration_ms", time.Since(started).Milliseconds())
 }
 
 // Check only reads configured resources. Discord errors are deliberately not
