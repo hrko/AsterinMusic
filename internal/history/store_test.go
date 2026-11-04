@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -148,8 +149,21 @@ func TestMigrationRefusesFutureVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.Close()
+	if err := Check(path); err == nil {
+		t.Fatal("preflight accepted future schema")
+	}
 	if future, err := Open(path, 100); err == nil {
 		future.Close()
 		t.Fatal("future schema accepted")
+	}
+}
+
+func TestCheckDoesNotCreateDatabase(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "absent.sqlite")
+	if err := Check(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatal("preflight created database", err)
 	}
 }

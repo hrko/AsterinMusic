@@ -44,6 +44,46 @@ type Store struct {
 	limit int64
 }
 
+// Check is read-only, including during restart preflight while the old bot runs.
+func Check(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	u := url.URL{Scheme: "file", Path: filepath.ToSlash(abs)}
+	if len(u.Path) > 1 && u.Path[1] == ':' {
+		u.Path = "/" + u.Path
+	}
+	u.RawQuery = "mode=ro"
+	db, err := sql.Open("sqlite", u.String())
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var version int
+	if err = db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+		return err
+	}
+	if version > 1 {
+		return errors.New("history schema is newer than this bot")
+	}
+	if version == 1 {
+		rows, err := db.QueryContext(ctx, "SELECT id FROM playback_history LIMIT 0")
+		if err != nil {
+			return err
+		}
+		return rows.Close()
+	}
+	return nil
+}
+
 func Open(path string, limit int) (*Store, error) {
 	if limit < 1 || limit > 1000000 {
 		return nil, errors.New("history retention must be between 1 and 1000000")

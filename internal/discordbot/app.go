@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"asterinmusic/internal/config"
+	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
@@ -28,6 +29,8 @@ import (
 )
 
 type App struct {
+	historyStore     *history.Store
+	historyWriter    *history.Writer
 	presenceRevision atomic.Uint64
 	client           *bot.Client
 	config           config.Config
@@ -134,6 +137,14 @@ func (a *App) Close() {
 	}
 	a.client.Close(ctx)
 	a.closeAllDave()
+	if a.historyWriter != nil {
+		flushCtx, c := context.WithTimeout(context.Background(), 10*time.Second)
+		logOperationFailure("history.shutdown", a.historyWriter.Shutdown(flushCtx))
+		c()
+	}
+	if a.historyStore != nil {
+		logOperationFailure("history.close", a.historyStore.Close())
+	}
 }
 
 // Check only reads configured resources. Discord errors are deliberately not
@@ -148,6 +159,9 @@ func (a *App) Check() error {
 		return errors.New("cannot access configured guild; check bot installation and guild ID")
 	}
 	// Read-only validation also runs in restart preflight, before the old Bot stops.
+	if err := history.Check(filepath.Join(a.config.StateDir, "history.sqlite")); err != nil {
+		return errors.New("cannot restore history database")
+	}
 	base := filepath.Join(a.config.StateDir, a.config.ApplicationID.String()+"-"+a.config.GuildID.String())
 	if _, err := music.OpenQueue(a.config.QueueLimit, base+"-queue.json"); err != nil {
 		return errors.New("cannot restore queue checkpoint")
@@ -214,6 +228,12 @@ func (a *App) Serve() error {
 		return errors.New("voice build required: use mise run serve")
 	}
 	stateDir := a.config.StateDir
+	store, err := history.Open(filepath.Join(stateDir, "history.sqlite"), a.config.HistoryLimit)
+	if err != nil {
+		return fmt.Errorf("open history: %w", err)
+	}
+	a.historyStore = store
+	a.historyWriter = history.NewWriter(store.Append, func(err error) { logOperationFailure("history.write", err) })
 	queue, err := music.OpenQueue(a.config.QueueLimit, filepath.Join(stateDir, a.config.ApplicationID.String()+"-"+a.config.GuildID.String()+"-queue.json"))
 	if err != nil {
 		return fmt.Errorf("restore queue: %w", err)
@@ -233,6 +253,10 @@ func (a *App) Serve() error {
 		err := s.checkpoint(checkpointPath)
 		if err != nil {
 			slog.Error("playback checkpoint failed; refusing stop", "error", a.safeError(err))
+		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			logOperationFailure("history.flush", a.historyWriter.Flush(ctx))
+			cancel()
 		}
 		return err
 	})

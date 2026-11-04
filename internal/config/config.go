@@ -18,6 +18,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	HistoryLimit                                          int
 	YouTubeDataEnabled                                    bool
 	YouTubeDataAPIKey                                     string
 	DisconnectWhenIdle                                    bool
@@ -30,6 +31,9 @@ type Config struct {
 	DefaultVolume, QueueLimit                             int
 }
 type Document struct {
+	History struct {
+		LimitPerVoice int `koanf:"limit_per_voice"`
+	} `koanf:"history"`
 	Sources struct {
 		YouTube struct {
 			DataAPI struct {
@@ -105,7 +109,7 @@ func Read(o Options, lookup func(string) (string, bool)) (Config, error) {
 		return "", false
 	}
 	k := koanf.New(".")
-	defaults := map[string]any{"runtime.state_dir": "./.asterinmusic/state", "tools.yt_dlp.path": "yt-dlp", "tools.ffmpeg.path": "ffmpeg", "playback.default_volume": 30, "playback.queue_limit": 500}
+	defaults := map[string]any{"runtime.state_dir": "./.asterinmusic/state", "tools.yt_dlp.path": "yt-dlp", "tools.ffmpeg.path": "ffmpeg", "playback.default_volume": 30, "playback.queue_limit": 500, "history.limit_per_voice": 10000}
 	if err := k.Load(confmap.Provider(defaults, "."), nil); err != nil {
 		return Config{}, errors.New("cannot load defaults")
 	}
@@ -153,7 +157,10 @@ func (d Document) resolve(base string) (Config, error) {
 	if strings.TrimSpace(d.Runtime.StateDir) == "" || strings.TrimSpace(d.Tools.YTDLP.Path) == "" || strings.TrimSpace(d.Tools.FFmpeg.Path) == "" {
 		return fail("runtime/tool paths must not be empty")
 	}
-	c := Config{StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
+	if d.History.LimitPerVoice < 1 || d.History.LimitPerVoice > 1000000 {
+		return fail("history.limit_per_voice must be between 1 and 1000000")
+	}
+	c := Config{HistoryLimit: d.History.LimitPerVoice, StateDir: resolvePath(base, d.Runtime.StateDir), YTDLP: resolveTool(base, d.Tools.YTDLP.Path), FFmpeg: resolveTool(base, d.Tools.FFmpeg.Path), DefaultVolume: d.Playback.DefaultVolume, QueueLimit: d.Playback.QueueLimit, ActivityEnabled: true}
 	c.YouTubeMetadataLanguage = "ja"
 	c.YouTubeDataEnabled = d.Sources.YouTube.DataAPI.Enabled
 	c.YouTubeDataAPIKey = d.Sources.YouTube.DataAPI.APIKey

@@ -10,6 +10,8 @@ playback:
   disconnect_when_idle: false
   default_volume: 30
   queue_limit: 500
+history:
+  limit_per_voice: 10000
 sources:
   youtube:
     metadata_language: ja

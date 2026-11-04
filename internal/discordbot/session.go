@@ -11,14 +11,18 @@ import (
 	"time"
 
 	"asterinmusic/internal/audio"
+	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
+	"crypto/rand"
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
 )
 
 type session struct {
+	historySessionID                   string
+	playbackHistory                    *history.Record
 	failureNotice                      failureNotice
 	playbackSequence                   uint64
 	queueViewMu                        sync.Mutex
@@ -54,7 +58,7 @@ type session struct {
 }
 
 func newSession(a *App, guild snowflake.ID) *session {
-	s := &session{app: a, guild: guild, queue: music.NewQueue(a.config.QueueLimit), volume: audio.NewVolume(48000)}
+	s := &session{historySessionID: rand.Text(), app: a, guild: guild, queue: music.NewQueue(a.config.QueueLimit), volume: audio.NewVolume(48000)}
 	if a.config.QueueLimit > 0 {
 		_ = s.volume.Set(a.config.DefaultVolume)
 	}

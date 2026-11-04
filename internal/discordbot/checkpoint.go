@@ -1,14 +1,17 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/disgoorg/snowflake/v2"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type playbackCheckpoint struct {
@@ -28,6 +31,7 @@ type playbackCheckpoint struct {
 // Identify a playback occurrence, not just a video. Manual re-additions have
 // distinct entry IDs; automatic entries are distinguished by AddedAt.
 type recordedPlayback struct {
+	History   *history.Record `json:",omitempty"`
 	Entry     music.Entry
 	Automatic bool
 }
@@ -37,9 +41,26 @@ func (s *session) recordStartedLocked() {
 	s.historyResume = nil
 	if r != nil && r.Automatic == s.currentAuto && r.Entry.ID == s.current.ID &&
 		r.Entry.Track.URL == s.current.Track.URL && r.Entry.AddedAt.Equal(s.current.AddedAt) {
+		s.playbackHistory = r.History
+		s.enqueueHistoryLocked()
 		return
 	}
+	botID := s.app.config.ApplicationID
+	if s.app.client != nil {
+		botID = s.app.client.ID()
+	}
+	s.playbackHistory = &history.Record{OccurrenceID: rand.Text(), GuildID: s.guild.String(), VoiceID: s.channel.String(), SessionID: s.historySessionID,
+		BotID: botID.String(), StartedAt: time.Now(), Entry: *s.current, Automatic: s.currentAuto}
+	s.enqueueHistoryLocked()
 	s.auto.started(s.current.Track, s.currentAuto)
+}
+
+func (s *session) enqueueHistoryLocked() {
+	if s.app.historyWriter != nil && s.playbackHistory != nil {
+		if !s.app.historyWriter.Enqueue(*s.playbackHistory) {
+			logOperationFailure("history.queue_full", errors.New("history queue unavailable"))
+		}
+	}
 }
 
 // Called by the authenticated lifecycle endpoint before app cancellation.
@@ -125,7 +146,7 @@ func (s *session) checkpointBytesLocked() ([]byte, error) {
 	if !s.skipping && !s.stopped {
 		v.RecordedPlayback = s.historyResume
 		if s.current != nil && s.started {
-			v.RecordedPlayback = &recordedPlayback{Entry: *s.current, Automatic: s.currentAuto}
+			v.RecordedPlayback = &recordedPlayback{Entry: *s.current, Automatic: s.currentAuto, History: s.playbackHistory}
 		}
 	}
 	return json.Marshal(v)
