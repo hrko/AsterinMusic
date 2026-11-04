@@ -81,7 +81,7 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 		// block the Gateway event dispatcher while resolving or connecting.
 		bot.WithEventManagerConfigOpts(eventOptions()...),
 		bot.WithGatewayConfigOpts(gateway.WithIntents(gateway.IntentGuilds | gateway.IntentGuildVoiceStates)),
-		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagGuilds, cache.FlagChannels, cache.FlagVoiceStates, cache.FlagMembers)),
+		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagGuilds, cache.FlagChannels, cache.FlagVoiceStates, cache.FlagMembers, cache.FlagRoles)),
 		bot.WithEventListenerFunc(func(e *events.Ready) { a.presenceRevision.Add(1); a.readyOnce.Do(func() { close(a.ready) }) }),
 		bot.WithEventListenerFunc(func(e *events.Resumed) { a.presenceRevision.Add(1) }),
 		bot.WithEventListenerFunc(a.onCommand), bot.WithEventListenerFunc(a.onComponent),

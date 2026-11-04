@@ -49,7 +49,7 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 			case 0, 7:
 				ops <- m.Op
 				if m.Op == 0 {
-					_ = ws.WriteJSON(map[string]any{"op": 2, "s": 1, "d": map[string]any{"ssrc": 42}})
+					_ = ws.WriteJSON(map[string]any{"op": 2, "s": 0, "d": map[string]any{"ssrc": 42}})
 				} else {
 					_ = ws.WriteJSON(map[string]any{"op": 9, "s": 2, "d": nil})
 				}

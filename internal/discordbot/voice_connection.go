@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
@@ -35,6 +36,12 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
+	recovery           *voiceRecoveryFlow
+	recoverySerial     uint64
+	rejoins            int
+	rejoinTimes        []time.Time
+	canRejoin          func(context.Context, snowflake.ID) bool
+	mute, deaf         bool
 	failureStage       string
 	failureReason      string
 	failureCode        int
@@ -83,6 +90,20 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 		c := newVoiceConnection(guild, user)
 		c.logger = logging.Component(a.logger, "voice").With("guild_id", guild.String())
 		c.update, c.remove = update, remove
+		c.canRejoin = func(ctx context.Context, channel snowflake.ID) bool {
+			if ctx.Err() != nil {
+				return false
+			}
+			vc, ok := a.client.Caches.GuildAudioChannel(channel)
+			if !ok || vc.GuildID() != guild {
+				return false
+			}
+			member, ok := a.client.Caches.Member(guild, user)
+			if !ok {
+				return false
+			}
+			return a.client.Caches.MemberPermissionsInChannel(vc, member).Has(discord.PermissionViewChannel, discord.PermissionConnect)
+		}
 		c.factory = func(ctx context.Context, state voice.State, closed func(error, bool)) (voiceTransport, error) {
 			return a.openVoiceTransport(ctx, state, closed, opts)
 		}
@@ -143,6 +164,7 @@ func (c *voiceConnection) discardLocked() {
 func (c *voiceConnection) beginLocked(reset bool, phase voicePhase) {
 	c.discardLocked()
 	if reset || c.deadline.IsZero() {
+		c.rejoins = 0
 		c.recoveryStart = c.now()
 		c.deadline = c.now().Add(voiceRecoveryTimeout)
 	}
@@ -160,9 +182,13 @@ func (c *voiceConnection) armLocked() {
 func (c *voiceConnection) expireLocked() {
 	if c.phase != voiceReady && c.phase != voiceClosed && c.phase != voiceFailed && !c.deadline.IsZero() && !c.now().Before(c.deadline) {
 		c.failureStage = "recovery"
+		if c.recovery != nil {
+			c.failureStage = c.recovery.stage
+		}
 		c.failureReason = "timeout"
 		c.discardLocked()
 		c.signalLocked(voiceFailed)
+		c.cancelRecoveryLocked()
 	}
 }
 func (c *voiceConnection) launchLocked() {
@@ -201,6 +227,16 @@ func (c *voiceConnection) launchLocked() {
 			}
 			c.failureStage = stage
 			c.failureReason = failureClass(err)
+			if c.recovery != nil {
+				c.recovery.attemptErr = err
+				c.discardLocked()
+				c.signalLocked(voiceWaiting)
+				c.mu.Unlock()
+				if t != nil {
+					t.Close()
+				}
+				return
+			}
 			c.discardLocked()
 			c.signalLocked(voiceFailed)
 			c.mu.Unlock()
@@ -216,6 +252,7 @@ func (c *voiceConnection) launchLocked() {
 			c.timer.Stop()
 		}
 		c.signalLocked(voiceReady)
+		c.cancelRecoveryLocked()
 		c.mu.Unlock()
 	}()
 }
@@ -236,6 +273,14 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		return
 	}
 	if e.ChannelID == nil {
+		if f := c.recovery; f != nil && f.leaving {
+			f.left = true
+			c.state = nil
+			c.server = nil
+			c.signalLocked(voiceRecovering)
+			return
+		}
+		c.cancelRecoveryLocked()
 		c.channel = 0
 		c.removed = true
 		c.state = nil
@@ -247,6 +292,11 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	id := *e.ChannelID
 	e.ChannelID = &id
 	moved := c.channel != id
+	if f := c.recovery; f != nil && f.leaving && !moved {
+		// An old membership echo cannot complete the new connection before
+		// the outstanding leave has been acknowledged.
+		return
+	}
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
 	attrs := []any{"event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil}
 	diagnostic = func() { logging.OrDiscard(c.logger).Debug("voice membership received", attrs...) }
@@ -256,8 +306,11 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		return
 	} // only explicit Open can restart
 	if changed {
+		if moved {
+			c.cancelRecoveryLocked()
+		}
 		c.statePending = true
-		c.beginLocked(moved, voiceWaiting)
+		c.beginLocked(false, voiceWaiting)
 	}
 	c.launchLocked()
 }
@@ -278,7 +331,12 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 		disposition = "terminal_state"
 		return
 	}
+	if f := c.recovery; f != nil && f.leaving {
+		disposition = "awaiting_leave_confirmation"
+		return
+	}
 	if e.Endpoint == nil {
+		c.cancelRecoveryLocked()
 		disposition = "endpoint_unavailable"
 		c.server = nil
 		c.beginLocked(false, voiceRecovering)
@@ -322,40 +380,16 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	c.failureReason = failureClass(err)
 	c.failureCode = code
 	c.recordDiagnosticLocked(slog.LevelDebug, "voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
-	if code == 4015 && c.active != nil {
-		if resumable, ok := c.active.(interface{ Resume(context.Context) error }); ok {
-			if c.resuming {
-				return
-			}
+	if c.recovery != nil && c.resuming {
+		// The Resume call receives its own socket error. Its supervisor owns
+		// retries; a second callback must not start another recovery flow.
+		return
+	}
+	if resumeAllowed(err) && c.active != nil {
+		if _, ok := c.active.(interface{ Resume(context.Context) error }); ok {
 			c.resuming = true
-			if c.deadline.IsZero() {
-				c.deadline = c.now().Add(voiceRecoveryTimeout)
-			}
-			ctx, cancel := context.WithDeadline(context.Background(), c.deadline)
-			c.cancel = cancel
 			c.signalLocked(voiceRecovering)
-			c.armLocked()
-			go func() {
-				defer c.flushDiagnostics()
-				err := resumable.Resume(ctx)
-				c.mu.Lock()
-				defer c.mu.Unlock()
-				c.expireLocked()
-				if generation != c.generation || c.phase != voiceRecovering {
-					return
-				}
-				if err != nil {
-					c.failureStage = "resume"
-					c.failureReason = failureClass(err)
-					c.discardLocked()
-					c.signalLocked(voiceFailed)
-				} else {
-					c.resuming = false
-					c.deadline = time.Time{}
-					c.timer.Stop()
-					c.signalLocked(voiceReady)
-				}
-			}()
+			c.startRecoveryLocked(context.Background(), true, false, false)
 			return
 		}
 	}
@@ -363,28 +397,16 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	// Never emit a leave or rejoin request here.
 	c.beginLocked(false, voiceRecovering)
 	if code == 4014 || code == 4022 {
+		c.cancelRecoveryLocked()
 		return
 	}
 	// Authentication, protocol and rate-limit failures require user intervention.
-	if !reconnect {
+	if !reconnect || !reconnectAllowed(err) {
+		c.cancelRecoveryLocked()
 		c.signalLocked(voiceFailed)
 		return
 	}
-	// Obtain fresh credentials instead of resuming a discarded DAVE session.
-	c.statePending = true
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		c.sendMu.Lock()
-		defer c.sendMu.Unlock()
-		c.mu.Lock()
-		valid := c.phase == voiceRecovering
-		channel := c.channel
-		c.mu.Unlock()
-		if valid && channel != 0 {
-			_ = c.update(ctx, c.guild, &channel, false, true)
-		}
-	}()
+	c.startRecoveryLocked(context.Background(), false, true, false)
 }
 
 func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, deaf bool) error {
@@ -394,6 +416,10 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 		return context.Canceled
 	}
 	c.removed = false
+	c.cancelRecoveryLocked()
+	c.channel = channel
+	c.mute, c.deaf = mute, deaf
+	c.rejoins = 0
 	c.failureStage = ""
 	c.failureReason = ""
 	c.failureCode = 0
@@ -402,21 +428,8 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 	c.server = nil
 	c.lastToken = ""
 	c.beginLocked(true, voiceWaiting)
+	c.startRecoveryLocked(ctx, false, true, true)
 	c.mu.Unlock()
-	c.sendMu.Lock()
-	c.mu.Lock()
-	valid := c.phase != voiceClosed
-	c.mu.Unlock()
-	var err error
-	if valid {
-		err = c.update(ctx, c.guild, &channel, mute, deaf)
-	} else {
-		err = context.Canceled
-	}
-	c.sendMu.Unlock()
-	if err != nil {
-		return err
-	}
 	return c.waitReady(ctx)
 }
 func (c *voiceConnection) waitReady(ctx context.Context) error {
@@ -550,6 +563,7 @@ func (c *voiceConnection) Close(ctx context.Context) {
 		return
 	}
 	removed := c.removed
+	c.cancelRecoveryLocked()
 	c.discardLocked()
 	if c.timer != nil {
 		c.timer.Stop()
@@ -560,7 +574,9 @@ func (c *voiceConnection) Close(ctx context.Context) {
 	c.sendMu.Lock()
 	defer c.sendMu.Unlock()
 	if !removed {
-		_ = c.update(ctx, c.guild, nil, false, false)
+		if err := c.update(ctx, c.guild, nil, false, false); err != nil {
+			logging.OrDiscard(c.logger).WarnContext(ctx, "voice leave request failed", "event", "voice.leave.failed", "reason", failureClass(err), "action", "local_connection_closed")
+		}
 	}
 	c.remove()
 }
