@@ -180,7 +180,10 @@ func (g *movingGateway) handleEvent(generation uint64, v voice.Gateway, op voice
 
 func (g *movingGateway) handleClose(generation uint64, v voice.Gateway, err error, reconnect bool) {
 	var closed *websocket.CloseError
-	if errors.As(err, &closed) && closed.Code == 4014 {
+	if errors.As(err, &closed) && (closed.Code == 4014 || closed.Code == 4022) {
+		// 4022 terminates the old call when moving its final participant too.
+		// Neither code permits resuming that transport; a confirmed move waits
+		// for fresh server credentials instead of closing the destination VC.
 		// Gateway and voice-state events travel independently. Briefly allow the
 		// cache to identify a move, but never request rejoin after a real removal.
 		deadline := time.Now().Add(time.Second)

@@ -77,7 +77,14 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 		t.Fatal("move disconnected VC or retained ready flag")
 	}
 	for i := range 3 {
-		target = snowflake.ID(i + 4)
+		target = snowflake.ID(4 - i%2) // A -> B -> A -> B
+		if i > 0 {
+			previous := bases[len(bases)-1]
+			previous.onClose(previous, &websocket.CloseError{Code: 4022}, false)
+			if closed != 0 {
+				t.Fatal("return move closed destination VC")
+			}
+		}
 		state.ChannelID = &target
 		if err := g.Open(context.Background(), state); err != nil {
 			t.Fatal(err)
@@ -111,6 +118,18 @@ func TestVoiceGatewayMove4014AndRepeatedRekeys(t *testing.T) {
 	g.Close()
 	if err := g.Open(context.Background(), state); !errors.Is(err, voice.ErrGatewayNotConnected) {
 		t.Fatal("reopened closed connection", err)
+	}
+}
+
+func TestVoiceCallTerminationWithoutMoveClosesConnection(t *testing.T) {
+	for _, code := range []int{4014, 4022} {
+		closed := 0
+		channel := snowflake.ID(3)
+		g := &movingGateway{generation: 1, state: voice.State{ChannelID: &channel}, currentChannel: func() snowflake.ID { return 0 }, onClose: func(voice.Gateway, error, bool) { closed++ }}
+		g.handleClose(1, nil, &websocket.CloseError{Code: code}, false)
+		if closed != 1 {
+			t.Fatalf("removal code %d suppressed", code)
+		}
 	}
 }
 
