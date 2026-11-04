@@ -187,3 +187,29 @@ func TestResumePolicy(t *testing.T) {
 		}
 	}
 }
+
+func TestExpiredSessionGetsFreshMembershipDespiteLibraryFlag(t *testing.T) {
+	for _, code := range []int{4006, 4009} {
+		c := testVoiceController(t)
+		c.HandleVoiceStateUpdate(stateEvent(3))
+		c.HandleVoiceServerUpdate(serverEvent("old"))
+		waitVoice(t, c)
+		var joins atomic.Int32
+		c.update = func(_ context.Context, _ snowflake.ID, id *snowflake.ID, _, _ bool) error {
+			if id != nil {
+				joins.Add(1)
+				c.HandleVoiceStateUpdate(stateEvent(*id))
+				c.HandleVoiceServerUpdate(serverEvent("fresh"))
+			}
+			return nil
+		}
+		c.mu.Lock()
+		gen := c.generation
+		c.mu.Unlock()
+		c.transportClosed(gen, &websocket.CloseError{Code: code}, false)
+		waitVoice(t, c)
+		if joins.Load() != 1 {
+			t.Fatalf("expired session %d did not rejoin", code)
+		}
+	}
+}

@@ -401,7 +401,9 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 		return
 	}
 	// Authentication, protocol and rate-limit failures require user intervention.
-	if !reconnect || !reconnectAllowed(err) {
+	// disgo marks expired sessions non-reconnectable because they cannot
+	// Resume. Our controller can instead establish a fresh session.
+	if (!reconnect && code != 4006 && code != 4009) || !reconnectAllowed(err) {
 		c.cancelRecoveryLocked()
 		c.signalLocked(voiceFailed)
 		return

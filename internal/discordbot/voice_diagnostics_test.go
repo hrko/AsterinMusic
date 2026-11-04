@@ -16,10 +16,10 @@ func TestTerminalVoiceFailureRetainsSafeCause(t *testing.T) {
 	c.logger = l
 	c.phase = voiceReady
 	c.channel = 3
-	c.transportClosed(c.generation, &websocket.CloseError{Code: 4006, Text: "PRIVATE_TOKEN"}, false)
+	c.transportClosed(c.generation, &websocket.CloseError{Code: 4021, Text: "PRIVATE_TOKEN"}, false)
 	c.flushDiagnostics()
 	text := out.String()
-	for _, value := range []string{`"stage":"transport"`, `"reason":"websocket_closed"`, `"close_code":4006`, `"action":"hold_playback"`} {
+	for _, value := range []string{`"stage":"transport"`, `"reason":"websocket_closed"`, `"close_code":4021`, `"action":"hold_playback"`} {
 		if !strings.Contains(text, value) {
 			t.Fatalf("missing outcome attribute: %s", text)
 		}
