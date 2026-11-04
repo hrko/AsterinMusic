@@ -13,6 +13,7 @@ type voiceDiagnostic struct {
 	message string
 	attrs   []any
 	at      time.Time
+	first   time.Time
 	count   int
 }
 
@@ -22,6 +23,7 @@ type voiceDiagnostic struct {
 // used below, preserving each outcome's latest attributes and occurrence count.
 func (c *voiceConnection) recordDiagnosticLocked(level slog.Level, message string, attrs ...any) {
 	d := voiceDiagnostic{level: level, message: message, attrs: attrs, at: c.now(), count: 1}
+	d.first = d.at
 	if len(c.diagnostics) < voiceDiagnosticCapacity {
 		c.diagnostics = append(c.diagnostics, d)
 		return
@@ -33,6 +35,7 @@ func (c *voiceConnection) recordDiagnosticLocked(level slog.Level, message strin
 	event := attrs[1].(string)
 	if old, ok := c.diagnosticOverflow[event]; ok {
 		d.count += old.count
+		d.first = old.first
 	}
 	c.diagnosticOverflow[event] = d
 }
@@ -48,7 +51,7 @@ func (c *voiceConnection) flushDiagnostics() {
 	emit := func(d voiceDiagnostic) {
 		attrs := append(d.attrs, "observed_at", d.at)
 		if d.count > 1 {
-			attrs = append(attrs, "occurrences", d.count, "coalesced", true)
+			attrs = append(attrs, "occurrences", d.count, "suppressed", d.count-1, "coalesced", true, "aggregation_duration_ms", d.at.Sub(d.first).Milliseconds())
 		}
 		logging.OrDiscard(c.logger).Log(nil, d.level, d.message, attrs...)
 	}
