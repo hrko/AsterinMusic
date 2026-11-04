@@ -6,6 +6,27 @@ import "strings"
 func helpSample(variant string) embed {
 	e := embed{Color: 0x527DA8, Footer: map[string]string{"text": "使い方の表示サンプル · コマンド実行・カテゴリ切替はできません"}}
 	switch variant {
+	case "help-detail-bullets":
+		e.Title = "詳細A：目的別の箇条書き"
+		e.Description = "YouTube・YouTube Music・ニコニコ動画のURLに対応しています。\n\n" +
+			"**曲をキューに追加**\n- `/play url:動画URL` で単曲を追加\n- YouTube・YouTube MusicのプレイリストURLなら、複数曲をまとめて追加\n\n" +
+			"**自分の待機曲の先頭に追加**\n- `/playnext url:動画URL` を使用\n- 他の人の順番は維持し、再生中の曲は中断しません\n\n" +
+			"**動画に付属するリストも追加**\n- リスト付き動画URLでは、まずその曲だけを追加\n- 追加結果のボタンから、付属プレイリストやMixを取り込めます\n\n" +
+			"**停止後に再開**\n- VCに参加して、URLなしで `/play` を実行\n- 保持しているキューを再開します"
+	case "help-detail-commands":
+		e.Title = "詳細B：コマンドと補足を分ける"
+		e.Description = "YouTube・YouTube Music・ニコニコ動画のURLに対応しています。\n\n" +
+			"**曲をキューに追加**\n`/play url:動画URL`\n単曲を追加します。YouTube・YouTube MusicのプレイリストURLなら、複数曲をまとめて追加できます。\n\n" +
+			"**自分の待機曲の先頭に追加**\n`/playnext url:動画URL`\n他の人の順番は維持し、再生中の曲は中断しません。\n\n" +
+			"**動画に付属するリストも追加**\n追加結果のリスト取り込みボタン\nリスト付き動画URLでは、まずその曲だけを追加します。ボタンから付属プレイリストやMixを取り込めます。\n\n" +
+			"**停止後に再開**\n`/play`（URLなし）\nVCに参加して実行すると、保持しているキューを再開します。"
+	case "help-detail-prose":
+		e.Title = "詳細C：短い説明文でまとめる"
+		e.Description = "YouTube・YouTube Music・ニコニコ動画のURLに対応しています。\n\n" +
+			"**曲をキューに追加**\n`/play url:動画URL` で単曲を追加します。YouTube・YouTube MusicのプレイリストURLなら、複数曲をまとめて追加できます。\n\n" +
+			"**自分の待機曲の先頭に追加**\n`/playnext url:動画URL` を使います。他の人の順番は維持し、再生中の曲は中断しません。\n\n" +
+			"**動画に付属するリストも追加**\nリスト付き動画URLでは、まずその曲だけを追加します。追加結果のボタンから、付属プレイリストやMixを取り込めます。\n\n" +
+			"**停止後に再開**\nVCに参加し、URLなしで `/play` を実行すると、保持しているキューを再開します。"
 	case "help-bullets":
 		e = helpSample("help-home")
 		e.Title = "A：カテゴリ別の箇条書き"
