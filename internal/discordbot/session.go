@@ -293,7 +293,10 @@ func (s *session) loop(done chan struct{}) {
 			play = s.playTrack
 		}
 		err := play(ctx, conn, func(ctx context.Context, w io.Writer) error {
-			return s.app.source.BufferedStream(ctx, entry.Track.URL, w)
+			if err := s.app.source.BufferedStream(ctx, entry.Track.URL, w); err != nil {
+				return &playbackStageError{stage: "source", err: err}
+			}
+			return nil
 		})
 		playLog.join()
 		cancel()
@@ -350,7 +353,7 @@ func (s *session) loop(done chan struct{}) {
 			if s.auto.enabled && s.auto.failures >= 3 {
 				s.auto.off()
 				s.mu.Unlock()
-				playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "disable_autoplay", position)
+				playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "disable_autoplay", position, err)
 				s.notifyFailure(text, &entry.Track, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。", true)
 				continue
 			}
@@ -362,7 +365,7 @@ func (s *session) loop(done chan struct{}) {
 			s.haltPlaybackLocked()
 			s.running = false
 			s.mu.Unlock()
-			playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "stop_retain_queue", position)
+			playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "stop_retain_queue", position, err)
 			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため、再生を停止しました。\n残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
@@ -370,7 +373,7 @@ func (s *session) loop(done chan struct{}) {
 		if skipped {
 			playLog.finish(s.app.ctx, slog.LevelInfo, "skipped", "advance", position)
 		} else if err != nil {
-			playLog.finish(s.app.ctx, slog.LevelWarn, failureClass(err), "advance", position)
+			playLog.finish(s.app.ctx, slog.LevelWarn, failureClass(err), "advance", position, err)
 		} else {
 			playLog.finish(s.app.ctx, slog.LevelInfo, "completed", "advance", position)
 		}

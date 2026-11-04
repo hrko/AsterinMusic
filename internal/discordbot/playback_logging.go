@@ -48,6 +48,10 @@ func newPlaybackLog(ctx context.Context, logger *slog.Logger, id string, automat
 }
 
 func (p *playbackLog) join() { close(p.done); <-p.joined }
-func (p *playbackLog) finish(ctx context.Context, level slog.Level, reason, action string, position time.Duration) {
-	p.logger.Log(ctx, level, "playback ended", "event", "playback.ended", "reason", reason, "action", action, "position_ms", position.Milliseconds())
+func (p *playbackLog) finish(ctx context.Context, level slog.Level, reason, action string, position time.Duration, causes ...error) {
+	attrs := []any{"event", "playback.ended", "reason", reason, "action", action, "position_ms", position.Milliseconds()}
+	if len(causes) > 0 {
+		attrs = append(attrs, failureAttributes(causes[0])...)
+	}
+	p.logger.Log(ctx, level, "playback ended", attrs...)
 }

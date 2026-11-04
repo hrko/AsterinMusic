@@ -2,18 +2,27 @@ package discordbot
 
 import (
 	"asterinmusic/internal/logging"
+	"asterinmusic/internal/process"
+	"asterinmusic/internal/source"
 	"context"
 	"errors"
 	"log/slog"
 	"net"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/disgoorg/disgo/rest"
+	"github.com/gorilla/websocket"
 )
 
 // Do not log upstream error strings: REST errors may contain interaction
 // tokens, response bodies, or URLs. Only stable classifications leave here.
 func failureClass(err error) string {
+	var stage *playbackStageError
+	if errors.As(err, &stage) {
+		err = stage.err
+	}
 	if errors.Is(err, context.Canceled) {
 		return "canceled"
 	}
@@ -22,6 +31,29 @@ func failureClass(err error) string {
 	}
 	if rest.IsJSONErrorCode(err, rest.JSONErrorCodeUnknownMessage) {
 		return "unknown_message"
+	}
+	for _, item := range []struct {
+		err    error
+		reason string
+	}{
+		{source.AuthRequired, "authentication_required"}, {source.AuthCookies, "cookies_unavailable"}, {source.AuthLogin, "authentication_failed"}, {source.AuthTemporary, "authentication_temporary"},
+		{os.ErrPermission, "permission"}, {os.ErrNotExist, "not_found"}, {process.ErrOutputLimit, "output_limit"}, {errVoiceRecovery, "voice_recovery"}, {errVoiceRemoved, "voice_removed"}, {errSuperseded, "superseded"},
+	} {
+		if errors.Is(err, item.err) {
+			return item.reason
+		}
+	}
+	var ws *websocket.CloseError
+	if errors.As(err, &ws) {
+		return "websocket_closed"
+	}
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		return "process_exit"
+	}
+	var httpErr *rest.Error
+	if errors.As(err, &httpErr) {
+		return "discord_api"
 	}
 	var network net.Error
 	if errors.As(err, &network) {
@@ -32,6 +64,43 @@ func failureClass(err error) string {
 	}
 	return "upstream"
 }
+
+// Only typed, numeric diagnostics are copied. Error(), HTTP bodies, request
+// URLs, executable arguments and WebSocket close text remain private.
+func failureAttributes(err error) []any {
+	var attrs []any
+	var stage *playbackStageError
+	if errors.As(err, &stage) {
+		attrs = append(attrs, "stage", stage.stage)
+		err = stage.err
+	}
+	var ws *websocket.CloseError
+	if errors.As(err, &ws) {
+		attrs = append(attrs, "close_code", ws.Code)
+	}
+	var exit *exec.ExitError
+	if errors.As(err, &exit) {
+		attrs = append(attrs, "exit_code", exit.ExitCode())
+	}
+	var httpErr *rest.Error
+	if errors.As(err, &httpErr) {
+		if httpErr.Response != nil {
+			attrs = append(attrs, "http_status", httpErr.Response.StatusCode)
+		}
+		if httpErr.Code != 0 {
+			attrs = append(attrs, "discord_code", int(httpErr.Code))
+		}
+	}
+	return attrs
+}
+
+type playbackStageError struct {
+	stage string
+	err   error
+}
+
+func (e *playbackStageError) Error() string { return "playback stage failed" }
+func (e *playbackStageError) Unwrap() error { return e.err }
 
 func (s *session) logOperationFailure(operation string, err error) {
 	ctx := context.Background()
@@ -75,5 +144,7 @@ func logFailure(ctx context.Context, logger *slog.Logger, operation string, err 
 	case "history.write", "history.flush", "history.shutdown", "history.close", "history.queue_full":
 		level, action = slog.LevelError, "persistence_failed"
 	}
-	logger.Log(ctx, level, "operation failed", "event", operation+".failed", "reason", failureClass(err), "action", action)
+	attrs := []any{"event", operation + ".failed", "reason", failureClass(err), "action", action}
+	attrs = append(attrs, failureAttributes(err)...)
+	logger.Log(ctx, level, "operation failed", attrs...)
 }

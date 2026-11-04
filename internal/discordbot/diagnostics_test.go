@@ -2,11 +2,15 @@ package discordbot
 
 import (
 	"asterinmusic/internal/logging"
+	"asterinmusic/internal/source"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/disgoorg/disgo/rest"
+	"github.com/gorilla/websocket"
 	"log/slog"
+	"net/http"
 	"strings"
 	"testing"
 )
@@ -27,6 +31,38 @@ func TestOperationLogDoesNotExposeUpstreamDetails(t *testing.T) {
 	}
 	if failureClass(fmt.Errorf("private: %w", context.Canceled)) != "canceled" {
 		t.Fatal("wrapped cancellation not classified")
+	}
+}
+
+func TestTypedFailuresKeepCodesWithoutPrivateText(t *testing.T) {
+	for _, tc := range []struct {
+		err          error
+		reason, code string
+	}{
+		{&websocket.CloseError{Code: 4006, Text: "PRIVATE"}, "websocket_closed", `"close_code":4006`},
+		{&rest.Error{Response: &http.Response{StatusCode: 403}, Code: 50013, Message: "PRIVATE", RsBody: []byte("PRIVATE")}, "discord_api", `"http_status":403`},
+		{fmt.Errorf("PRIVATE: %w", source.AuthCookies), "cookies_unavailable", `"reason":"cookies_unavailable"`},
+	} {
+		var out bytes.Buffer
+		l, _ := logging.New(&out, logging.Options{Format: "json", Level: "debug"})
+		logFailure(t.Context(), l, "interaction.reply", tc.err)
+		if failureClass(tc.err) != tc.reason || strings.Contains(out.String(), "PRIVATE") || !strings.Contains(out.String(), tc.code) {
+			t.Fatalf("unsafe or incomplete typed error: %s", out.String())
+		}
+	}
+}
+
+func TestSourceFailureTakesPrecedenceOverPipelineCancellation(t *testing.T) {
+	err := errors.Join(context.Canceled, &playbackStageError{stage: "source", err: source.AuthRequired})
+	if got := failureClass(err); got != "authentication_required" {
+		t.Fatalf("source cause hidden: %s", got)
+	}
+	var out bytes.Buffer
+	l, _ := logging.New(&out, logging.Options{Format: "json"})
+	p := &playbackLog{logger: l}
+	p.finish(t.Context(), slog.LevelWarn, failureClass(err), "advance", 0, err)
+	if !strings.Contains(out.String(), `"stage":"source"`) {
+		t.Fatalf("source stage missing: %s", out.String())
 	}
 }
 
