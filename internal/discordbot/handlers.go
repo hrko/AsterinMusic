@@ -38,6 +38,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		logOperationFailure("interaction.defer_command", err)
 		return
 	}
+	s.bindNotificationChannel(user.ID, e.Channel().ID())
 	reply := func(text string) { a.edit(e.Token(), text, nil) }
 	switch data.CommandName() {
 	case "history":

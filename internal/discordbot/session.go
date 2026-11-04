@@ -45,6 +45,8 @@ type session struct {
 	connectCancel                      context.CancelFunc
 	createConn                         func() voice.Conn
 	idleSince, emptySince              time.Time
+	moveDeadline                       time.Time
+	moveSpeaking                       bool
 	position                           time.Duration
 	auto                               autoplay
 	current                            *music.Entry
@@ -72,6 +74,9 @@ func (s *session) authorize(user snowflake.ID) (snowflake.ID, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.conn != nil {
+		s.syncVoiceLocked()
+	}
 	if s.channel != 0 && s.channel != *state.ChannelID {
 		return 0, errSameVoice
 	}
@@ -243,7 +248,7 @@ func (s *session) loop(done chan struct{}) {
 		s.trackCancel = cancel
 		s.position = 0
 		s.skipping = false
-		conn, text := s.conn, s.text
+		conn := s.conn
 		s.mu.Unlock()
 		play := s.playAudio
 		if play == nil {
@@ -255,6 +260,7 @@ func (s *session) loop(done chan struct{}) {
 		cancel()
 		s.mu.Lock()
 		s.waitQueueLocked()
+		text := s.text
 		if automatic && !s.started && !s.skipping && !s.stopped && !s.shuttingDown && s.app.ctx.Err() == nil &&
 			(errors.Is(err, context.Canceled) || errors.Is(err, errSuperseded)) {
 			_, pending := s.queue.Snapshot()
@@ -272,6 +278,14 @@ func (s *session) loop(done chan struct{}) {
 		if stopped {
 			s.running = false
 			s.mu.Unlock()
+			return
+		}
+		if errors.Is(err, errVoiceMoveFailed) {
+			slog.Warn("voice move recovery failed; playback halted", "guild", s.guild, "channel", s.channel)
+			s.haltPlaybackLocked()
+			s.running = false
+			s.mu.Unlock()
+			s.notifyFailure(text, &entry.Track, "移動先への音声接続を再確立できなかったため、再生を停止しました。残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		if err != nil && !skipped {
@@ -300,10 +314,10 @@ func (s *session) loop(done chan struct{}) {
 			s.auto.failures = 0
 		}
 		if failures >= 3 {
-			s.stopLocked()
+			s.haltPlaybackLocked()
 			s.running = false
 			s.mu.Unlock()
-			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため停止しました。残りのキューは保持しています。", true)
+			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため、再生を停止しました。\n残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		s.mu.Unlock()
@@ -338,7 +352,20 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err := waitDave(ctx, func() error {
+		err := s.sendVoicePacket(ctx, func() error {
+			s.mu.Lock()
+			reset, channel := s.moveSpeaking, s.channel
+			s.mu.Unlock()
+			if reset {
+				if err := conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
+					return err
+				}
+				s.mu.Lock()
+				if s.channel == channel {
+					s.moveSpeaking = false
+				}
+				s.mu.Unlock()
+			}
 			return s.sendPacket(ctx, func() error { _, err := conn.UDP().Write(packet); return err })
 		})
 		if err != nil {
@@ -422,21 +449,14 @@ func (s *session) stop() error {
 }
 
 func (s *session) stopLocked() {
-	if s.connectCancel != nil {
-		s.connectCancel()
-	}
-	s.auto.off()
-	s.resumeAuto = nil
-	s.epoch++
-	s.stopped = true
-	if s.trackCancel != nil {
-		s.trackCancel()
-	}
+	s.haltPlaybackLocked()
 	conn := s.conn
 	s.conn = nil
 	s.channel = 0
 	s.emptySince = time.Time{}
 	s.idleSince = time.Time{}
+	s.moveDeadline = time.Time{}
+	s.moveSpeaking = false
 	if conn != nil {
 		done := make(chan struct{})
 		s.closing = done
@@ -451,6 +471,21 @@ func (s *session) stopLocked() {
 			s.mu.Unlock()
 		}()
 	}
+}
+
+// Stop scheduling and playback without leaving the voice channel.
+func (s *session) haltPlaybackLocked() {
+	if s.connectCancel != nil {
+		s.connectCancel()
+	}
+	s.auto.off()
+	s.resumeAuto = nil
+	s.epoch++
+	s.stopped = true
+	if s.trackCancel != nil {
+		s.trackCancel()
+	}
+	s.idleSince = time.Now()
 }
 
 func (s *session) skip() error {
@@ -473,8 +508,7 @@ func (s *session) tick() {
 		s.mu.Unlock()
 		return
 	}
-	if state, ok := s.app.client.Caches.VoiceState(s.guild, s.app.client.ID()); !ok || state.ChannelID == nil || *state.ChannelID != s.channel {
-		s.stopLocked()
+	if !s.syncVoiceLocked() {
 		s.mu.Unlock()
 		return
 	}

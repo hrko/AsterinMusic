@@ -39,6 +39,10 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 		return
 	}
 	s.mu.Lock()
+	if channel != s.text {
+		s.mu.Unlock()
+		return
+	}
 	sequence := s.playbackSequence
 	s.mu.Unlock()
 	embed := discord.Embed{Title: "曲を再生できませんでした", Description: text, Color: colorWarning}

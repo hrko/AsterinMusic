@@ -314,8 +314,5 @@ func (a *App) onVoiceState(e *events.GuildVoiceStateUpdate) {
 		return
 	}
 	// Read the latest cache: asynchronous event listeners may arrive out of order.
-	state, ok := a.client.Caches.VoiceState(s.guild, a.client.ID())
-	if !ok || state.ChannelID == nil || *state.ChannelID != s.channel {
-		s.stopLocked()
-	}
+	s.syncVoiceLocked()
 }
