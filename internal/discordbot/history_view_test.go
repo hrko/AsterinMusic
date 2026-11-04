@@ -10,11 +10,45 @@ import (
 	"time"
 	"unicode/utf16"
 
+	"asterinmusic/internal/config"
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 )
+
+func TestHistoryActionUsesCurrentVoiceAndRejectsConcurrentClicks(t *testing.T) {
+	c := cache.New(cache.WithCaches(cache.FlagVoiceStates))
+	a := &App{config: config.Config{GuildID: 2}, client: &bot.Client{Caches: c}}
+	v := &historyView{id: "view", owner: 1, guild: 2, voice: 3, message: 4, revision: 5, expires: time.Now().Add(time.Minute)}
+	if !a.rememberHistory(v) {
+		t.Fatal("remember")
+	}
+	voice := snowflake.ID(3)
+	c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+	got, action, err := a.historyAction(v.componentID("next"), 1, &v.guild, 4)
+	if err != nil || got != v || action != "next" {
+		t.Fatalf("valid action: %v", err)
+	}
+	if _, _, err := a.historyAction(v.componentID("next"), 1, &v.guild, 4); err == nil {
+		t.Fatal("concurrent click accepted")
+	}
+	got.mu.Unlock()
+	voice = 9
+	c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+	if _, _, err := a.historyAction(v.componentID("next"), 1, &v.guild, 4); err == nil {
+		t.Fatal("moved user accepted")
+	}
+	c.RemoveVoiceState(2, 1)
+	if _, _, err := a.historyAction(v.componentID("refresh"), 1, &v.guild, 4); err == nil {
+		t.Fatal("departed user accepted")
+	}
+	if _, _, err := a.historyAction("history:view:5:next", 1, nil, 4); err == nil {
+		t.Fatal("DM accepted")
+	}
+}
 
 func TestHistoryViewAccessBoundary(t *testing.T) {
 	now := time.Now()
