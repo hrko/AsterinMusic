@@ -131,7 +131,7 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 	}
 	if action != "status" {
 		if _, err := s.authorize(e.User().ID); err != nil {
-			a.edit(e.Token(), err.Error(), nil)
+			a.edit(responseFor(e), err.Error(), nil)
 			return
 		}
 	}
@@ -139,7 +139,7 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 	if action != "status" {
 		if err := s.mutableLocked(); err != nil {
 			s.mu.Unlock()
-			a.edit(e.Token(), userError(err), nil)
+			a.edit(responseFor(e), userError(err), nil)
 			return
 		}
 	}
@@ -180,9 +180,9 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 	}
 	s.mu.Unlock()
 	if action == "status" {
-		a.editEmbed(e.Token(), embed, nil)
+		a.editEmbed(responseFor(e), embed, nil)
 	} else {
-		a.edit(e.Token(), text, nil)
+		a.edit(responseFor(e), text, nil)
 	}
 }
 

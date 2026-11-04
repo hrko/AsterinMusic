@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-func (a *App) edit(token, text string, components []discord.LayoutComponent) *discord.Message {
+func (a *App) edit(response responseRef, text string, components []discord.LayoutComponent) *discord.Message {
 	text = truncate(text, 1900)
-	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate(text, nil, components))
-	a.logOperationFailure("interaction.update_text", err)
+	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, messageUpdate(text, nil, components))
+	a.logInteractionFailure(response.operation, "interaction.update_text", err)
 	return m
 }
 
@@ -40,7 +40,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		return
 	}
 	s.bindNotificationChannel(user.ID, e.Channel().ID())
-	reply := func(text string) { a.edit(e.Token(), text, nil) }
+	reply := func(text string) { a.edit(responseFor(e), text, nil) }
 	switch data.CommandName() {
 	case "history":
 		a.historyCommand(e)
@@ -75,11 +75,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		result, err := a.source.Inspect(a.ctx, url)
 		if front && (err != nil || len(result.Tracks) != 1) {
-			a.editFailure(e.Token(), source.AuthMessage(err, "曲を取得できませんでした。キューは変更していません。"))
+			a.editFailure(responseFor(e), source.AuthMessage(err, "曲を取得できませんでした。キューは変更していません。"))
 			return
 		}
 		if len(result.Tracks) == 0 {
-			a.editFailure(e.Token(), source.AuthMessage(err, "曲を取得できませんでした。公開状態とURLを確認してください。"))
+			a.editFailure(responseFor(e), source.AuthMessage(err, "曲を取得できませんでした。公開状態とURLを確認してください。"))
 			return
 		}
 		playlist := ""
@@ -121,12 +121,12 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			}
 			embed.Description += "\n\n" + notice
 			embed.Footer = &discord.EmbedFooter{Text: "本人のみ操作可能 · 15分間有効"}
-			m := a.editEmbed(e.Token(), embed, []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton(label, "playlist:"+o.ID))})
+			m := a.editEmbed(responseFor(e), embed, []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton(label, "playlist:"+o.ID))})
 			if m != nil {
 				a.offers.bind(o.ID, m.ID)
 			}
 		} else {
-			a.editEmbed(e.Token(), embed, nil)
+			a.editEmbed(responseFor(e), embed, nil)
 		}
 	case "queue":
 		if data.String("action") == "clear" {
@@ -159,7 +159,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			return
 		}
 		s.queueViewMu.Lock()
-		a.editQueue(e.Token(), s, user.ID, max(1, data.Int("page")), "")
+		a.editQueue(responseFor(e), s, user.ID, max(1, data.Int("page")), "")
 		s.queueViewMu.Unlock()
 	case "nowplaying":
 		s.mu.Lock()
@@ -182,7 +182,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		if !started {
 			state = "再生準備中"
 		}
-		a.editEmbed(e.Token(), discord.Embed{Title: state, Description: singleLink(current.Track) + "\n" + queueDetail(current.Track, origin), Color: colorInfo, Thumbnail: trackThumbnail(current.Track), Footer: &discord.EmbedFooter{Text: fmt.Sprintf("表示時点 %s / %s · 音量 %d%%", queueDuration(int64(position/time.Second)), queueTrackDuration(current.Track), s.volume.Percent())}}, nil)
+		a.editEmbed(responseFor(e), discord.Embed{Title: state, Description: singleLink(current.Track) + "\n" + queueDetail(current.Track, origin), Color: colorInfo, Thumbnail: trackThumbnail(current.Track), Footer: &discord.EmbedFooter{Text: fmt.Sprintf("表示時点 %s / %s · 音量 %d%%", queueDuration(int64(position/time.Second)), queueTrackDuration(current.Track), s.volume.Percent())}}, nil)
 	case "volume":
 		if p, ok := data.OptInt("percent"); ok {
 			if _, err := s.authorize(user.ID); err != nil {
@@ -261,7 +261,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		a.mixComponent(e, s, o)
 		return
 	}
-	a.edit(e.Token(), "プレイリストを取り込み中です…", []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("取り込み中", "playlist:"+id).WithDisabled(true))})
+	a.edit(responseFor(e), "プレイリストを取り込み中です…", []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("取り込み中", "playlist:"+id).WithDisabled(true))})
 	epoch := s.version()
 	result, inspectErr := a.source.Inspect(a.ctx, o.URL)
 	tracks, _ := excludeFirst(result.Tracks, o.TrackURL)
@@ -285,5 +285,5 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		embed.Description += "\n\n期限内なら再試行できます。"
 		components = []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("再試行", "playlist:"+id))}
 	}
-	a.editEmbed(e.Token(), embed, components)
+	a.editEmbed(responseFor(e), embed, components)
 }

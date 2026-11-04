@@ -27,13 +27,13 @@ func messageUpdate(text string, embed *discord.Embed, components []discord.Layou
 	}
 	return discord.MessageUpdate{Content: &text, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}}
 }
-func (a *App) editEmbed(token string, embed discord.Embed, components []discord.LayoutComponent) *discord.Message {
-	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate("", &embed, components))
-	a.logOperationFailure("interaction.update_embed", err)
+func (a *App) editEmbed(response responseRef, embed discord.Embed, components []discord.LayoutComponent) *discord.Message {
+	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, messageUpdate("", &embed, components))
+	a.logInteractionFailure(response.operation, "interaction.update_embed", err)
 	return m
 }
-func (a *App) editFailure(token, text string) {
-	a.editEmbed(token, discord.Embed{Title: "操作を完了できませんでした", Description: text, Color: colorError}, nil)
+func (a *App) editFailure(response responseRef, text string) {
+	a.editEmbed(response, discord.Embed{Title: "操作を完了できませんでした", Description: text, Color: colorError}, nil)
 }
 func singleLink(t music.Track) string { return trackLink(t, 160) }
 func resultEmbed(title, body string, n, wanted int, partial bool, err error) discord.Embed {

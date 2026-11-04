@@ -162,11 +162,11 @@ func (v *historyView) render() (discord.Embed, []discord.LayoutComponent) {
 	return embed, components
 }
 
-func (a *App) showHistory(token string, v *historyView) bool {
+func (a *App) showHistory(response responseRef, v *historyView) bool {
 	v.revision++
 	v.retryMessage = 0
 	embed, components := v.render()
-	if m := a.editEmbed(token, embed, components); m != nil {
+	if m := a.editEmbed(response, embed, components); m != nil {
 		v.message = m.ID
 		return true
 	}
@@ -186,11 +186,11 @@ func historyProblem(err error) string {
 func (a *App) historyCommand(e *events.ApplicationCommandInteractionCreate) {
 	voice, err := a.historyVoice(*e.GuildID(), e.User().ID)
 	if err != nil {
-		a.edit(e.Token(), err.Error(), nil)
+		a.edit(responseFor(e), err.Error(), nil)
 		return
 	}
 	if a.historyStore == nil {
-		a.edit(e.Token(), "履歴を利用できません。", nil)
+		a.edit(responseFor(e), "履歴を利用できません。", nil)
 		return
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 3*time.Second)
@@ -198,35 +198,35 @@ func (a *App) historyCommand(e *events.ApplicationCommandInteractionCreate) {
 	snap, err := a.historyStore.Snapshot(ctx, e.GuildID().String(), voice.String())
 	if err != nil {
 		a.logInteractionFailure(e.ID(), "history.snapshot", err)
-		a.edit(e.Token(), historyProblem(err), nil)
+		a.edit(responseFor(e), historyProblem(err), nil)
 		return
 	}
 	v := &historyView{id: rand.Text(), originalToken: e.Token(), owner: e.User().ID, guild: *e.GuildID(), voice: voice, expires: time.Now().Add(historyViewTTL)}
 	if err = v.load(ctx, a.historyStore, snap, 1); err != nil {
-		a.edit(e.Token(), historyProblem(err), nil)
+		a.edit(responseFor(e), historyProblem(err), nil)
 		return
 	}
 	current, err := a.historyVoice(v.guild, v.owner)
 	if err != nil || current != voice {
-		a.edit(e.Token(), errHistoryView.Error(), nil)
+		a.edit(responseFor(e), errHistoryView.Error(), nil)
 		return
 	}
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	if !a.rememberHistory(v) {
-		a.edit(e.Token(), "履歴画面が混み合っています。少し待って再実行してください。", nil)
+		a.edit(responseFor(e), "履歴画面が混み合っています。少し待って再実行してください。", nil)
 		return
 	}
-	a.showHistory(e.Token(), v)
+	a.showHistory(responseFor(e), v)
 }
 
 func ephemeral(text string) discord.MessageCreate {
 	return discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}
 }
 
-func (a *App) historyReply(token, text string) {
-	_, err := a.client.Rest.CreateFollowupMessage(a.config.ApplicationID, token, ephemeral(text))
-	a.logOperationFailure("history.reply", err)
+func (a *App) historyReply(response responseRef, text string) {
+	_, err := a.client.Rest.CreateFollowupMessage(a.config.ApplicationID, response.token, ephemeral(text))
+	a.logInteractionFailure(response.operation, "history.reply", err)
 }
 
 func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
@@ -271,27 +271,27 @@ func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 	case "select":
 		data, ok := e.Data.(discord.StringSelectMenuInteractionData)
 		if !ok || len(data.Values) != 1 {
-			a.historyReply(e.Token(), errHistoryView.Error())
+			a.historyReply(responseFor(e), errHistoryView.Error())
 			return
 		}
 		id, parseErr := strconv.ParseInt(data.Values[0], 10, 64)
 		if parseErr != nil || !v.selectRecord(id) {
-			a.historyReply(e.Token(), errHistoryView.Error())
+			a.historyReply(responseFor(e), errHistoryView.Error())
 			return
 		}
 		if _, err = a.historyStore.Page(ctx, snap, page); err != nil {
 			v.selected = 0
-			a.historyReply(e.Token(), historyProblem(err))
+			a.historyReply(responseFor(e), historyProblem(err))
 			return
 		}
 		if current, checkErr := a.historyVoice(v.guild, v.owner); checkErr != nil || current != v.voice {
-			a.historyReply(e.Token(), errHistoryView.Error())
+			a.historyReply(responseFor(e), errHistoryView.Error())
 			return
 		}
-		a.showHistory(e.Token(), v)
+		a.showHistory(responseFor(e), v)
 		return
 	default:
-		a.historyReply(e.Token(), errHistoryView.Error())
+		a.historyReply(responseFor(e), errHistoryView.Error())
 		return
 	}
 	if err == nil {
@@ -299,14 +299,14 @@ func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 	}
 	if err != nil {
 		a.logInteractionFailure(e.ID(), "history.page", err)
-		a.historyReply(e.Token(), historyProblem(err))
+		a.historyReply(responseFor(e), historyProblem(err))
 		return
 	}
 	if current, checkErr := a.historyVoice(v.guild, v.owner); checkErr != nil || current != v.voice {
-		a.historyReply(e.Token(), errHistoryView.Error())
+		a.historyReply(responseFor(e), errHistoryView.Error())
 		return
 	}
-	a.showHistory(e.Token(), v)
+	a.showHistory(responseFor(e), v)
 }
 
 func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
@@ -335,7 +335,7 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 			return
 		}
 		v.retryMessage = 0
-		if m := a.edit(e.Token(), fmt.Sprintf("1〜%dの整数を入力してください。", v.pageCount()), []discord.LayoutComponent{discord.NewActionRow(discord.NewSecondaryButton("入力し直す", v.componentID("retry")))}); m != nil {
+		if m := a.edit(responseFor(e), fmt.Sprintf("1〜%dの整数を入力してください。", v.pageCount()), []discord.LayoutComponent{discord.NewActionRow(discord.NewSecondaryButton("入力し直す", v.componentID("retry")))}); m != nil {
 			v.retryMessage = m.ID
 		}
 		return
@@ -347,21 +347,21 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 	ctx, cancel := context.WithTimeout(a.ctx, 3*time.Second)
 	defer cancel()
 	if err = v.load(ctx, a.historyStore, v.snapshot, page); err != nil {
-		a.historyReply(e.Token(), historyProblem(err))
+		a.historyReply(responseFor(e), historyProblem(err))
 		return
 	}
 	if current, checkErr := a.historyVoice(v.guild, v.owner); checkErr != nil || current != v.voice {
-		a.historyReply(e.Token(), errHistoryView.Error())
+		a.historyReply(responseFor(e), errHistoryView.Error())
 		return
 	}
 	if action == "resubmit" {
-		if a.showHistory(v.originalToken, v) {
-			a.edit(e.Token(), "指定したページを表示しました。", nil)
+		if a.showHistory(responseRef{token: v.originalToken, operation: e.ID()}, v) {
+			a.edit(responseFor(e), "指定したページを表示しました。", nil)
 		} else {
-			a.edit(e.Token(), "履歴画面を更新できませんでした。/historyを実行し直してください。", nil)
+			a.edit(responseFor(e), "履歴画面を更新できませんでした。/historyを実行し直してください。", nil)
 		}
 	} else {
-		a.showHistory(e.Token(), v)
+		a.showHistory(responseFor(e), v)
 	}
 }
 
@@ -375,39 +375,39 @@ func (v *historyView) pageModal(action string) discord.ModalCreate {
 
 func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView, front bool) {
 	if v.selected == 0 {
-		a.historyReply(e.Token(), "再追加する曲を選択してください。")
+		a.historyReply(responseFor(e), "再追加する曲を選択してください。")
 		return
 	}
 	s := a.getSession(v.guild)
 	if _, err := s.authorize(v.owner); err != nil {
-		a.historyReply(e.Token(), userError(err))
+		a.historyReply(responseFor(e), userError(err))
 		return
 	}
 	epoch := s.version()
 	ctx, cancel := context.WithTimeout(a.ctx, 45*time.Second)
 	defer cancel()
 	if _, err := a.historyStore.Page(ctx, v.snapshot, v.page); err != nil {
-		a.historyReply(e.Token(), historyProblem(err))
+		a.historyReply(responseFor(e), historyProblem(err))
 		return
 	}
 	r, err := a.historyStore.Get(ctx, v.guild.String(), v.voice.String(), v.selected)
 	if err != nil {
-		a.historyReply(e.Token(), historyProblem(err))
+		a.historyReply(responseFor(e), historyProblem(err))
 		return
 	}
 	input, err := source.Parse(r.Entry.Track.URL)
 	if err != nil || input.Playlist {
-		a.historyReply(e.Token(), "この履歴の曲は再追加できません。")
+		a.historyReply(responseFor(e), "この履歴の曲は再追加できません。")
 		return
 	}
 	result, err := a.source.Inspect(ctx, input.URL)
 	if err != nil || len(result.Tracks) != 1 {
-		a.historyReply(e.Token(), source.AuthMessage(err, "曲を取得できませんでした。キューには追加していません。"))
+		a.historyReply(responseFor(e), source.AuthMessage(err, "曲を取得できませんでした。キューには追加していません。"))
 		return
 	}
 	voice, err := a.historyVoice(v.guild, v.owner)
 	if err != nil || voice != v.voice || time.Now().After(v.expires) {
-		a.historyReply(e.Token(), errHistoryView.Error())
+		a.historyReply(responseFor(e), errHistoryView.Error())
 		return
 	}
 	n, _, addErr := s.acceptAt(v.owner, music.Requester{ID: v.owner.String(), Name: e.User().Username}, result.Tracks, "", "", e.Channel().ID(), epoch, music.Insertion{Front: front})
@@ -418,7 +418,7 @@ func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView,
 	if n > 0 {
 		v.selected = 0
 		if current, checkErr := a.historyVoice(v.guild, v.owner); checkErr == nil && current == v.voice && time.Now().Before(v.expires) {
-			a.showHistory(e.Token(), v)
+			a.showHistory(responseFor(e), v)
 		}
 		if addErr != nil {
 			text += "\n" + userError(addErr)
@@ -428,5 +428,5 @@ func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView,
 	} else {
 		text = "曲を追加できませんでした。"
 	}
-	a.historyReply(e.Token(), text)
+	a.historyReply(responseFor(e), text)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (a *App) mixCommand(e *events.ApplicationCommandInteractionCreate, s *session) {
-	reply := func(t string) { a.edit(e.Token(), t, nil) }
+	reply := func(t string) { a.edit(responseFor(e), t, nil) }
 	if _, err := s.authorize(e.User().ID); err != nil {
 		reply(userError(err))
 		return
@@ -30,25 +30,25 @@ func (a *App) mixCommand(e *events.ApplicationCommandInteractionCreate, s *sessi
 	epoch := s.version()
 	seed, err := a.source.Inspect(a.ctx, raw)
 	if err != nil || len(seed.Tracks) != 1 {
-		a.editFailure(e.Token(), "起点の曲を取得できませんでした。キューは変更していません。")
+		a.editFailure(responseFor(e), "起点の曲を取得できませんでした。キューは変更していません。")
 		return
 	}
 	result, fetchErr := a.source.InspectMix(a.ctx, raw)
 	if len(result.Tracks) == 0 {
-		a.editFailure(e.Token(), "Mixを取得できませんでした。キューは変更していません。")
+		a.editFailure(responseFor(e), "Mixを取得できませんでした。キューは変更していません。")
 		return
 	}
 	selection := source.SelectMix(result.Tracks, seed.Tracks[0], count, true)
 	n, addErr := s.accept(e.User().ID, music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, selection.Tracks, result.Input.URL, "", e.Channel().ID(), epoch)
 	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", seed.Tracks[0], e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
 	embed.Thumbnail = trackThumbnail(seed.Tracks[0])
-	a.editEmbed(e.Token(), embed, nil)
+	a.editEmbed(responseFor(e), embed, nil)
 }
 
 // The common component handler has already claimed the offer and acknowledged it.
 func (a *App) mixComponent(e *events.ComponentInteractionCreate, s *session, o offer) {
 	epoch := s.version()
-	a.edit(e.Token(), "Mixの候補を取得中です…", []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("取得中", "playlist:"+o.ID).WithDisabled(true))})
+	a.edit(responseFor(e), "Mixの候補を取得中です…", []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("取得中", "playlist:"+o.ID).WithDisabled(true))})
 	result, fetchErr := a.source.InspectMix(a.ctx, o.URL)
 	selection := source.SelectMix(result.Tracks, music.Track{URL: o.TrackURL}, source.DefaultMixCount, false)
 	n := 0
@@ -65,5 +65,5 @@ func (a *App) mixComponent(e *events.ComponentInteractionCreate, s *session, o o
 		embed.Description += "\n\n期限内なら再試行できます。"
 		components = []discord.LayoutComponent{discord.NewActionRow(discord.NewPrimaryButton("再試行", "playlist:"+o.ID))}
 	}
-	a.editEmbed(e.Token(), embed, components)
+	a.editEmbed(responseFor(e), embed, components)
 }
