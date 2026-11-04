@@ -18,7 +18,7 @@ const daveBackend = "dave-go v0.5.1"
 func daveOptions(a *App) []bot.ConfigOpt {
 	return []bot.ConfigOpt{bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, callbacks godave.Callbacks) godave.Session {
 		factory := func() *davesession.Session { return davesession.New(user, callbacks, davesession.WithLogger(logger)) }
-		s := &guardedDave{Session: factory(), factory: factory}
+		s := &guardedDave{Session: factory()}
 		a.daveClosers.Store(callbacks, s)
 		return s
 	}))}
@@ -28,25 +28,16 @@ func daveOptions(a *App) []bot.ConfigOpt {
 // this gate an epoch reset between the check and Encrypt could emit plaintext.
 type guardedDave struct {
 	*davesession.Session
-	mu      sync.Mutex
-	factory func() *davesession.Session
-	closed  bool
+	mu sync.Mutex
+
+	closed bool
 }
 
-// A new voice transport must not inherit membership, pending transitions or
-// recovery watchdogs from the previous channel.
-func (s *guardedDave) ResetVoiceTransport(channel godave.ChannelID) {
+func (s *guardedDave) Ready() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed {
-		return
-	}
-	_ = s.Session.Close()
-	s.Session = s.factory()
-	s.Session.SetChannelID(channel)
+	return !s.Session.ShouldHoldFrames()
 }
-
-func (s *guardedDave) Ready() bool { s.mu.Lock(); defer s.mu.Unlock(); return s.Session.Ready() }
 func (s *guardedDave) MaxSupportedProtocolVersion() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()

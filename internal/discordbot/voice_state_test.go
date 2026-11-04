@@ -107,36 +107,9 @@ func TestMoveRetainsPlaybackAndResetsOnlyScope(t *testing.T) {
 		t.Fatal("move changed playback or retained old scope")
 	}
 	s.notifyFailure(7, &entry.Track, "must not send to old channel", false) // no REST client: a leak would panic
-	deadline := s.moveDeadline
-	s.moveVoiceLocked(4)
-	if s.moveDeadline != deadline || s.epoch != oldEpoch+1 {
-		t.Fatal("duplicate event reset transition")
-	}
-}
 
-func TestVoiceMoveRetriesPacketAndBoundsRecovery(t *testing.T) {
-	s := autoSession()
-	s.moveDeadline = time.Now().Add(time.Second)
-	calls := 0
-	err := s.sendVoicePacket(context.Background(), func() error {
-		calls++
-		if calls == 1 {
-			return errors.New("UDP transitioning")
-		}
-		return nil
-	})
-	if err != nil || calls != 2 {
-		t.Fatal(calls, err)
-	}
-	s.moveDeadline = time.Now().Add(20 * time.Millisecond)
-	err = s.sendVoicePacket(context.Background(), func() error { return errors.New("UDP failed") })
-	if !errors.Is(err, errVoiceMoveFailed) {
-		t.Fatal(err)
-	}
-	s.moveDeadline = time.Time{}
-	calls = 0
-	err = s.sendVoicePacket(context.Background(), func() error { calls++; return errors.New("ordinary failure") })
-	if err == nil || calls != 1 || errors.Is(err, errVoiceMoveFailed) {
-		t.Fatal(calls, err)
+	s.moveVoiceLocked(4)
+	if s.epoch != oldEpoch+1 {
+		t.Fatal("duplicate event reset transition")
 	}
 }

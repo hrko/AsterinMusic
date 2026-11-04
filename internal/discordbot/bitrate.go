@@ -6,6 +6,11 @@ package discordbot
 func (s *session) channelBitrate() int {
 	s.mu.Lock()
 	id := s.channel
+	if c, ok := s.conn.(*voiceConnection); ok {
+		if current := c.ChannelID(); current != nil {
+			id = *current
+		}
+	}
 	s.mu.Unlock()
 	channel, ok := s.app.client.Caches.GuildAudioChannel(id)
 	if !ok {

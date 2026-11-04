@@ -19,7 +19,7 @@ func (s *session) sendPacket(ctx context.Context, write func() error) error {
 		return context.Canceled
 	}
 	current := s.current
-	if current != nil && !s.started && s.currentAuto {
+	if current != nil && !s.started && s.currentAuto && !s.replaying {
 		_, pending := s.queue.Snapshot()
 		if !s.auto.enabled || s.auto.revision != s.currentRevision || len(pending) > 0 {
 			s.mu.Unlock()
@@ -39,6 +39,11 @@ func (s *session) sendPacket(ctx context.Context, write func() error) error {
 		return context.Canceled
 	}
 	if current != nil && !s.started {
+		if c, ok := s.conn.(*voiceConnection); ok {
+			if id := c.ChannelID(); id != nil {
+				s.moveVoiceLocked(*id)
+			}
+		}
 		s.started = true
 		s.playbackSequence++
 		s.recordStartedLocked()

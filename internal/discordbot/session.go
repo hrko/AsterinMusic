@@ -45,8 +45,8 @@ type session struct {
 	connectCancel                      context.CancelFunc
 	createConn                         func() voice.Conn
 	idleSince, emptySince              time.Time
-	moveDeadline                       time.Time
-	moveSpeaking                       bool
+	recoveryHeld                       bool
+	replaying                          bool
 	position                           time.Duration
 	auto                               autoplay
 	current                            *music.Entry
@@ -159,11 +159,15 @@ func (s *session) startLocked(channel snowflake.ID) error {
 		return errStopping
 	}
 	_, pending := s.queue.Snapshot()
-	if len(pending) == 0 && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
+	if len(pending) == 0 && !s.recoveryHeld && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
 		return errQueueEmpty
 	}
-	if s.conn == nil {
-		ctx, cancel := context.WithTimeout(s.app.ctx, 25*time.Second)
+	needsOpen := s.conn == nil
+	if c, ok := s.conn.(*voiceConnection); ok {
+		needsOpen = c.Failed()
+	}
+	if needsOpen {
+		ctx, cancel := context.WithTimeout(s.app.ctx, voiceRecoveryTimeout)
 		s.connectCancel = cancel
 		s.connecting = true
 		s.stopped = false
@@ -175,15 +179,31 @@ func (s *session) startLocked(channel snowflake.ID) error {
 		if create == nil {
 			create = func() voice.Conn { return s.app.client.VoiceManager.CreateConn(s.guild) }
 		}
+		conn := s.conn
 		s.mu.Unlock()
-		conn := create()
+		if conn == nil {
+			conn = create()
+		}
+		_, managed := conn.(*voiceConnection)
+		s.mu.Lock()
+		if managed && !s.stopped && !s.shuttingDown {
+			s.conn = conn
+		}
+		s.mu.Unlock()
 		err := conn.Open(ctx, channel, false, true)
 		cancel()
 		s.mu.Lock()
-		stale := s.stopped || s.shuttingDown || s.epoch != epoch || s.app.ctx.Err() != nil
+		stale := (s.stopped && !s.recoveryHeld) || s.shuttingDown || (!managed && s.epoch != epoch) || s.app.ctx.Err() != nil
 		s.connecting = false
 		s.connectCancel = nil
 		if err != nil || stale {
+			if managed && !stale {
+				s.stopped = true
+				s.closing = nil
+				close(done)
+				return errVoiceConnection
+			}
+			s.conn = nil
 			s.channel = 0
 			s.mu.Unlock()
 			logOperationFailure("voice.connect", err)
@@ -192,17 +212,27 @@ func (s *session) startLocked(channel snowflake.ID) error {
 			s.app.closeDave(conn)
 			c()
 			s.mu.Lock()
-			s.closing = nil
+			if s.closing == done {
+				s.closing = nil
+			}
 			close(done)
 			if stale {
 				return errQueueChanged
 			}
 			return errVoiceConnection
 		}
-		s.closing = nil
+		if s.closing == done {
+			s.closing = nil
+		}
 		close(done)
 		s.conn = conn
-		s.channel = channel
+		if managed {
+			if id := conn.ChannelID(); id != nil {
+				s.moveVoiceLocked(*id)
+			}
+		} else {
+			s.channel = channel
+		}
 	}
 	s.stopped = false
 	s.running = true
@@ -223,14 +253,18 @@ func (s *session) loop(done chan struct{}) {
 		s.mu.Lock()
 		s.waitQueueLocked()
 		if s.stopped || s.app.ctx.Err() != nil {
-			if !automatic && !s.shuttingDown && s.app.ctx.Err() == nil {
+			if automatic && s.recoveryHeld {
+				copy := entry
+				s.resumeAuto = &copy
+			}
+			if !automatic && !s.recoveryHeld && !s.shuttingDown && s.app.ctx.Err() == nil {
 				s.queueIOLocked(func() { s.queue.Finish(entry.ID) })
 			}
 			s.running = false
 			s.mu.Unlock()
 			return
 		}
-		if automatic {
+		if automatic && !s.replaying {
 			_, pending := s.queue.Snapshot()
 			if !s.auto.enabled || s.auto.revision != s.selectionRevision || len(pending) > 0 {
 				if len(pending) > 0 {
@@ -261,6 +295,16 @@ func (s *session) loop(done chan struct{}) {
 		s.mu.Lock()
 		s.waitQueueLocked()
 		text := s.text
+		if !s.skipping && !s.shuttingDown && s.app.ctx.Err() == nil && (s.recoveryHeld || errors.Is(err, errVoiceRecovery) || errors.Is(err, errVoiceRemoved)) {
+			s.suspendVoiceLocked()
+			s.current = nil
+			s.started = false
+			s.trackCancel = nil
+			s.running = false
+			s.mu.Unlock()
+			s.notifyFailure(text, &entry.Track, "音声接続を復旧できなかったため、再生を停止しました。曲とキューは保持しています。/playで再開できます。", true)
+			return
+		}
 		if automatic && !s.started && !s.skipping && !s.stopped && !s.shuttingDown && s.app.ctx.Err() == nil &&
 			(errors.Is(err, context.Canceled) || errors.Is(err, errSuperseded)) {
 			_, pending := s.queue.Snapshot()
@@ -278,14 +322,6 @@ func (s *session) loop(done chan struct{}) {
 		if stopped {
 			s.running = false
 			s.mu.Unlock()
-			return
-		}
-		if errors.Is(err, errVoiceMoveFailed) {
-			slog.Warn("voice move recovery failed; playback halted", "guild", s.guild, "channel", s.channel)
-			s.haltPlaybackLocked()
-			s.running = false
-			s.mu.Unlock()
-			s.notifyFailure(text, &entry.Track, "移動先への音声接続を再確立できなかったため、再生を停止しました。残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		if err != nil && !skipped {
@@ -330,16 +366,12 @@ func (s *session) loop(done chan struct{}) {
 func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.Producer) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	first := true
+	c, ok := conn.(*voiceConnection)
+	if !ok {
+		return errors.New("unmanaged voice connection")
+	}
 	next := time.Now()
 	err := audio.StreamOpus(ctx, s.app.config.FFmpeg, produce, s.volume, func(packet []byte) error {
-		if first {
-			if err := conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
-				return err
-			}
-			first = false
-			next = time.Now()
-		}
 		if wait := time.Until(next); !audio.StreamPaced && wait > 0 {
 			timer := time.NewTimer(wait)
 			select {
@@ -352,24 +384,7 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err := s.sendVoicePacket(ctx, func() error {
-			return withReadyVoiceGateway(ctx, conn.Gateway(), func() error {
-				s.mu.Lock()
-				reset, channel := s.moveSpeaking, s.channel
-				s.mu.Unlock()
-				if reset {
-					if err := conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
-						return err
-					}
-					s.mu.Lock()
-					if s.channel == channel {
-						s.moveSpeaking = false
-					}
-					s.mu.Unlock()
-				}
-				return s.sendPacket(ctx, func() error { _, err := conn.UDP().Write(packet); return err })
-			})
-		})
+		err := s.sendPacket(ctx, func() error { return c.WriteAudio(ctx, packet) })
 		if err != nil {
 			return err
 		}
@@ -381,15 +396,10 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 		return nil
 	}, s.channelBitrate)
 	cancel()
-	stopCtx, c := context.WithTimeout(context.Background(), 2*time.Second)
-	defer c()
+	stopCtx, stop := context.WithTimeout(context.Background(), 2*time.Second)
+	defer stop()
 	// Flush the Opus decoder before clearing speaking, as Discord recommends.
-	for i := 0; i < 5; i++ {
-		if _, e := conn.UDP().Write(voice.SilenceAudioFrame); e != nil {
-			break
-		}
-	}
-	_ = conn.SetSpeaking(stopCtx, voice.SpeakingFlagNone)
+	c.FinishAudio(stopCtx)
 	return err
 }
 
@@ -402,32 +412,6 @@ func (s *session) playbackStatus() runcontrol.Playback {
 var diagnosticURL = regexp.MustCompile(`https?://[^\s]+`)
 var errSuperseded = errors.New("automatic candidate superseded")
 var errDaveNotReady = errors.New("DAVE key exchange in progress")
-
-// Retry the same encoded frame without holding the session mutex. Epoch
-// changes must not advance the track or send unencrypted audio.
-func waitDave(ctx context.Context, send func() error) error {
-	deadline := time.NewTimer(15 * time.Second)
-	defer deadline.Stop()
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		err := send()
-		if !errors.Is(err, errDaveNotReady) {
-			return err
-		}
-		timer := time.NewTimer(10 * time.Millisecond)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return ctx.Err()
-		case <-deadline.C:
-			timer.Stop()
-			return errors.New("DAVE key exchange timed out")
-		case <-timer.C:
-		}
-	}
-}
 
 func (a *App) safeError(err error) string {
 	if err == nil {
@@ -457,8 +441,6 @@ func (s *session) stopLocked() {
 	s.channel = 0
 	s.emptySince = time.Time{}
 	s.idleSince = time.Time{}
-	s.moveDeadline = time.Time{}
-	s.moveSpeaking = false
 	if conn != nil {
 		done := make(chan struct{})
 		s.closing = done
@@ -477,6 +459,13 @@ func (s *session) stopLocked() {
 
 // Stop scheduling and playback without leaving the voice channel.
 func (s *session) haltPlaybackLocked() {
+	if s.recoveryHeld && !s.shuttingDown {
+		current, _ := s.queue.Snapshot()
+		if current != nil {
+			s.queueIOLocked(func() { s.queue.Finish(current.ID) })
+		}
+		s.recoveryHeld = false
+	}
 	if s.connectCancel != nil {
 		s.connectCancel()
 	}

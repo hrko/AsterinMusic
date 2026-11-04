@@ -26,6 +26,7 @@ type playbackCheckpoint struct {
 	History          []string
 	AutomaticTrack   *music.Entry
 	RecordedPlayback *recordedPlayback `json:",omitempty"`
+	RecoveryHeld     bool              `json:",omitempty"`
 }
 
 // Identify a playback occurrence, not just a video. Manual re-additions have
@@ -73,9 +74,12 @@ func (s *session) checkpoint(path string) error {
 	if s.shuttingDown {
 		return nil
 	}
+	if s.conn != nil {
+		s.syncVoiceLocked()
+	}
 	// Explicit user termination wins over a later managed shutdown, even if
 	// the playback goroutine has not finished its cancellation cleanup yet.
-	if s.stopped {
+	if s.stopped && !s.recoveryHeld {
 		// Queue.Start may have selected a manual track before loop assigns
 		// session.current. Stop ends that selection as well.
 		if current, _ := s.queue.Snapshot(); current != nil {
@@ -134,9 +138,17 @@ func (s *session) checkpoint(path string) error {
 }
 
 func (s *session) checkpointBytesLocked() ([]byte, error) {
+	if s.conn != nil {
+		s.syncVoiceLocked()
+	}
 	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
 		Playing: !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
 		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
+	v.RecoveryHeld = s.recoveryHeld
+	if s.recoveryHeld {
+		v.AutomaticTrack = s.resumeAuto
+		v.RecordedPlayback = s.historyResume
+	}
 	if s.currentAuto && s.auto.enabled && !s.skipping && !s.stopped {
 		v.AutomaticTrack = s.current
 	}
@@ -204,7 +216,8 @@ func (s *session) restoreSettings(v *playbackCheckpoint) {
 	s.auto.seed = v.Seed
 	s.auto.history = append([]string(nil), v.History...)
 	s.historyResume = v.RecordedPlayback
-	if v.AutoEnabled {
+	s.recoveryHeld = v.RecoveryHeld
+	if v.AutoEnabled || v.RecoveryHeld {
 		s.resumeAuto = v.AutomaticTrack
 	}
 }

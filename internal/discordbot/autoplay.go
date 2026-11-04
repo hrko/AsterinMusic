@@ -199,6 +199,23 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 		}
 		var entry music.Entry
 		var ok bool
+		s.replaying = false
+		if s.recoveryHeld {
+			s.recoveryHeld = false
+			s.replaying = true
+			if s.resumeAuto != nil {
+				entry = *s.resumeAuto
+				s.resumeAuto = nil
+				s.selectionRevision = s.auto.revision
+				s.selectionSeed = s.auto.seedGeneration
+				s.mu.Unlock()
+				return entry, true, true
+			}
+			if current, _ := s.queue.Snapshot(); current != nil {
+				s.mu.Unlock()
+				return *current, false, true
+			}
+		}
 		s.queueIOLocked(func() { entry, ok = s.queue.Start() })
 		if ok {
 			s.resumeAuto = nil
