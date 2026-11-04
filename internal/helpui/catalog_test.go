@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/discordbot"
 	"asterinmusic/internal/helpui"
 	"github.com/disgoorg/disgo/discord"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode/utf16"
@@ -57,6 +58,91 @@ func TestRegisteredCommandCoverageAndDiscordLimits(t *testing.T) {
 	}
 	if _, ok := c.Find("command:missing"); ok {
 		t.Fatal("invalid ID accepted")
+	}
+}
+
+// Examples are editorial text: validate their executable parts against the
+// registration so option renames/removals and changed bounds cannot drift.
+func TestExamplesMatchRegistration(t *testing.T) {
+	commands := discordbot.Commands()
+	c, err := helpui.New(commands, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, registration := range commands {
+		cmd := registration.(discord.SlashCommandCreate)
+		p, _ := c.Find("command:" + cmd.Name)
+		for _, field := range p.Embed.Fields {
+			if field.Name != "使用例" {
+				continue
+			}
+			for _, line := range strings.Split(field.Value, "\n") {
+				line = strings.TrimSpace(line)
+				if !strings.HasPrefix(line, "/") {
+					continue
+				}
+				tokens := strings.Fields(line)
+				if tokens[0] != "/"+cmd.Name {
+					t.Fatalf("wrong command example: %s", line)
+				}
+				seen := map[string]bool{}
+				for _, token := range tokens[1:] {
+					name, value, hasValue := strings.Cut(token, ":")
+					found := false
+					for _, opt := range cmd.Options {
+						if opt.OptionName() != name {
+							continue
+						}
+						found = true
+						seen[name] = true
+						switch o := opt.(type) {
+						case discord.ApplicationCommandOptionSubCommand:
+							if hasValue {
+								t.Fatal(line)
+							}
+						case discord.ApplicationCommandOptionInt:
+							n, e := strconv.Atoi(value)
+							if e != nil || (o.MinValue != nil && n < *o.MinValue) || (o.MaxValue != nil && n > *o.MaxValue) {
+								t.Fatalf("invalid integer example: %s", line)
+							}
+						case discord.ApplicationCommandOptionString:
+							if !hasValue || value == "" {
+								t.Fatal(line)
+							}
+							if len(o.Choices) > 0 {
+								valid := false
+								for _, choice := range o.Choices {
+									valid = valid || choice.Value == value
+								}
+								if !valid {
+									t.Fatal(line)
+								}
+							}
+							if cmd.Name == "help" {
+								if _, ok := c.Find(value); !ok {
+									t.Fatal("unknown help example page")
+								}
+							}
+						}
+					}
+					if !found {
+						t.Fatalf("unknown argument in example: %s", line)
+					}
+				}
+				for _, opt := range cmd.Options {
+					required := false
+					switch o := opt.(type) {
+					case discord.ApplicationCommandOptionString:
+						required = o.Required
+					case discord.ApplicationCommandOptionInt:
+						required = o.Required
+					}
+					if required && !seen[opt.OptionName()] {
+						t.Fatalf("missing required example argument: %s", line)
+					}
+				}
+			}
+		}
 	}
 }
 
