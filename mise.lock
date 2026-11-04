@@ -1131,18 +1131,6 @@ backend = "github:bazelbuild/bazel"
 specifiers = ["5.3.2"]
 
 [tools."github:bazelbuild/bazel".options]
-asset_pattern = "bazel-5.3.2-windows-x86_64.exe"
-
-[tools."github:bazelbuild/bazel"."platforms.windows-x64"]
-checksum = "sha256:af080ef9a8b6f27c2b2055a9e0a5155ef7138cf46b967103b91d47c675c2bbde"
-url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-windows-x86_64.exe"
-url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580397"
-
-[[tools."github:bazelbuild/bazel"]]
-version = "5.3.2"
-backend = "github:bazelbuild/bazel"
-
-[tools."github:bazelbuild/bazel".options]
 asset_pattern = "bazel-5.3.2-linux-x86_64"
 
 [tools."github:bazelbuild/bazel"."platforms.linux-x64"]
@@ -1150,22 +1138,22 @@ checksum = "sha256:973e213b1e9207ccdd3ea4730c0f92cbef769ec112ac2b84980583220d8db
 url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64"
 url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580360"
 
+[[tools."github:bazelbuild/bazel"]]
+version = "5.3.2"
+backend = "github:bazelbuild/bazel"
+
+[tools."github:bazelbuild/bazel".options]
+asset_pattern = "bazel-5.3.2-windows-x86_64.exe"
+
+[tools."github:bazelbuild/bazel"."platforms.windows-x64"]
+checksum = "sha256:af080ef9a8b6f27c2b2055a9e0a5155ef7138cf46b967103b91d47c675c2bbde"
+url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-windows-x86_64.exe"
+url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580397"
+
 [[tools."github:sqlc-dev/sqlc"]]
 version = "1.31.1"
 backend = "github:sqlc-dev/sqlc"
 specifiers = ["1.31.1"]
-
-[tools."github:sqlc-dev/sqlc".options]
-asset_pattern = "sqlc_1.31.1_windows_amd64.zip"
-
-[tools."github:sqlc-dev/sqlc"."platforms.windows-x64"]
-checksum = "sha256:352711fa7dcb05dcdfefca0ad71b2c9a74fd090f8d7fc609419de4cbc725429f"
-url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_windows_amd64.zip"
-url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402612157"
-
-[[tools."github:sqlc-dev/sqlc"]]
-version = "1.31.1"
-backend = "github:sqlc-dev/sqlc"
 
 [tools."github:sqlc-dev/sqlc".options]
 asset_pattern = "sqlc_1.31.1_linux_amd64.tar.gz"
@@ -1175,23 +1163,22 @@ checksum = "sha256:497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27
 url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
 url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402611992"
 
+[[tools."github:sqlc-dev/sqlc"]]
+version = "1.31.1"
+backend = "github:sqlc-dev/sqlc"
+
+[tools."github:sqlc-dev/sqlc".options]
+asset_pattern = "sqlc_1.31.1_windows_amd64.zip"
+
+[tools."github:sqlc-dev/sqlc"."platforms.windows-x64"]
+checksum = "sha256:352711fa7dcb05dcdfefca0ad71b2c9a74fd090f8d7fc609419de4cbc725429f"
+url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_windows_amd64.zip"
+url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402612157"
+
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
 backend = "github:yt-dlp/yt-dlp"
 specifiers = ["latest"]
-
-[tools."github:yt-dlp/yt-dlp".options]
-asset_pattern = "yt-dlp.exe"
-
-[tools."github:yt-dlp/yt-dlp"."platforms.windows-x64"]
-checksum = "sha256:66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
-url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe"
-url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488854"
-provenance = "github-attestations"
-
-[[tools."github:yt-dlp/yt-dlp"]]
-version = "2026.08.19"
-backend = "github:yt-dlp/yt-dlp"
 
 [tools."github:yt-dlp/yt-dlp".options]
 asset_pattern = "yt-dlp_linux"
@@ -1200,6 +1187,19 @@ asset_pattern = "yt-dlp_linux"
 checksum = "sha256:58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
 url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux"
 url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488856"
+provenance = "github-attestations"
+
+[[tools."github:yt-dlp/yt-dlp"]]
+version = "2026.08.19"
+backend = "github:yt-dlp/yt-dlp"
+
+[tools."github:yt-dlp/yt-dlp".options]
+asset_pattern = "yt-dlp.exe"
+
+[tools."github:yt-dlp/yt-dlp"."platforms.windows-x64"]
+checksum = "sha256:66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe"
+url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488854"
 provenance = "github-attestations"
 
 [[tools.go]]
@@ -1238,6 +1238,7 @@ specifiers = ["0.15.2"]
 [tools.zig."platforms.linux-x64"]
 checksum = "sha256:02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239"
 url = "https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz"
+provenance = "minisign"
 
 [tools.zig."platforms.windows-x64"]
 checksum = "sha256:3a0ed1e8799a2f8ce2a6e6290a9ff22e6906f8227865911fb7ddedc3cc14cb0c"
