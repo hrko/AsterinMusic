@@ -192,7 +192,7 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
-		if v == "help-home" || v == "help-add" || v == "help-autoplay" {
+		if v == "help-home" || v == "help-add" || v == "help-autoplay" || v == "help-bullets" || v == "help-compact" || v == "help-steps" {
 			continue
 		}
 		if v == "brackets" {

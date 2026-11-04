@@ -1,9 +1,31 @@
 package main
 
+import "strings"
+
 // Static layout previews; no commands or interactive components are registered.
 func helpSample(variant string) embed {
 	e := embed{Color: 0x527DA8, Footer: map[string]string{"text": "使い方の表示サンプル · コマンド実行・カテゴリ切替はできません"}}
 	switch variant {
+	case "help-bullets":
+		e = helpSample("help-home")
+		e.Title = "A：カテゴリ別の箇条書き"
+		for _, f := range e.Fields {
+			e.Description += "\n\n**" + f.Name + "**\n- " + strings.ReplaceAll(f.Value, "\n", "\n- ")
+		}
+		e.Fields = nil
+	case "help-compact":
+		e.Title = "B：目的とコマンドのコンパクトな一覧"
+		e.Description = "VCに参加して、`/play` に動画や音楽のURLを指定すると再生できます。\n\n" +
+			"**曲を追加**\nキューに追加 → `/play`\n自分の待機曲の先頭に追加 → `/playnext`\n\n" +
+			"**再生を操作**\nスキップ → `/skip`\n停止して退出 → `/stop`\n音量を表示・変更 → `/volume`\n\n" +
+			"**曲を確認**\n再生中 → `/nowplaying`\n再生予定 → `/queue`\n履歴・再追加 → `/history`\n\n" +
+			"**関連曲を聴く**\nMixからまとめて追加 → `/mix`\n待機曲の後に自動再生 → `/autoplay on`"
+	case "help-steps":
+		e.Title = "C：最初の手順＋操作一覧"
+		e.Description = "**まずは再生してみる**\n1. 音声チャンネルに参加\n2. `/play` の `url` に動画や音楽のURLを指定\n3. 別の曲も `/play` でキューに追加\n\n" +
+			"**追加・再生操作**\n- `/playnext` 自分の待機曲の先頭に追加\n- `/skip` 現在の曲をスキップ\n- `/stop` 再生を停止して退出\n- `/volume` 音量を表示・変更\n\n" +
+			"**曲を確認**\n- `/nowplaying` 再生中の曲\n- `/queue` 再生予定\n- `/history` 履歴を表示・曲を再追加\n\n" +
+			"**関連曲を聴く**\n- `/mix` Mixからまとめて追加\n- `/autoplay on` 待機曲がなくなったら自動再生"
 	case "help-home":
 		e.Title = "AsterinMusicの使い方"
 		e.Description = "VCに参加して、`/play` に動画や音楽のURLを指定すると再生できます。"
