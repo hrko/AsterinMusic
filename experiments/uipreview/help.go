@@ -1,0 +1,36 @@
+package main
+
+// Static layout previews; no commands or interactive components are registered.
+func helpSample(variant string) embed {
+	e := embed{Color: 0x527DA8, Footer: map[string]string{"text": "使い方の表示サンプル · コマンド実行・カテゴリ切替はできません"}}
+	switch variant {
+	case "help-home":
+		e.Title = "AsterinMusicの使い方"
+		e.Description = "VCに参加して、`/play` に動画や音楽のURLを指定すると再生できます。"
+		e.Fields = []field{
+			{Name: "曲を追加", Value: "`/play` キューに追加\n`/playnext` 自分の待機曲の先頭に追加"},
+			{Name: "再生を操作", Value: "`/skip` 現在の曲をスキップ\n`/stop` 再生を停止して退出\n`/volume` 音量を表示・変更"},
+			{Name: "曲を確認", Value: "`/nowplaying` 再生中の曲\n`/queue` 再生予定\n`/history` 履歴を表示・曲を再追加"},
+			{Name: "関連曲を聴く", Value: "`/mix` Mixからまとめて追加\n`/autoplay on` 待機曲がなくなったら自動再生"},
+		}
+	case "help-add":
+		e.Title = "曲を追加する"
+		e.Description = "YouTube・YouTube Music・ニコニコ動画のURLに対応しています。"
+		e.Fields = []field{
+			{Name: "通常の追加", Value: "`/play url:動画URL` で曲をキューに追加します。\nYouTube・YouTube MusicのプレイリストURLなら、複数曲をまとめて追加できます。"},
+			{Name: "先に聴きたい曲", Value: "`/playnext url:動画URL` で自分の待機曲の先頭に追加します。他の人の順番は維持し、再生中の曲は中断しません。"},
+			{Name: "動画に付属するリスト", Value: "リスト付きの動画URLでは、まずその曲を追加します。追加結果のボタンから、付属プレイリストやMixも取り込めます。"},
+			{Name: "停止後に再開", Value: "VCに参加し、URLを指定せず `/play` を実行すると、保持しているキューを再開できます。"},
+		}
+	case "help-autoplay":
+		e.Title = "Mix・自動再生"
+		e.Description = "まとめて曲を追加するにはMix、待機曲がなくなった後も聴き続けるには自動再生を使います。"
+		e.Fields = []field{
+			{Name: "Mixから追加", Value: "`/mix url:動画URL` で、YouTube・YouTube Musicの動画を起点に関連曲をまとめて追加します。\n追加する件数は `count` で指定できます。追加後の自動補充はしません。"},
+			{Name: "自動再生を有効にする", Value: "`/autoplay on` で有効にします。手動追加の待機曲がなくなると、関連曲を再生します。\n有効な間に最後に再生を開始した、手動追加のYouTube曲が起点になります。"},
+			{Name: "自分で追加した曲を聴く", Value: "手動で追加した曲が優先されます。再生中の曲は中断せず、その後に再生します。"},
+			{Name: "確認・無効化", Value: "`/autoplay status` 状態と起点を確認\n`/autoplay off` 自動補充を停止（現在の曲は継続）"},
+		}
+	}
+	return e
+}

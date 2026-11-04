@@ -50,6 +50,9 @@ func imageSamples(variant string) []embed {
 }
 
 func sample(variant string) embed {
+	if strings.HasPrefix(variant, "help-") {
+		return helpSample(variant)
+	}
 	if variant == "brackets" {
 		return bracketSample()
 	}
@@ -189,6 +192,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "help-home" || v == "help-add" || v == "help-autoplay" {
+			continue
+		}
 		if v == "brackets" {
 			continue
 		}
