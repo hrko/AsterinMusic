@@ -29,6 +29,7 @@ import (
 )
 
 type App struct {
+	historyViews     map[string]*historyView
 	historyStore     *history.Store
 	historyWriter    *history.Writer
 	presenceRevision atomic.Uint64
@@ -78,6 +79,7 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		bot.WithEventListenerFunc(func(e *events.Ready) { a.presenceRevision.Add(1); a.readyOnce.Do(func() { close(a.ready) }) }),
 		bot.WithEventListenerFunc(func(e *events.Resumed) { a.presenceRevision.Add(1) }),
 		bot.WithEventListenerFunc(a.onCommand), bot.WithEventListenerFunc(a.onComponent),
+		bot.WithEventListenerFunc(a.onHistoryModal),
 		bot.WithEventListenerFunc(a.onVoiceState),
 	}
 	opts = append(opts, daveOptions(a)...)

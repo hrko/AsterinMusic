@@ -90,7 +90,7 @@ func privateQuery(d discord.SlashCommandInteractionData) bool {
 	switch d.CommandName() {
 	case "queue":
 		return d.String("action") != "clear"
-	case "nowplaying":
+	case "nowplaying", "history":
 		return true
 	case "volume":
 		_, set := d.OptInt("percent")

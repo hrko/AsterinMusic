@@ -40,6 +40,8 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 	}
 	reply := func(text string) { a.edit(e.Token(), text, nil) }
 	switch data.CommandName() {
+	case "history":
+		a.historyCommand(e)
 	case "autoplay":
 		a.autoplayCommand(e, s)
 	case "mix":
@@ -218,6 +220,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 }
 
 func (a *App) onComponent(e *events.ComponentInteractionCreate) {
+	if strings.HasPrefix(e.Data.CustomID(), "history:") {
+		a.historyComponent(e)
+		return
+	}
 	if strings.HasPrefix(e.Data.CustomID(), "queue:") {
 		a.queueComponent(e)
 		return
