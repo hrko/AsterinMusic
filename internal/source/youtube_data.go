@@ -22,6 +22,7 @@ import (
 // YouTubeData owns a bounded cache and serializes cache misses, including
 // overlapping requests. Waiting for another caller counts toward the budget.
 type YouTubeData struct {
+	failures logging.Repetition
 	// Logger must be set before Enrich is called; nil disables diagnostics.
 	Logger       *slog.Logger
 	key          string
@@ -169,7 +170,11 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 			} else if errors.Is(err, context.DeadlineExceeded) {
 				reason = "timeout"
 			}
-			logging.OrDiscard(d.Logger).Log(ctx, level, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", reason, "action", "use_extractor_metadata")
+			if level == slog.LevelDebug {
+				logging.OrDiscard(d.Logger).DebugContext(ctx, "YouTube metadata request canceled", "event", "source.metadata.canceled", "reason", reason)
+			} else {
+				d.fallback(ctx, reason, 0)
+			}
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
@@ -179,7 +184,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 				delay = 15 * time.Minute
 			}
 			d.blockedUntil = time.Now().Add(delay)
-			logging.OrDiscard(d.Logger).WarnContext(ctx, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", "http_status", "http_status", resp.StatusCode, "action", "use_extractor_metadata")
+			d.fallback(ctx, "http_status", resp.StatusCode)
 			return
 		}
 		var body struct {
@@ -204,7 +209,7 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 		resp.Body.Close()
 		if err != nil {
 			d.blockedUntil = time.Now().Add(30 * time.Second)
-			logging.OrDiscard(d.Logger).WarnContext(ctx, "YouTube metadata API unavailable", "event", "source.metadata.fallback", "reason", "invalid_response", "action", "use_extractor_metadata")
+			d.fallback(ctx, "invalid_response", 0)
 			return
 		}
 		titles := map[string]apiMetadata{}
@@ -245,5 +250,23 @@ func (d *YouTubeData) Enrich(parent context.Context, tracks []music.Track, lang 
 		}
 		d.cacheMu.Unlock()
 		logging.OrDiscard(d.Logger).DebugContext(ctx, "YouTube metadata API request completed", "event", "source.metadata.completed", "videos", len(batch))
+		d.failures.ResolveAll(ctx, d.Logger)
+	}
+}
+
+func (d *YouTubeData) fallback(ctx context.Context, reason string, status int) {
+	attrs := []any{"event", "source.metadata.fallback", "reason", reason, "action", "use_extractor_metadata"}
+	key := reason
+	if status != 0 {
+		attrs = append(attrs, "http_status", status)
+		key += strconv.Itoa(status)
+	}
+	d.failures.Failure(ctx, d.Logger, key, "YouTube metadata API unavailable", attrs...)
+}
+
+// CloseDiagnostics flushes bounded summaries without changing the metadata cache.
+func (d *YouTubeData) CloseDiagnostics(ctx context.Context) {
+	if d != nil {
+		d.failures.Close(ctx, d.Logger)
 	}
 }

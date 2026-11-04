@@ -108,6 +108,9 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 	}
 	a.config.ApplicationID = application.ID
 	a.logger = a.logger.With("bot_id", application.ID.String())
+	if a.source.YouTubeData != nil {
+		a.source.YouTubeData.Logger = logging.Component(a.logger, "source").With("guild_id", c.GuildID.String())
+	}
 	return a, nil
 }
 
@@ -152,6 +155,9 @@ func (a *App) Close() {
 	}
 	a.client.Close(ctx)
 	a.closeAllDave()
+	if a.source != nil {
+		a.source.YouTubeData.CloseDiagnostics(ctx)
+	}
 	if a.historyWriter != nil {
 		flushCtx, c := context.WithTimeout(context.Background(), 10*time.Second)
 		err := a.historyWriter.Shutdown(flushCtx)

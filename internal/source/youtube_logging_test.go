@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestMetadataFailureLogsSafeOutcome(t *testing.T) {
@@ -40,5 +41,31 @@ func TestMetadataFailureLogsSafeOutcome(t *testing.T) {
 				t.Fatal("fallback metadata changed")
 			}
 		})
+	}
+}
+
+func TestMetadataFailureSeriesIsSummarizedOnRecovery(t *testing.T) {
+	var out bytes.Buffer
+	logger, _ := logging.New(&out, logging.Options{Format: "json"})
+	count := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		count++
+		if count < 3 {
+			w.WriteHeader(503)
+			return
+		}
+		fmt.Fprint(w, `{"items":[]}`)
+	}))
+	defer server.Close()
+	d := NewYouTubeData("PRIVATE")
+	d.endpoint = server.URL
+	d.Logger = logging.Component(logger, "source")
+	for range 3 {
+		d.blockedUntil = time.Time{} // Exercise logging independently of request backoff.
+		d.Enrich(t.Context(), []music.Track{{URL: "https://www.youtube.com/watch?v=abcdefghijk", Site: "youtube"}}, "ja")
+	}
+	text := out.String()
+	if strings.Count(text, `"event":"source.metadata.fallback"`) != 1 || !strings.Contains(text, `"suppressed":1`) || !strings.Contains(text, `"event":"logging.repetition.recovered"`) {
+		t.Fatalf("missing aggregate or recovery: %s", text)
 	}
 }
