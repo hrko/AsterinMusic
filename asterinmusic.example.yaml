@@ -1,4 +1,9 @@
 version: 1
+logging:
+  level: info
+  format: text
+  # components:
+  #   voice: debug
 runtime:
   state_dir: ./.asterinmusic/state
 tools:

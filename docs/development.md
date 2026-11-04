@@ -80,6 +80,22 @@ mise run update-rollback
 
 保存先は既定で`.dev/yt-dlp`です。運用環境では`ASTERINMUSIC_UPDATE_DIR`で永続ディレクトリを指定してください。更新中に異常終了して`update.lock`が残った場合は、更新プロセスが動いていないことを確認してから削除します。miseのロックやツール本体は更新機構から変更しません。
 
+## ログの確認
+
+運用ログは標準エラーへ出し、開発管理タスクが`.dev/logs`へ保存する。閲覧は`mise run bot-logs`、稼働確認は`mise run bot-status`を使う。Bot本体はファイルのローテーションを行わない。旧ログの整理は`mise run bot-cleanup`で候補を確認し、削除するときだけ`-- --apply`を付ける。稼働中のログ保護と既存の保持件数は変わらない。
+
+調査時は設定ファイルで対象コンポーネントだけDEBUGにする。例えば音声接続は次の設定を使う。変更の反映は`mise run bot-restart -- --after-track`で行い、通常の設定ファイル指定も維持する。全体のDEBUGは不要である。
+
+```yaml
+logging:
+  level: info
+  format: json
+  components:
+    voice: debug
+```
+
+`event`で出来事を検索し、`bot_id`・`guild_id`、接続の`generation`、再生の`playback_id`、操作の`operation_id`で絞る。曲名・入力URL・ユーザー名や認証情報はログで追跡しない。ログファイルはGit管理外に置き、閲覧権限は運用者が管理する。配布先では実行環境のログ収集・保持機構を使う。
+
 ## WebhookによるUI検証
 
 外部モデルによるコード点検は [Agyレビュー手順](agy-review.md) を参照する。Botの実行管理とは別の読み取りレビューとして扱う。

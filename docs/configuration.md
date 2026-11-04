@@ -11,6 +11,9 @@ AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してか�
 | 項目 | 必須・既定値 |
 | --- | --- |
 | `version` | 必須、`1` |
+| `logging.level` | `info`。`debug` / `info` / `warn` / `error`（大文字も可） |
+| `logging.format` | `text`。`text` / `json` |
+| `logging.components` | 空。コンポーネント名をキー、上書きレベルを値とするマップ |
 | `runtime.state_dir` | `./.asterinmusic/state` |
 | `tools.yt_dlp.path` | `yt-dlp` |
 | `tools.ffmpeg.path` | `ffmpeg` |
@@ -30,6 +33,14 @@ AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してか�
 | `servers.<name>.command_bot` | 必須。上記リスト内のBot名 |
 
 配置関係は`servers.*.bots`だけに記述する。Bot名・サーバー名は英小文字・数字・`_`・`-`を使用する。未知のキー、重複キー、不正な型、null、YAMLのエイリアス・マージキー、複数ドキュメントを拒否する。リストは全体置換であり、連結しない。ファイルは1つだけ読み、includeは提供しない。
+
+## ログ設定
+
+`logging`を省略した既存設定はINFO・textで動作する。指定できるコンポーネントは`app`、`voice`、`playback`、`source`、`history`、`state`、`interaction`、`updater`、`discord`、`dave`。例えば`logging.components.voice: debug`を指定すると、他のコンポーネントをINFOに保ったまま音声接続の診断を有効にできる。未知の名前・不正なレベル・形式は起動時に拒否する。変更には再起動が必要である。
+
+ログは標準エラーへ出力する。JSONは一行一イベントで、診断コマンドが標準出力へ返す結果とは分離する。秘密情報はDEBUGでも出力対象にしない。依存ライブラリの原文・任意属性は除外し、コンポーネントとレベル、安全な数値属性だけを残すため、DEBUGにしてもライブラリの通信内容全体は表示されない。
+
+移行範囲と検証状況は[ログ改善の要件](logging-plan.md)を参照する。
 
 ## 変数と認証情報
 
