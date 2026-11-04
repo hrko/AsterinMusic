@@ -156,6 +156,52 @@ func TestResumeKickNeverRejoins(t *testing.T) {
 	}
 }
 
+func TestResumeBudgetFallsBackToFreshConnection(t *testing.T) {
+	c := testVoiceController(t)
+	transport := &rejectedResume{fakeVoiceTransport: newFakeVoiceTransport(), code: 1006}
+	var opens atomic.Int32
+	c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
+		if opens.Add(1) == 1 {
+			return transport, nil
+		}
+		return newFakeVoiceTransport(), nil
+	}
+	c.HandleVoiceStateUpdate(stateEvent(3))
+	c.HandleVoiceServerUpdate(serverEvent("old"))
+	waitVoice(t, c)
+	var joins atomic.Int32
+	c.update = func(_ context.Context, _ snowflake.ID, id *snowflake.ID, _, _ bool) error {
+		if id != nil {
+			joins.Add(1)
+			c.HandleVoiceStateUpdate(stateEvent(*id))
+			c.HandleVoiceServerUpdate(serverEvent("new"))
+		}
+		return nil
+	}
+	c.mu.Lock()
+	gen := c.generation
+	c.mu.Unlock()
+	c.transportClosed(gen, &websocket.CloseError{Code: 1006}, true)
+	waitVoice(t, c)
+	if transport.calls.Load() != 2 || joins.Load() != 1 || opens.Load() != 2 {
+		t.Fatal("resume budget or fallback incorrect")
+	}
+}
+
+func TestStopCancelsRecoveryBeforeAsyncTeardown(t *testing.T) {
+	c := testVoiceController(t)
+	f := recoveryFixture(t, c)
+	var calls atomic.Int32
+	c.update = func(context.Context, snowflake.ID, *snowflake.ID, bool, bool) error { calls.Add(1); return nil }
+	c.stopRecovery()
+	if err := c.recoveryUpdate(f, false); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stop result: %v", err)
+	}
+	if calls.Load() != 0 {
+		t.Fatal("stopped supervisor sent join")
+	}
+}
+
 func TestRecoveryDoesNotRejoinWithoutLeaveConfirmation(t *testing.T) {
 	c := testVoiceController(t)
 	c.canRejoin = func(context.Context, snowflake.ID) bool { return true }

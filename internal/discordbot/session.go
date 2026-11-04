@@ -449,6 +449,9 @@ func (s *session) stop() error {
 }
 
 func (s *session) stopLocked() {
+	if c, ok := s.conn.(*voiceConnection); ok {
+		c.stopRecovery()
+	}
 	s.haltPlaybackLocked()
 	conn := s.conn
 	s.conn = nil

@@ -54,6 +54,24 @@ func (c *voiceConnection) cancelRecoveryLocked() {
 	}
 }
 
+// Stop cancels the supervisor synchronously, before session teardown is
+// scheduled. No network I/O or log writer is called while the session is locked.
+func (c *voiceConnection) stopRecovery() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.cancelRecoveryLocked()
+	if c.phase != voiceClosed {
+		c.discardLocked()
+		c.failureStage = "stop"
+		c.failureReason = "canceled"
+		// Close will publish the final transition; do not report explicit
+		// stop as a connection failure.
+		c.phase = voiceFailed
+		close(c.changed)
+		c.changed = make(chan struct{})
+	}
+}
+
 func (c *voiceConnection) recoveryValidLocked(f *voiceRecoveryFlow) bool {
 	return c.recovery == f && f.ctx.Err() == nil && !c.removed && c.phase != voiceClosed && c.phase != voiceFailed
 }
