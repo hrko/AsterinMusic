@@ -353,20 +353,22 @@ func (s *session) playTrack(ctx context.Context, conn voice.Conn, produce audio.
 			return err
 		}
 		err := s.sendVoicePacket(ctx, func() error {
-			s.mu.Lock()
-			reset, channel := s.moveSpeaking, s.channel
-			s.mu.Unlock()
-			if reset {
-				if err := conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
-					return err
-				}
+			return withReadyVoiceGateway(conn.Gateway(), func() error {
 				s.mu.Lock()
-				if s.channel == channel {
-					s.moveSpeaking = false
-				}
+				reset, channel := s.moveSpeaking, s.channel
 				s.mu.Unlock()
-			}
-			return s.sendPacket(ctx, func() error { _, err := conn.UDP().Write(packet); return err })
+				if reset {
+					if err := conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
+						return err
+					}
+					s.mu.Lock()
+					if s.channel == channel {
+						s.moveSpeaking = false
+					}
+					s.mu.Unlock()
+				}
+				return s.sendPacket(ctx, func() error { _, err := conn.UDP().Write(packet); return err })
+			})
 		})
 		if err != nil {
 			return err

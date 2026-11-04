@@ -83,6 +83,7 @@ func New(ctx context.Context, c config.Config) (*App, error) {
 		bot.WithEventListenerFunc(a.onVoiceState),
 	}
 	opts = append(opts, daveOptions(a)...)
+	opts = append(opts, a.voiceMoveOptions())
 	client, err := disgo.New(c.Token, opts...)
 	if err != nil {
 		return nil, errors.New("could not initialize Discord client")
