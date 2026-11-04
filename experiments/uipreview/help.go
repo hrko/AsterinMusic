@@ -10,30 +10,30 @@ func helpSample(variant string) embed {
 		e.Title = "/play"
 		e.Description = "曲・プレイリストをキューに追加、または停止後のキューを再開します。"
 		e.Fields = []field{
-			{Name: "書式", Value: "`/play [url:URL]`\n角括弧内は省略できます。"},
-			{Name: "引数", Value: "**url** · 任意\nYouTube・YouTube Music・ニコニコ動画のURL。プレイリストはYouTube・YouTube Musicに対応。"},
+			{Name: "書式", Value: "```\n/play [url:URL]\n```\n-# 角括弧内は省略できます。"},
+			{Name: "引数", Value: "- **url** · 任意  \n  YouTube・YouTube Music・ニコニコ動画のURL。プレイリストはYouTube・YouTube Musicに対応。"},
 			{Name: "動作", Value: "- 動画URL：その曲をキューに追加\n- プレイリストURL：複数曲をまとめて追加\n- URL省略：保持しているキューを再開\n- リスト付き動画URL：まず単曲を追加し、ボタンから付属リストも取り込み可能"},
-			{Name: "使用例", Value: "`/play url:https://www.youtube.com/watch?v=TcLLpZBWsck`\n曲を追加\n\n`/play`\nキューを再開"},
+			{Name: "使用例", Value: "- 曲を追加\n  ```\n  /play url:https://www.youtube.com/watch?v=TcLLpZBWsck\n  ```\n- キューを再開\n  ```\n  /play\n  ```"},
 			{Name: "利用条件", Value: "音声チャンネルへの参加が必要です。"},
 		}
 	case "help-ref-playnext":
 		e.Title = "/playnext"
 		e.Description = "曲を自分の待機曲の先頭に追加します。"
 		e.Fields = []field{
-			{Name: "書式", Value: "`/playnext url:URL`"},
-			{Name: "引数", Value: "**url** · 必須\nYouTube・YouTube Music・ニコニコ動画の単曲URL。"},
+			{Name: "書式", Value: "```\n/playnext url:URL\n```"},
+			{Name: "引数", Value: "- **url** · 必須  \n  YouTube・YouTube Music・ニコニコ動画の単曲URL。"},
 			{Name: "動作", Value: "- 自分の次の番に再生する曲として追加\n- 他の人の順番は維持\n- 再生中の曲は中断しません\n- 付属リストは追加結果のボタンから取り込めます"},
-			{Name: "使用例", Value: "`/playnext url:https://www.youtube.com/watch?v=TcLLpZBWsck`\n自分の待機曲より先に追加"},
+			{Name: "使用例", Value: "- 自分の待機曲より先に追加\n  ```\n  /playnext url:https://www.youtube.com/watch?v=TcLLpZBWsck\n  ```"},
 			{Name: "利用条件", Value: "音声チャンネルへの参加が必要です。プレイリスト単独URLは指定できません。"},
 		}
 	case "help-ref-mix":
 		e.Title = "/mix"
 		e.Description = "動画を起点に、Mixから関連曲をまとめてキューに追加します。"
 		e.Fields = []field{
-			{Name: "書式", Value: "`/mix url:URL [count:件数]`\n角括弧内は省略できます。"},
-			{Name: "引数", Value: "**url** · 必須\nYouTube・YouTube Musicの動画URL。\n\n**count** · 任意 · 1〜50 · 既定20\n起点の曲を含む追加上限。指定件数より少なくなる場合があります。"},
+			{Name: "書式", Value: "```\n/mix url:URL [count:件数]\n```\n-# 角括弧内は省略できます。"},
+			{Name: "引数", Value: "- **url** · 必須  \n  YouTube・YouTube Musicの動画URL。\n- **count** · 任意 · 1〜50 · 既定20  \n  起点の曲を含む追加上限。指定件数より少なくなる場合があります。"},
 			{Name: "動作", Value: "- 動画にMixが付いていなくても指定可能\n- 取得した候補から指定件数を上限に追加\n- 追加後の自動補充はしません"},
-			{Name: "使用例", Value: "`/mix url:https://www.youtube.com/watch?v=TcLLpZBWsck count:10`\n起点の曲を含めて最大10曲を追加"},
+			{Name: "使用例", Value: "- 起点の曲を含めて最大10曲を追加\n  ```\n  /mix url:https://www.youtube.com/watch?v=TcLLpZBWsck count:10\n  ```"},
 			{Name: "利用条件", Value: "音声チャンネルへの参加が必要です。"},
 		}
 	case "help-detail-heading":
