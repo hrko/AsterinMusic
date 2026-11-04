@@ -265,12 +265,12 @@ func (a *App) editQueue(token string, s *session, owner snowflake.ID, page int, 
 	embeds := []discord.Embed{embed}
 	empty := ""
 	_, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}})
-	logOperationFailure("interaction.update_queue", err)
+	a.logOperationFailure("interaction.update_queue", err)
 }
 func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 	parts := strings.Split(e.Data.CustomID(), ":")
 	fail := func() {
-		logOperationFailure("interaction.reject_queue", e.CreateMessage(discord.MessageCreate{Content: "この操作は利用できません。/queueを実行し直してください。", Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logOperationFailure("interaction.reject_queue", e.CreateMessage(discord.MessageCreate{Content: "この操作は利用できません。/queueを実行し直してください。", Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 	}
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID || len(parts) != 5 || parts[1] != "1" || parts[2] != e.User().ID.String() || (parts[3] != "auto" && parts[3] != "manual") {
 		fail()
@@ -282,7 +282,7 @@ func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
-		logOperationFailure("interaction.defer_queue", err)
+		a.logOperationFailure("interaction.defer_queue", err)
 		return
 	}
 	s := a.getSession(*e.GuildID())

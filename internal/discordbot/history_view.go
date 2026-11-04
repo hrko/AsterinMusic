@@ -197,7 +197,7 @@ func (a *App) historyCommand(e *events.ApplicationCommandInteractionCreate) {
 	defer cancel()
 	snap, err := a.historyStore.Snapshot(ctx, e.GuildID().String(), voice.String())
 	if err != nil {
-		logOperationFailure("history.snapshot", err)
+		a.logOperationFailure("history.snapshot", err)
 		a.edit(e.Token(), historyProblem(err), nil)
 		return
 	}
@@ -226,19 +226,19 @@ func ephemeral(text string) discord.MessageCreate {
 
 func (a *App) historyReply(token, text string) {
 	_, err := a.client.Rest.CreateFollowupMessage(a.config.ApplicationID, token, ephemeral(text))
-	logOperationFailure("history.reply", err)
+	a.logOperationFailure("history.reply", err)
 }
 
 func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 	v, action, err := a.historyAction(e.Data.CustomID(), e.User().ID, e.GuildID(), e.Message.ID)
 	if err != nil {
-		logOperationFailure("history.reject", e.CreateMessage(ephemeral(err.Error())))
+		a.logOperationFailure("history.reject", e.CreateMessage(ephemeral(err.Error())))
 		return
 	}
 	defer v.mu.Unlock()
 	if action == "jump" || action == "retry" {
 		if len(v.rows) == 0 {
-			logOperationFailure("history.empty_page", e.CreateMessage(ephemeral("このVCの再生履歴はまだありません。")))
+			a.logOperationFailure("history.empty_page", e.CreateMessage(ephemeral("このVCの再生履歴はまだありません。")))
 			return
 		}
 		submit := "submit"
@@ -246,11 +246,11 @@ func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 			submit = "resubmit"
 		}
 		modal := v.pageModal(submit)
-		logOperationFailure("history.modal", e.Modal(modal))
+		a.logOperationFailure("history.modal", e.Modal(modal))
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
-		logOperationFailure("history.defer", err)
+		a.logOperationFailure("history.defer", err)
 		return
 	}
 	if action == "add" || action == "front" {
@@ -298,7 +298,7 @@ func (a *App) historyComponent(e *events.ComponentInteractionCreate) {
 		err = v.load(ctx, a.historyStore, snap, page)
 	}
 	if err != nil {
-		logOperationFailure("history.page", err)
+		a.logOperationFailure("history.page", err)
 		a.historyReply(e.Token(), historyProblem(err))
 		return
 	}
@@ -319,18 +319,18 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 	}
 	v, action, err := a.historyAction(e.Data.CustomID, e.User().ID, e.GuildID(), message)
 	if err != nil {
-		logOperationFailure("history.reject_modal", e.CreateMessage(ephemeral(err.Error())))
+		a.logOperationFailure("history.reject_modal", e.CreateMessage(ephemeral(err.Error())))
 		return
 	}
 	defer v.mu.Unlock()
 	page, err := strconv.Atoi(strings.TrimSpace(e.Data.Text("page")))
 	if action != "submit" && action != "resubmit" {
-		logOperationFailure("history.invalid_modal", e.CreateMessage(ephemeral(errHistoryView.Error())))
+		a.logOperationFailure("history.invalid_modal", e.CreateMessage(ephemeral(errHistoryView.Error())))
 		return
 	}
 	if err != nil || page < 1 || int64(page) > v.pageCount() {
 		if err := e.DeferCreateMessage(true); err != nil {
-			logOperationFailure("history.invalid_page", err)
+			a.logOperationFailure("history.invalid_page", err)
 			return
 		}
 		v.retryMessage = 0
@@ -340,7 +340,7 @@ func (a *App) onHistoryModal(e *events.ModalSubmitInteractionCreate) {
 		return
 	}
 	if err = e.DeferUpdateMessage(); err != nil {
-		logOperationFailure("history.defer_modal", err)
+		a.logOperationFailure("history.defer_modal", err)
 		return
 	}
 	ctx, cancel := context.WithTimeout(a.ctx, 3*time.Second)

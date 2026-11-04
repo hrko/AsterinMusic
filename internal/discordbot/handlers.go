@@ -13,7 +13,7 @@ import (
 func (a *App) edit(token, text string, components []discord.LayoutComponent) *discord.Message {
 	text = truncate(text, 1900)
 	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate(text, nil, components))
-	logOperationFailure("interaction.update_text", err)
+	a.logOperationFailure("interaction.update_text", err)
 	return m
 }
 
@@ -31,11 +31,11 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 	}
 	if problem != "" {
-		logOperationFailure("interaction.reject_command", e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logOperationFailure("interaction.reject_command", e.CreateMessage(discord.MessageCreate{Content: problem, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 		return
 	}
 	if err := e.DeferCreateMessage(privateQuery(data)); err != nil {
-		logOperationFailure("interaction.defer_command", err)
+		a.logOperationFailure("interaction.defer_command", err)
 		return
 	}
 	s.bindNotificationChannel(user.ID, e.Channel().ID())
@@ -234,7 +234,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	fail := func(text string) {
-		logOperationFailure("interaction.reject_import", e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
+		a.logOperationFailure("interaction.reject_import", e.CreateMessage(discord.MessageCreate{Content: text, Flags: discord.MessageFlagEphemeral, AllowedMentions: &discord.AllowedMentions{}}))
 	}
 	if e.GuildID() == nil || *e.GuildID() != a.config.GuildID {
 		fail("このサーバーでは操作できません。")
@@ -251,7 +251,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	if err := e.DeferUpdateMessage(); err != nil {
-		logOperationFailure("interaction.defer_import", err)
+		a.logOperationFailure("interaction.defer_import", err)
 		a.offers.finish(id, false)
 		return
 	}

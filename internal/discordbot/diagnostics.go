@@ -1,10 +1,12 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"context"
 	"errors"
 	"log/slog"
 	"net"
+	"strings"
 
 	"github.com/disgoorg/disgo/rest"
 )
@@ -31,13 +33,47 @@ func failureClass(err error) string {
 	return "upstream"
 }
 
-func logOperationFailure(operation string, err error) {
+func (s *session) logOperationFailure(operation string, err error) {
+	ctx := context.Background()
+	if s.app != nil && s.app.ctx != nil {
+		ctx = s.app.ctx
+	}
+	logFailure(ctx, logging.OrDiscard(s.logger), operation, err)
+}
+
+func (a *App) logOperationFailure(operation string, err error) {
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	logger := logging.OrDiscard(a.logger)
+	if a.config.GuildID != 0 {
+		logger = logger.With("guild_id", a.config.GuildID.String())
+	}
+	logFailure(ctx, logger, operation, err)
+}
+
+func logFailure(ctx context.Context, logger *slog.Logger, operation string, err error) {
 	if err == nil {
 		return
 	}
+	component, _, _ := strings.Cut(operation, ".")
+	if component == "notification" {
+		component = "interaction"
+	}
+	if component == "autoplay" {
+		component = "playback"
+	}
+	logger = logging.Component(logger, component)
 	if errors.Is(err, context.Canceled) {
-		slog.Debug("operation canceled", "operation", operation)
+		logger.DebugContext(ctx, "operation canceled", "event", operation+".canceled", "reason", "canceled")
 		return
 	}
-	slog.Warn("operation failed", "operation", operation, "reason", failureClass(err))
+	level := slog.LevelWarn
+	action := "operation_failed"
+	switch operation {
+	case "history.write", "history.flush", "history.shutdown", "history.close", "history.queue_full":
+		level, action = slog.LevelError, "persistence_failed"
+	}
+	logger.Log(ctx, level, "operation failed", "event", operation+".failed", "reason", failureClass(err), "action", action)
 }

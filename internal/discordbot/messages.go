@@ -29,7 +29,7 @@ func messageUpdate(text string, embed *discord.Embed, components []discord.Layou
 }
 func (a *App) editEmbed(token string, embed discord.Embed, components []discord.LayoutComponent) *discord.Message {
 	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, token, messageUpdate("", &embed, components))
-	logOperationFailure("interaction.update_embed", err)
+	a.logOperationFailure("interaction.update_embed", err)
 	return m
 }
 func (a *App) editFailure(token, text string) {

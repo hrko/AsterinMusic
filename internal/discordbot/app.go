@@ -148,11 +148,11 @@ func (a *App) Close() {
 	a.closeAllDave()
 	if a.historyWriter != nil {
 		flushCtx, c := context.WithTimeout(context.Background(), 10*time.Second)
-		logOperationFailure("history.shutdown", a.historyWriter.Shutdown(flushCtx))
+		a.logOperationFailure("history.shutdown", a.historyWriter.Shutdown(flushCtx))
 		c()
 	}
 	if a.historyStore != nil {
-		logOperationFailure("history.close", a.historyStore.Close())
+		a.logOperationFailure("history.close", a.historyStore.Close())
 	}
 }
 
@@ -242,7 +242,7 @@ func (a *App) Serve() error {
 		return fmt.Errorf("open history: %w", err)
 	}
 	a.historyStore = store
-	a.historyWriter = history.NewWriter(store.Append, func(err error) { logOperationFailure("history.write", err) })
+	a.historyWriter = history.NewWriter(store.Append, func(err error) { a.logOperationFailure("history.write", err) })
 	queue, err := music.OpenQueue(a.config.QueueLimit, filepath.Join(stateDir, a.config.ApplicationID.String()+"-"+a.config.GuildID.String()+"-queue.json"))
 	if err != nil {
 		return fmt.Errorf("restore queue: %w", err)
@@ -264,7 +264,7 @@ func (a *App) Serve() error {
 			logging.OrDiscard(a.logger).ErrorContext(a.ctx, "playback checkpoint failed; refusing stop", "event", "state.checkpoint.failed", "reason", failureClass(err), "action", "retain_playback")
 		} else {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			logOperationFailure("history.flush", a.historyWriter.Flush(ctx))
+			a.logOperationFailure("history.flush", a.historyWriter.Flush(ctx))
 			cancel()
 		}
 		return err

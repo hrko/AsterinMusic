@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"context"
 	"errors"
 	"log/slog"
@@ -34,6 +35,7 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
+	logger        *slog.Logger
 	mu            sync.Mutex
 	guild, user   snowflake.ID
 	channel       snowflake.ID
@@ -73,6 +75,7 @@ func newVoiceConnection(guild, user snowflake.ID) *voiceConnection {
 func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 	return bot.WithVoiceManagerConfigOpts(voice.WithConnCreateFunc(func(guild, user snowflake.ID, update voice.StateUpdateFunc, remove func(), opts ...voice.ConnConfigOpt) voice.Conn {
 		c := newVoiceConnection(guild, user)
+		c.logger = logging.Component(a.logger, "voice").With("guild_id", guild.String())
 		c.update, c.remove = update, remove
 		c.factory = func(ctx context.Context, state voice.State, closed func(error, bool)) (voiceTransport, error) {
 			return a.openVoiceTransport(ctx, state, closed, opts)
@@ -83,11 +86,21 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 
 func (c *voiceConnection) signalLocked(phase voicePhase) {
 	if c.phase != phase {
-		slog.Info("voice state", "guild", c.guild, "channel", c.channel, "generation", c.generation, "from", c.phase, "to", phase)
+		logging.OrDiscard(c.logger).Debug("voice state", "event", "voice.state.changed", "channel_id", c.channel.String(), "generation", c.generation, "from", string(c.phase), "to", string(phase))
+		if phase == voiceReady {
+			logging.OrDiscard(c.logger).Info("voice connection ready", "event", "voice.connection.ready", "channel_id", c.channel.String(), "generation", c.generation)
+		}
+		if phase == voiceFailed {
+			if c.removed {
+				logging.OrDiscard(c.logger).Info("voice membership removed", "event", "voice.membership.removed", "generation", c.generation, "action", "hold_playback", "queue_retained", true)
+			} else {
+				logging.OrDiscard(c.logger).Error("voice connection failed", "event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true)
+			}
+		}
 	}
 	c.phase = phase
 	if phase == voiceReady && !c.recoveryStart.IsZero() {
-		slog.Info("voice recovery complete", "guild", c.guild, "channel", c.channel, "generation", c.generation, "duration", c.now().Sub(c.recoveryStart))
+		logging.OrDiscard(c.logger).Info("voice recovery complete", "event", "voice.recovery.completed", "channel_id", c.channel.String(), "generation", c.generation, "duration_ms", c.now().Sub(c.recoveryStart).Milliseconds())
 		c.recoveryStart = time.Time{}
 	}
 	close(c.changed)
@@ -162,10 +175,10 @@ func (c *voiceConnection) launchLocked() {
 			if errors.As(err, &detail) {
 				stage = detail.stage
 			}
-			logOperationFailure("voice."+stage, err)
 			c.discardLocked()
 			c.signalLocked(voiceFailed)
 			c.mu.Unlock()
+			logging.OrDiscard(c.logger).DebugContext(ctx, "voice establishment attempt failed", "event", "voice.establish.failed", "stage", stage, "reason", failureClass(err), "generation", generation)
 			if t != nil {
 				t.Close()
 			}
@@ -202,7 +215,7 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	e.ChannelID = &id
 	moved := c.channel != id
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
-	slog.Info("voice membership received", "guild", c.guild, "channel", id, "generation", c.generation, "phase", c.phase, "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil)
+	logging.OrDiscard(c.logger).Debug("voice membership received", "event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil)
 	c.channel = id
 	c.state = &e
 	if c.removed || c.phase == voiceFailed {
@@ -223,7 +236,7 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 	// Only comparisons are logged; credentials and endpoint values stay private.
 	disposition := "accepted"
 	defer func() {
-		slog.Info("voice server update received", "guild", c.guild, "channel", c.channel, "generation", c.generation, "phase", c.phase, "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending)
+		logging.OrDiscard(c.logger).Debug("voice server update received", "event", "voice.server.received", "channel_id", c.channel.String(), "generation", c.generation, "phase", string(c.phase), "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending)
 	}()
 	if c.phase == voiceClosed || c.phase == voiceFailed {
 		disposition = "terminal_state"
@@ -269,7 +282,7 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	if errors.As(err, &ws) {
 		code = ws.Code
 	}
-	slog.Info("voice transport closed", "guild", c.guild, "generation", generation, "code", code)
+	logging.OrDiscard(c.logger).Debug("voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
 	if code == 4015 && c.active != nil {
 		if resumable, ok := c.active.(interface{ Resume(context.Context) error }); ok {
 			if c.resuming {

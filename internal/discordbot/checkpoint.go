@@ -59,7 +59,7 @@ func (s *session) recordStartedLocked() {
 func (s *session) enqueueHistoryLocked() {
 	if s.app.historyWriter != nil && s.playbackHistory != nil {
 		if !s.app.historyWriter.Enqueue(*s.playbackHistory) {
-			logOperationFailure("history.queue_full", errors.New("history queue unavailable"))
+			s.logOperationFailure("history.queue_full", errors.New("history queue unavailable"))
 		}
 	}
 }

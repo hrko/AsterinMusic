@@ -19,7 +19,7 @@ type failureNotice struct {
 	channel, message snowflake.ID
 }
 
-func (n *failureNotice) publish(sequence uint64, channel snowflake.ID, embed discord.Embed, send func(snowflake.ID, discord.Embed) (snowflake.ID, error)) {
+func (n *failureNotice) publish(sequence uint64, channel snowflake.ID, embed discord.Embed, send func(snowflake.ID, discord.Embed) (snowflake.ID, error)) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	if n.sequence != sequence || n.channel != channel {
@@ -29,10 +29,10 @@ func (n *failureNotice) publish(sequence uint64, channel snowflake.ID, embed dis
 	}
 	id, err := send(n.message, embed)
 	if err != nil {
-		logOperationFailure("notification.playback_failure", err)
-		return
+		return err
 	}
 	n.message = id
+	return nil
 }
 func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text string, terminal bool) {
 	if channel == 0 {
@@ -56,7 +56,7 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 	if track != nil {
 		embed.Description = singleLink(*track) + "\n\n" + text
 	}
-	s.failureNotice.publish(sequence, channel, embed, func(id snowflake.ID, e discord.Embed) (snowflake.ID, error) {
+	err := s.failureNotice.publish(sequence, channel, embed, func(id snowflake.ID, e discord.Embed) (snowflake.ID, error) {
 		ctx, cancel := context.WithTimeout(s.app.ctx, 10*time.Second)
 		defer cancel()
 		if id != 0 {
@@ -74,4 +74,5 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 		}
 		return m.ID, nil
 	})
+	s.logOperationFailure("notification.playback_failure", err)
 }

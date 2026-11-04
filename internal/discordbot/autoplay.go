@@ -297,7 +297,7 @@ func (s *session) fetchCandidatesLocked() {
 	}
 	go func() {
 		result, err := fetch(ctx, url)
-		logOperationFailure("autoplay.fetch_candidates", err)
+		s.logOperationFailure("autoplay.fetch_candidates", err)
 		cancel()
 		s.mu.Lock()
 		defer s.mu.Unlock()

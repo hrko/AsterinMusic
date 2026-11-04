@@ -12,6 +12,7 @@ import (
 
 	"asterinmusic/internal/audio"
 	"asterinmusic/internal/history"
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
@@ -21,6 +22,7 @@ import (
 )
 
 type session struct {
+	logger                             *slog.Logger
 	historySessionID                   string
 	playbackHistory                    *history.Record
 	failureNotice                      failureNotice
@@ -61,6 +63,7 @@ type session struct {
 
 func newSession(a *App, guild snowflake.ID) *session {
 	s := &session{historySessionID: rand.Text(), app: a, guild: guild, queue: music.NewQueue(a.config.QueueLimit), volume: audio.NewVolume(48000)}
+	s.logger = logging.Component(a.logger, "playback").With("guild_id", guild.String())
 	if a.config.QueueLimit > 0 {
 		_ = s.volume.Set(a.config.DefaultVolume)
 	}
@@ -206,7 +209,7 @@ func (s *session) startLocked(channel snowflake.ID) error {
 			s.conn = nil
 			s.channel = 0
 			s.mu.Unlock()
-			logOperationFailure("voice.connect", err)
+			s.logOperationFailure("voice.connect", err)
 			closeCtx, c := context.WithTimeout(context.Background(), 5*time.Second)
 			conn.Close(closeCtx)
 			s.app.closeDave(conn)
