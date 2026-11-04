@@ -8,9 +8,12 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/process"
 )
 
@@ -21,7 +24,17 @@ func TestIntegrationPacedOpus(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	packets := 0
-	err := StreamOpus(ctx, "ffmpeg", func(ctx context.Context, w io.Writer) error {
+	path := filepath.Join(t.TempDir(), "audio.log")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	logger, err := logging.New(file, logging.Options{Format: "json", Level: "debug"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = StreamOpusWithOptions(ctx, "ffmpeg", func(ctx context.Context, w io.Writer) error {
 		return process.Run(ctx, "ffmpeg", []string{"-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=5", "-f", "wav", "pipe:1"}, nil, w)
 	}, NewVolume(48000), func([]byte) error {
 		packets++
@@ -29,12 +42,21 @@ func TestIntegrationPacedOpus(t *testing.T) {
 			time.Sleep(20 * time.Millisecond)
 		}
 		return nil
-	})
+	}, StreamOptions{Logger: logging.Component(logger, "playback")})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if packets < 250 || packets > 252 {
 		t.Fatalf("truncated stream: %d packets", packets)
+	}
+	if StreamPaced {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Count(string(data), "\n") != 1 || !strings.Contains(string(data), `"event":"playback.pacing"`) {
+			t.Fatalf("missing bounded file log: %s", data)
+		}
 	}
 }
 
