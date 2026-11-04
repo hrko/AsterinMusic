@@ -8,7 +8,45 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/slogtest"
 )
+
+func TestStandardHandlerContract(t *testing.T) {
+	var out bytes.Buffer
+	l, err := New(&out, Options{Format: "json", Level: "debug"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = slogtest.TestHandler(l.Handler(), func() []map[string]any {
+		var results []map[string]any
+		for _, line := range strings.Split(strings.TrimSpace(out.String()), "\n") {
+			var record map[string]any
+			if err := json.Unmarshal([]byte(line), &record); err != nil {
+				t.Fatal(err)
+			}
+			results = append(results, record)
+		}
+		return results
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestReservedAndDuplicateKeys(t *testing.T) {
+	var out bytes.Buffer
+	l, _ := New(&out, Options{Format: "json"})
+	l.With("event", "old").Info("actual", "event", "new", "msg", "fake", "level", "ERROR", "time", "fake", slog.Attr{})
+	text := out.String()
+	for _, key := range []string{"msg", "level", "time", "event"} {
+		if strings.Count(text, `"`+key+`":`) != 1 {
+			t.Fatalf("duplicate %s: %s", key, text)
+		}
+	}
+	if strings.Contains(text, "fake") || strings.Contains(text, `"event":"old"`) {
+		t.Fatalf("reserved attributes replaced output: %s", text)
+	}
+}
 
 func TestComponentLevelsAndGroups(t *testing.T) {
 	var out bytes.Buffer

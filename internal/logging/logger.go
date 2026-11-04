@@ -164,6 +164,9 @@ func clean(s string) string {
 }
 
 func safeAttr(a slog.Attr) slog.Attr {
+	if a.Equal(slog.Attr{}) {
+		return a
+	}
 	a.Key = clean(a.Key)
 	switch strings.ToLower(a.Key) {
 	case "token", "password", "cookie", "cookies", "api_key", "authorization", "session_id", "secret_key", "private_key":
@@ -231,6 +234,11 @@ func (h *handler) Handle(ctx context.Context, r slog.Record) error {
 	}
 	n := slog.NewRecord(r.Time, r.Level, clean(r.Message), r.PC)
 	for _, key := range order {
+		// These keys belong to the output Handler. Do not create ambiguous JSON
+		// by accepting application attributes with the same top-level names.
+		if key == slog.TimeKey || key == slog.LevelKey || key == slog.MessageKey {
+			continue
+		}
 		n.AddAttrs(attrs[key])
 	}
 	return h.output.Handle(ctx, n)
