@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/config"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
@@ -15,6 +16,46 @@ import (
 	"strings"
 	"testing"
 )
+
+// Existing interaction tests use real Cedar evaluation with deterministic Discord facts.
+func authorizationFixture(t *testing.T, a *App) {
+	t.Helper()
+	if a.ctx == nil {
+		a.ctx = t.Context()
+	}
+	if a.config.ApplicationID == 0 {
+		a.config.ApplicationID = 8
+	}
+	if a.client == nil {
+		a.client = &bot.Client{}
+	}
+	c := cache.New(cache.WithCaches(cache.FlagGuilds, cache.FlagRoles, cache.FlagChannels, cache.FlagVoiceStates))
+	guild := a.config.GuildID
+	c.AddGuild(discord.Guild{ID: guild, OwnerID: 999})
+	c.AddRole(discord.Role{ID: guild, GuildID: guild, Permissions: discord.PermissionViewChannel})
+	if a.client.Caches != nil {
+		for state := range a.client.Caches.VoiceStates(guild) {
+			c.AddVoiceState(state)
+			if state.ChannelID != nil {
+				var channel discord.GuildVoiceChannel
+				raw := `{"id":"` + state.ChannelID.String() + `","guild_id":"` + guild.String() + `","type":2}`
+				if err := json.Unmarshal([]byte(raw), &channel); err != nil {
+					t.Fatal(err)
+				}
+				c.AddChannel(channel)
+			}
+		}
+	}
+	a.client.Caches = c
+	a.authorizationMember = func(_ context.Context, g, u snowflake.ID) (*discord.Member, error) {
+		return &discord.Member{GuildID: g, User: discord.User{ID: u}}, nil
+	}
+	var err error
+	a.authorizer, err = authorization.NewCedar(authorization.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestAuthorizationRefreshesMemberAndFailsClosed(t *testing.T) {
 	c := cache.New(cache.WithCaches(cache.FlagGuilds, cache.FlagRoles, cache.FlagVoiceStates))

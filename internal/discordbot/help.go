@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/helpui"
 	"context"
 	"fmt"
@@ -91,6 +92,10 @@ func (a *App) helpComponent(e *events.ComponentInteractionCreate) {
 		fail()
 		return
 	}
+	if err := a.authorizeTarget(a.ctx, e.User().ID, authorization.HelpView, authorizationTarget{guild: *e.GuildID()}); err != nil {
+		a.logInteractionFailure(e.ID(), "interaction.help_denied", e.CreateMessage(ephemeral(err.Error())))
+		return
+	}
 	m := a.helpMessage(data.Values[0], e.User().ID.String(), expires)
 	a.logInteractionFailure(e.ID(), "interaction.help_update", e.UpdateMessage(discord.MessageUpdate{Content: &m.Content, Embeds: &m.Embeds, Components: &m.Components, AllowedMentions: &discord.AllowedMentions{}}))
 }
@@ -100,5 +105,9 @@ func (a *App) onHelpAutocomplete(e *events.AutocompleteInteractionCreate) {
 		return
 	}
 	defer a.observeOperation(e.ID(), "autocomplete")()
+	if err := a.authorizeTarget(a.ctx, e.User().ID, authorization.HelpView, authorizationTarget{guild: *e.GuildID()}); err != nil {
+		a.logInteractionFailure(e.ID(), "interaction.help_autocomplete_denied", e.AutocompleteResult(nil))
+		return
+	}
 	a.logInteractionFailure(e.ID(), "interaction.help_autocomplete", e.AutocompleteResult(a.helpCatalog.Search(e.Data.String("page"))))
 }

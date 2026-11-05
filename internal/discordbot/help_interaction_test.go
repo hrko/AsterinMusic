@@ -18,6 +18,7 @@ func TestHelpCommandBypassesPlaybackAndRepliesPrivately(t *testing.T) {
 	}
 	a := &App{ctx: t.Context(), helpCatalog: c, helpEpoch: "boot"}
 	a.config.GuildID = 2
+	authorizationFixture(t, a)
 	for _, page := range []string{"", "command:play", "guide:add", "invalid"} {
 		raw := fmt.Sprintf(`{"id":"10","application_id":"1","guild_id":"2","type":2,"user":{"id":"3","username":"test"},"data":{"id":"4","name":"help","type":1,"options":[{"name":"page","type":3,"value":%q}]}}`, page)
 		var interaction discord.ApplicationCommandInteraction
@@ -43,6 +44,7 @@ func TestHelpComponentUpdatesSameMessageAndRejectsOtherUser(t *testing.T) {
 	c, _ := helpui.New(Commands(), nil)
 	a := &App{ctx: t.Context(), helpCatalog: c, helpEpoch: "boot"}
 	a.config.GuildID = 2
+	authorizationFixture(t, a)
 	for _, owner := range []string{"3", "99"} {
 		id := fmt.Sprintf("help:boot:%s:%d:command", owner, time.Now().Add(helpTTL).Unix())
 		raw := fmt.Sprintf(`{"id":"10","application_id":"1","guild_id":"2","type":3,"user":{"id":"3","username":"test"},"data":{"custom_id":%q,"component_type":3,"values":["command:mix"]},"message":{"id":"20"}}`, id)
@@ -79,6 +81,7 @@ func TestHelpAutocompleteUsesSharedPagesWithoutPlayback(t *testing.T) {
 	}
 	a := &App{ctx: t.Context(), helpCatalog: c}
 	a.config.GuildID = 2
+	authorizationFixture(t, a)
 	for _, query := range []string{"", "再生", "play", "missing-page-xyz"} {
 		raw := fmt.Sprintf(`{"id":"10","application_id":"1","guild_id":"2","type":4,"user":{"id":"3","username":"test"},"data":{"id":"4","name":"help","type":1,"options":[{"name":"page","type":3,"value":%q,"focused":true}]}}`, query)
 		var interaction discord.AutocompleteInteraction

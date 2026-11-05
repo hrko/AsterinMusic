@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
 	"fmt"
@@ -22,6 +23,17 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		return
 	}
 	defer a.observeOperation(e.ID(), "command")()
+	action := commandAction(e.SlashCommandInteractionData())
+	var authErr error
+	if action == authorization.HelpView {
+		authErr = a.authorizeTarget(a.ctx, e.User().ID, action, authorizationTarget{guild: *e.GuildID()})
+	} else if action != authorization.HistoryView {
+		authErr = a.getSession(*e.GuildID()).checkPermission(e.User().ID, action)
+	}
+	if authErr != nil {
+		a.logInteractionFailure(e.ID(), "interaction.reject_permission", e.CreateMessage(ephemeral(authErr.Error())))
+		return
+	}
 	if e.SlashCommandInteractionData().CommandName() == "help" {
 		a.helpCommand(e)
 		return
@@ -257,6 +269,15 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	}
 	o, err := a.offers.claim(id, *e.GuildID(), e.User().ID, e.Message.ID, time.Now())
 	if err != nil {
+		fail(err.Error())
+		return
+	}
+	action := authorization.QueueAdd
+	if o.Insertion.Front {
+		action = authorization.QueueAddNext
+	}
+	if err := s.checkPermission(e.User().ID, action); err != nil {
+		a.offers.finish(id, false)
 		fail(err.Error())
 		return
 	}

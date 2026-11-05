@@ -18,6 +18,7 @@ type playbackCheckpoint struct {
 	Version          int
 	Guild            snowflake.ID
 	Channel, Text    snowflake.ID
+	AccessVoice      snowflake.ID `json:",omitempty"`
 	Playing          bool
 	Volume           int
 	AutoEnabled      bool
@@ -141,7 +142,8 @@ func (s *session) checkpointBytesLocked() ([]byte, error) {
 		s.syncVoiceLocked()
 	}
 	v := playbackCheckpoint{Version: 1, Guild: s.guild, Channel: s.channel, Text: s.text,
-		Playing: !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
+		AccessVoice: s.accessVoice,
+		Playing:     !s.stopped && (s.running || s.connecting), Volume: s.volume.Percent(),
 		AutoEnabled: s.auto.enabled, AutoOwner: s.auto.owner, Seed: s.auto.seed, History: s.auto.history}
 	v.RecoveryHeld = s.recoveryHeld
 	if s.recoveryHeld {
@@ -210,6 +212,10 @@ func readPlaybackCheckpoint(path string, guild snowflake.ID) (*playbackCheckpoin
 func (s *session) restoreSettings(v *playbackCheckpoint) {
 	s.volume.Set(v.Volume)
 	s.text = v.Text
+	s.accessVoice = v.AccessVoice
+	if s.accessVoice == 0 {
+		s.accessVoice = v.Channel
+	}
 	s.auto.enabled = v.AutoEnabled
 	s.auto.owner = v.AutoOwner
 	s.auto.seed = v.Seed

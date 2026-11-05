@@ -48,6 +48,7 @@ func TestHistoryModalRetryUpdatesOriginalView(t *testing.T) {
 		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"id":"%s","channel_id":"7"}`, id))), Request: r}, nil
 	})
 	a := &App{ctx: ctx, config: config.Config{GuildID: 2, ApplicationID: 8}, historyStore: store, client: &bot.Client{Caches: c, Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
+	authorizationFixture(t, a)
 	v := &historyView{id: "view", owner: 1, guild: 2, voice: 3, message: 4, originalToken: "original-token", expires: time.Now().Add(time.Minute)}
 	snap, _ := store.Snapshot(ctx, "2", "3")
 	if err := v.load(ctx, store, snap, 1); err != nil {

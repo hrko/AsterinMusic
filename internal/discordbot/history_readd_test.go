@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/config"
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
@@ -27,7 +28,7 @@ type historyTransport func(*http.Request) (*http.Response, error)
 func (f historyTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestHistoryReaddUsesFreshSingleTrackAndCurrentActor(t *testing.T) {
-	for _, scenario := range []string{"append", "front", "moved", "stopped"} {
+	for _, scenario := range []string{"append", "front", "moved", "stopped", "role_revoked"} {
 		t.Run(scenario, func(t *testing.T) {
 			ctx := context.Background()
 			store, err := history.Open(filepath.Join(t.TempDir(), "history.sqlite"), 100)
@@ -53,12 +54,32 @@ func TestHistoryReaddUsesFreshSingleTrackAndCurrentActor(t *testing.T) {
 				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"id":"4","channel_id":"7"}`)), Request: r}, nil
 			})
 			a := &App{ctx: ctx, config: config.Config{GuildID: 2, ApplicationID: 8}, historyStore: store, client: &bot.Client{Caches: c, Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}, sessions: make(map[snowflake.ID]*session)}
+			authorizationFixture(t, a)
+			roleRevoked := false
+			if scenario == "role_revoked" {
+				a.authorizer, err = authorization.NewCedar(authorization.Config{Policies: []authorization.Policy{{ID: "restricted_add", Text: `forbid(principal, action == Action::"queue.add", resource) unless {principal in Role::"2/5"};`}}})
+				if err != nil {
+					t.Fatal(err)
+				}
+				a.client.Caches.AddRole(discord.Role{ID: 5, GuildID: 2})
+				a.authorizationMember = func(_ context.Context, g, u snowflake.ID) (*discord.Member, error) {
+					m := &discord.Member{GuildID: g, User: discord.User{ID: u}}
+					if !roleRevoked {
+						m.RoleIDs = []snowflake.ID{5}
+					}
+					return m, nil
+				}
+			}
+			c = a.client.Caches
 			s := a.getSession(2)
 			s.channel = 3
 			s.running = true
 			s.queue.Add(music.Requester{ID: "1"}, []music.Track{autoTrack("xxxxxxxxxxx")}, "", "")
 			a.source = source.New("test-yt-dlp")
 			a.source.Run = func(_ context.Context, _ string, args []string, _ io.Reader, out io.Writer) error {
+				if scenario == "role_revoked" {
+					roleRevoked = true
+				}
 				if strings.Contains(strings.Join(args, " "), "list=") || strings.Contains(strings.Join(args, " "), "si=") {
 					t.Fatal("attached list/tracking passed to source")
 				}
@@ -89,7 +110,7 @@ func TestHistoryReaddUsesFreshSingleTrackAndCurrentActor(t *testing.T) {
 			}
 			a.readdHistory(&events.ComponentInteractionCreate{ComponentInteraction: interaction}, v, scenario == "front")
 			_, pending := s.queue.Snapshot()
-			if scenario == "moved" || scenario == "stopped" {
+			if scenario == "moved" || scenario == "stopped" || scenario == "role_revoked" {
 				if len(pending) != 1 {
 					t.Fatal("stale operation added track")
 				}

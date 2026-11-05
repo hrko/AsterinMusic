@@ -21,6 +21,35 @@ type authorizationTarget struct {
 	session, requester string
 }
 
+func (s *session) checkPermission(user snowflake.ID, action authorization.Action) error {
+	s.mu.Lock()
+	if s.conn != nil {
+		s.syncVoiceLocked()
+	}
+	target := authorizationTarget{guild: s.guild, voice: s.channel, session: s.historySessionID}
+	if target.voice == 0 {
+		target.voice = s.accessVoice
+	}
+	if s.current != nil {
+		target.requester = s.current.Requester.ID
+	}
+	epoch := s.epoch
+	s.mu.Unlock()
+	if err := s.app.authorizeTarget(s.app.ctx, user, action, target); err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	voice := s.channel
+	if voice == 0 {
+		voice = s.accessVoice
+	}
+	if epoch != s.epoch || voice != target.voice {
+		return errQueueChanged
+	}
+	return nil
+}
+
 // authorizeTarget refreshes membership on every call, including the check after
 // slow source work. Roles/channels are kept current by the Guilds Gateway intent.
 // It must be called without holding a session lock.
@@ -30,7 +59,13 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	}
 	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 	defer cancel()
-	member, err := a.client.Rest.GetMember(target.guild, user, rest.WithCtx(ctx))
+	load := a.authorizationMember
+	if load == nil {
+		load = func(ctx context.Context, guild, user snowflake.ID) (*discord.Member, error) {
+			return a.client.Rest.GetMember(guild, user, rest.WithCtx(ctx))
+		}
+	}
+	member, err := load(ctx, target.guild, user)
 	if err != nil || member == nil || member.User.ID != user {
 		return errPermissionFacts
 	}

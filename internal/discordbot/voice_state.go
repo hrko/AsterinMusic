@@ -37,6 +37,9 @@ func (s *session) moveVoiceLocked(channel snowflake.ID) {
 		return
 	}
 	s.channel = channel
+	if channel != 0 {
+		s.accessVoice = channel
+	}
 	s.text = 0
 	s.epoch++
 	s.emptySince = time.Time{}

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
@@ -41,6 +42,9 @@ func (a *App) historyVoice(guild, user snowflake.ID) (snowflake.ID, error) {
 	state, ok := a.client.Caches.VoiceState(guild, user)
 	if !ok || state.ChannelID == nil {
 		return 0, errors.New("履歴を確認するVCに参加してください。")
+	}
+	if err := a.authorizeTarget(a.ctx, user, authorization.HistoryView, authorizationTarget{guild: guild, voice: *state.ChannelID}); err != nil {
+		return 0, err
 	}
 	return *state.ChannelID, nil
 }
@@ -374,6 +378,14 @@ func (v *historyView) pageModal(action string) discord.ModalCreate {
 }
 
 func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView, front bool) {
+	action := authorization.HistoryReadd
+	if front {
+		action = authorization.HistoryReaddNext
+	}
+	if err := a.authorizeTarget(a.ctx, v.owner, action, authorizationTarget{guild: v.guild, voice: v.voice}); err != nil {
+		a.historyReply(responseFor(e), err.Error())
+		return
+	}
 	if v.selected == 0 {
 		a.historyReply(responseFor(e), "再追加する曲を選択してください。")
 		return
@@ -408,6 +420,10 @@ func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView,
 	voice, err := a.historyVoice(v.guild, v.owner)
 	if err != nil || voice != v.voice || time.Now().After(v.expires) {
 		a.historyReply(responseFor(e), errHistoryView.Error())
+		return
+	}
+	if err := a.authorizeTarget(a.ctx, v.owner, action, authorizationTarget{guild: v.guild, voice: v.voice}); err != nil {
+		a.historyReply(responseFor(e), err.Error())
 		return
 	}
 	n, _, addErr := s.acceptAt(v.owner, music.Requester{ID: v.owner.String(), Name: e.User().Username}, result.Tracks, "", "", e.Channel().ID(), epoch, music.Insertion{Front: front})

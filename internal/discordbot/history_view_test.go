@@ -28,6 +28,8 @@ func TestHistoryActionUsesCurrentVoiceAndRejectsConcurrentClicks(t *testing.T) {
 	}
 	voice := snowflake.ID(3)
 	c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+	authorizationFixture(t, a)
+	c = a.client.Caches
 	got, action, err := a.historyAction(v.componentID("next"), 1, &v.guild, 4)
 	if err != nil || got != v || action != "next" {
 		t.Fatalf("valid action: %v", err)

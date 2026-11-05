@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
 	"fmt"
@@ -286,6 +287,10 @@ func (a *App) queueComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	s := a.getSession(*e.GuildID())
+	if err := s.checkPermission(e.User().ID, authorization.QueueView); err != nil {
+		a.edit(responseFor(e), err.Error(), nil)
+		return
+	}
 	s.queueViewMu.Lock()
 	defer s.queueViewMu.Unlock()
 	a.editQueue(responseFor(e), s, e.User().ID, page, parts[3])

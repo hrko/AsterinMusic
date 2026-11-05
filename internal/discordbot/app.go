@@ -33,24 +33,25 @@ import (
 )
 
 type App struct {
-	authorizer       authorization.Service
-	helpCatalog      *helpui.Catalog
-	helpEpoch        string
-	logger           *slog.Logger
-	historyViews     map[string]*historyView
-	historyStore     *history.Store
-	historyWriter    *history.Writer
-	presenceRevision atomic.Uint64
-	client           *bot.Client
-	config           config.Config
-	source           *source.Client
-	ctx              context.Context
-	mu               sync.Mutex
-	sessions         map[snowflake.ID]*session
-	offers           *offers
-	ready            chan struct{}
-	readyOnce        sync.Once
-	daveClosers      sync.Map
+	authorizer          authorization.Service
+	authorizationMember func(context.Context, snowflake.ID, snowflake.ID) (*discord.Member, error)
+	helpCatalog         *helpui.Catalog
+	helpEpoch           string
+	logger              *slog.Logger
+	historyViews        map[string]*historyView
+	historyStore        *history.Store
+	historyWriter       *history.Writer
+	presenceRevision    atomic.Uint64
+	client              *bot.Client
+	config              config.Config
+	source              *source.Client
+	ctx                 context.Context
+	mu                  sync.Mutex
+	sessions            map[snowflake.ID]*session
+	offers              *offers
+	ready               chan struct{}
+	readyOnce           sync.Once
+	daveClosers         sync.Map
 }
 
 func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error) {

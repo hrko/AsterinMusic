@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"asterinmusic/internal/audio"
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
@@ -32,6 +33,7 @@ type session struct {
 	mu                                 sync.Mutex
 	app                                *App
 	guild, channel, text               snowflake.ID
+	accessVoice                        snowflake.ID
 	queue                              *music.Queue
 	volume                             *audio.Volume
 	conn                               voice.Conn
@@ -92,6 +94,16 @@ func (s *session) accept(user snowflake.ID, who music.Requester, tracks []music.
 	return n, err
 }
 func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []music.Track, playlist, importID string, text snowflake.ID, epoch uint64, position music.Insertion) (int, string, error) {
+	action := authorization.QueueAdd
+	if position.Front {
+		action = authorization.QueueAddNext
+	}
+	if len(tracks) == 0 {
+		action = authorization.PlaybackResume
+	}
+	if err := s.checkPermission(user, action); err != nil {
+		return 0, "", err
+	}
 	channel, err := s.authorize(user)
 	if err != nil {
 		return 0, "", err
@@ -134,6 +146,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 		return n, entryID, errQueueChanged
 	}
 	s.text = text
+	s.accessVoice = channel
 	if n > 0 {
 		if s.auto.fetching {
 			s.auto.invalidate()
