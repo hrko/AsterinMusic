@@ -9,6 +9,8 @@ import (
 
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const voiceStageTimeout = 5 * time.Second
@@ -67,6 +69,7 @@ func (c *voiceConnection) stopRecovery() {
 		// Close will publish the final transition; do not report explicit
 		// stop as a connection failure.
 		c.phase = voiceFailed
+		c.endTraceLocked(voiceClosed)
 		close(c.changed)
 		c.changed = make(chan struct{})
 	}
@@ -79,6 +82,7 @@ func (c *voiceConnection) recoveryValidLocked(f *voiceRecoveryFlow) bool {
 // One supervisor owns the recovery budget. Transport generations may change
 // within it, but never grant additional time or reset the rejoin limit.
 func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, sendJoin, explicit bool) {
+	c.startTraceLocked(parent)
 	c.cancelRecoveryLocked()
 	if c.deadline.IsZero() {
 		c.recoveryStart = c.now()
@@ -87,6 +91,7 @@ func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, se
 	}
 	c.recoverySerial++
 	ctx, cancel := context.WithDeadline(parent, c.deadline)
+	ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(c.traceContextLocked()))
 	f := &voiceRecoveryFlow{id: c.recoverySerial, ctx: ctx, cancel: cancel, explicit: explicit}
 	c.recovery = f
 	c.armLocked()
@@ -129,9 +134,14 @@ func (c *voiceConnection) recoveryFailure(f *voiceRecoveryFlow, err error) {
 	c.cancelRecoveryLocked()
 }
 
-func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Duration, leaving bool) error {
+func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Duration, leaving bool) (result error) {
 	ctx, cancel := context.WithTimeout(f.ctx, duration)
 	defer cancel()
+	c.mu.Lock()
+	stage := f.stage
+	c.mu.Unlock()
+	ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.wait", trace.WithAttributes(attribute.String("asterinmusic.stage", stage)))
+	defer func() { finishTrace(observed, result) }()
 	for {
 		c.mu.Lock()
 		if c.phase == voiceReady && !leaving {
@@ -163,9 +173,11 @@ func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Durat
 
 // Sending is serialized with Close, and validity is rechecked after taking
 // sendMu. Gateway failures remain distinct from missing Discord notifications.
-func (c *voiceConnection) recoveryUpdate(f *voiceRecoveryFlow, leave bool) error {
+func (c *voiceConnection) recoveryUpdate(f *voiceRecoveryFlow, leave bool) (result error) {
 	ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
 	defer cancel()
+	ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.membership_request", trace.WithAttributes(attribute.Bool("asterinmusic.leave", leave)))
+	defer func() { finishTrace(observed, result) }()
 	for attempt := 1; ; attempt++ {
 		c.sendMu.Lock()
 		c.mu.Lock()
@@ -222,7 +234,9 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 				break
 			}
 			ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
+			ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.resume", trace.WithAttributes(attribute.Int("asterinmusic.attempt", attempt)))
 			err := resumable.Resume(ctx)
+			finishTrace(observed, err)
 			attemptContextErr := ctx.Err()
 			cancel()
 			c.mu.Lock()
@@ -328,7 +342,14 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 		c.recoveryFailure(f, previousError)
 		return
 	}
-	if check == nil || !check(f.ctx, channel) {
+	permissionCtx, permissionSpan := tracerOrNoop(c.tracer).Start(f.ctx, "voice.rejoin_permission")
+	allowed := check != nil && check(permissionCtx, channel)
+	if allowed {
+		finishTrace(permissionSpan, nil)
+	} else {
+		finishTrace(permissionSpan, errRejoinDenied)
+	}
+	if !allowed {
 		c.recoveryFailure(f, errRejoinDenied)
 		return
 	}

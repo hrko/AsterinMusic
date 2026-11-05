@@ -14,6 +14,7 @@ import (
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var errVoiceRecovery = errors.New("voice connection recovery failed")
@@ -36,6 +37,9 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
+	tracer             trace.Tracer
+	observation        *voiceTrace
+	traceAttempt       *voiceTraceAttempt
 	recovery           *voiceRecoveryFlow
 	recoverySerial     uint64
 	rejoins            int
@@ -88,6 +92,7 @@ func newVoiceConnection(guild, user snowflake.ID) *voiceConnection {
 func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 	return bot.WithVoiceManagerConfigOpts(voice.WithConnCreateFunc(func(guild, user snowflake.ID, update voice.StateUpdateFunc, remove func(), opts ...voice.ConnConfigOpt) voice.Conn {
 		c := newVoiceConnection(guild, user)
+		c.tracer = a.tracer
 		c.logger = logging.Component(a.logger, "voice").With("guild_id", guild.String())
 		c.update, c.remove = update, remove
 		c.canRejoin = func(ctx context.Context, channel snowflake.ID) bool {
@@ -145,10 +150,21 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 		c.recordDiagnosticLocked(slog.LevelInfo, "voice recovery complete", "event", "voice.recovery.completed", "channel_id", c.channel.String(), "generation", c.generation, "duration_ms", c.now().Sub(c.recoveryStart).Milliseconds())
 		c.recoveryStart = time.Time{}
 	}
+	if phase == voiceReady || phase == voiceFailed || phase == voiceClosed {
+		c.endTraceLocked(phase)
+	}
 	close(c.changed)
 	c.changed = make(chan struct{})
 }
 func (c *voiceConnection) discardLocked() {
+	if c.traceAttempt != nil {
+		err := error(context.Canceled)
+		if !c.deadline.IsZero() && !c.now().Before(c.deadline) {
+			err = context.DeadlineExceeded
+		}
+		c.traceAttempt.end(err)
+		c.traceAttempt = nil
+	}
 	c.resuming = false
 	c.generation++
 	if c.cancel != nil {
@@ -162,6 +178,7 @@ func (c *voiceConnection) discardLocked() {
 	}
 }
 func (c *voiceConnection) beginLocked(reset bool, phase voicePhase) {
+	c.startTraceLocked(context.Background())
 	c.discardLocked()
 	if reset || c.deadline.IsZero() {
 		c.rejoins = 0
@@ -185,6 +202,9 @@ func (c *voiceConnection) expireLocked() {
 		if c.recovery != nil {
 			c.failureStage = c.recovery.stage
 		}
+		if c.traceAttempt != nil {
+			c.failureStage = c.traceAttempt.current()
+		}
 		c.failureReason = "timeout"
 		c.discardLocked()
 		c.signalLocked(voiceFailed)
@@ -205,11 +225,14 @@ func (c *voiceConnection) launchLocked() {
 	c.discardLocked()
 	generation := c.generation
 	ctx, cancel := context.WithDeadline(context.Background(), c.deadline)
+	ctx = c.newTraceAttemptLocked(ctx)
+	observed := c.traceAttempt
 	c.cancel = cancel
 	c.signalLocked(voiceConnecting)
 	go func() {
 		defer c.flushDiagnostics()
 		t, err := c.factory(ctx, state, func(err error, reconnect bool) { c.transportClosed(generation, err, reconnect) })
+		observed.end(err)
 		c.mu.Lock()
 		c.expireLocked()
 		if generation != c.generation || c.phase != voiceConnecting {
@@ -429,6 +452,8 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 	c.state = nil // explicit join must pair with its new membership notification
 	c.server = nil
 	c.lastToken = ""
+	c.endTraceLocked(voiceClosed)
+	c.startTraceLocked(ctx)
 	c.beginLocked(true, voiceWaiting)
 	c.startRecoveryLocked(ctx, false, true, true)
 	c.mu.Unlock()

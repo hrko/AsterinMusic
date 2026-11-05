@@ -139,10 +139,14 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	// membership side effects are intentionally disconnected from the manager.
 	t.conn = voice.NewConn(state.GuildID, state.UserID, func(context.Context, snowflake.ID, *snowflake.ID, bool, bool) error { return nil }, func() {}, options...)
 	t.cleanup = func() { a.closeDave(t.conn) }
+	traceVoiceStage(ctx, "gateway")
 	if err := t.conn.Gateway().Open(ctx, state); err != nil {
 		t.Close()
 		return nil, &voiceStageError{"gateway", err}
 	}
+	// disgo owns UDP discovery and protocol selection. Until SessionDescription
+	// arrives, this interval includes both those steps and the key response.
+	traceVoiceStage(ctx, "udp_protocol_transport_key")
 	select {
 	case <-ctx.Done():
 		t.Close()
@@ -153,6 +157,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			return nil, &voiceStageError{"transport_key", err}
 		}
 	}
+	traceVoiceStage(ctx, "dave")
 	for !t.dave.Ready() {
 		select {
 		case <-ctx.Done():

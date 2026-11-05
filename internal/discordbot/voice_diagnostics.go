@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"asterinmusic/internal/logging"
+	"context"
 	"log/slog"
 	"time"
 )
@@ -9,6 +10,7 @@ import (
 const voiceDiagnosticCapacity = 64
 
 type voiceDiagnostic struct {
+	ctx     context.Context
 	level   slog.Level
 	message string
 	attrs   []any
@@ -22,7 +24,7 @@ type voiceDiagnostic struct {
 // Under a stalled observer, overflow is coalesced by the finite event names
 // used below, preserving each outcome's latest attributes and occurrence count.
 func (c *voiceConnection) recordDiagnosticLocked(level slog.Level, message string, attrs ...any) {
-	d := voiceDiagnostic{level: level, message: message, attrs: attrs, at: c.now(), count: 1}
+	d := voiceDiagnostic{ctx: c.traceContextLocked(), level: level, message: message, attrs: attrs, at: c.now(), count: 1}
 	d.first = d.at
 	if len(c.diagnostics) < voiceDiagnosticCapacity {
 		c.diagnostics = append(c.diagnostics, d)
@@ -53,7 +55,7 @@ func (c *voiceConnection) flushDiagnostics() {
 		if d.count > 1 {
 			attrs = append(attrs, "occurrences", d.count, "suppressed", d.count-1, "coalesced", true, "aggregation_duration_ms", d.at.Sub(d.first).Milliseconds())
 		}
-		logging.OrDiscard(c.logger).Log(nil, d.level, d.message, attrs...)
+		logging.OrDiscard(c.logger).Log(d.ctx, d.level, d.message, attrs...)
 	}
 	for _, d := range pending {
 		emit(d)
