@@ -228,6 +228,36 @@ func TestExtraPermitCannotBypassHistoryParticipation(t *testing.T) {
 	}
 }
 
+func TestDJRolePreflight(t *testing.T) {
+	for _, scenario := range []string{"present", "missing", "fetch_failed"} {
+		t.Run(scenario, func(t *testing.T) {
+			transport := historyTransport(func(r *http.Request) (*http.Response, error) {
+				body := `{"id":"2"}`
+				status := 200
+				if strings.HasSuffix(r.URL.Path, "/roles") {
+					body = `[{"id":"5"}]`
+					if scenario == "missing" {
+						body = `[]`
+					}
+					if scenario == "fetch_failed" {
+						status = 403
+						body = `{"code":50013,"message":"PRIVATE_FAILURE"}`
+					}
+				}
+				return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body)), Request: r}, nil
+			})
+			a := &App{ctx: t.Context(), config: config.Config{GuildID: 2, ApplicationID: 8, StateDir: t.TempDir(), QueueLimit: 10, Authorization: authorization.Config{Preset: "dj", DJRoleIDs: []string{"5"}}}, client: &bot.Client{ApplicationID: 8, Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
+			err := a.Check()
+			if (err == nil) != (scenario == "present") {
+				t.Fatalf("%s: %v", scenario, err)
+			}
+			if err != nil && strings.Contains(err.Error(), "PRIVATE") {
+				t.Fatal("preflight leaked REST content")
+			}
+		})
+	}
+}
+
 func TestAuthorizationOverwritePrecedence(t *testing.T) {
 	member := discord.Member{GuildID: 1, User: discord.User{ID: 2}, RoleIDs: []snowflake.ID{3, 4}}
 	roles := map[snowflake.ID]discord.Permissions{1: discord.PermissionViewChannel, 3: 0, 4: 0}
