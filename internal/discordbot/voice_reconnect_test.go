@@ -10,10 +10,17 @@ import (
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/codes"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 func TestMissingServerNotificationRejoinsAfterConfirmedLeave(t *testing.T) {
 	c := testVoiceController(t)
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	defer provider.Shutdown(context.Background())
+	c.tracer = provider.Tracer("test")
 	c.canRejoin = func(context.Context, snowflake.ID) bool { return true }
 	var joins, leaves atomic.Int32
 	c.update = func(_ context.Context, _ snowflake.ID, id *snowflake.ID, _, _ bool) error {
@@ -41,6 +48,28 @@ func TestMissingServerNotificationRejoinsAfterConfirmedLeave(t *testing.T) {
 	}
 	if c.ChannelID() == nil || *c.ChannelID() != 3 {
 		t.Fatal("target lost during reset")
+	}
+	deadline := time.Now().Add(time.Second)
+	for len(recorder.Started()) != len(recorder.Ended()) && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if len(recorder.Started()) != len(recorder.Ended()) {
+		t.Fatal("rejoin trace did not finish")
+	}
+	var recovered, failedWait, permission, leave bool
+	for _, span := range recorder.Ended() {
+		switch span.Name() {
+		case "voice.recovery":
+			recovered = span.Status().Code == codes.Unset && spanString(span, "asterinmusic.result") == "ready"
+		case "voice.wait":
+			failedWait = failedWait || span.Status().Code == codes.Error
+			leave = leave || spanString(span, "asterinmusic.stage") == "leave_confirmation"
+		case "voice.rejoin_permission":
+			permission = span.Status().Code == codes.Unset
+		}
+	}
+	if !recovered || !failedWait || !permission || !leave {
+		t.Fatalf("rejoin trace lost outcome: recovered=%v failedWait=%v permission=%v leave=%v", recovered, failedWait, permission, leave)
 	}
 }
 
