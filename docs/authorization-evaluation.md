@@ -31,6 +31,8 @@ Windows amd64、Go 1.27.2、AMD RYZEN AI MAX+ 395で、同一の単純な条件�
 
 mise環境で`go test ./experiments/authorization -bench . -benchtime=100ms`を実行する。このパッケージは通常の`mise run test`にも含まれる。
 
-次に、サーバー境界を含む実データモデル、複数ロール、本人追加曲、入力検証、ポリシー・属性のサイズ上限を評価する。認可インターフェースとプリセットの許可表、設定形式を確定してから本体に組み込む。Discord側の事実取得失敗、処理途中の権限変更、全入口への適用、実Discordでの確認はまだ実施していない。
+認可サービスを`internal/authorization`に実装し、[認可モデル](authorization-model.md)の両プリセット、複数ロール、管理者・所有者、本人追加曲、別サーバーのロール、追加拒否をテストした。広いpermitがあっても取得未完了・閲覧不可・サーバー不一致を拒否し、不正なforbidを注入した実行時テストでも安全側に拒否できた。共有サービスの並行評価、vet、Linux向けCGO無効ビルドも通過した。
+
+ポリシー・属性の制限値はモデルに記載した。上限値境界の自動テストと実モデルでの性能測定、設定ファイル形式、Discord側の事実取得失敗、処理途中の権限変更、全入口への適用、実Discordでの確認はまだ残っている。認可サービスはBotへ接続していない。
 
 参考：[Cedar Go公式リポジトリ](https://github.com/cedar-policy/cedar-go)。実験的機能の扱いは[導入方針](authorization-plan.md)に従う。
