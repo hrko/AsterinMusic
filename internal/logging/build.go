@@ -5,6 +5,19 @@ import (
 	"runtime/debug"
 )
 
+// BuildVersion excludes local paths and build timestamps.
+func BuildVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				return setting.Value
+			}
+		}
+		return info.Main.Version
+	}
+	return "unknown"
+}
+
 // BuildAttributes deliberately excludes build paths, settings and timestamps.
 func BuildAttributes() []any {
 	attrs := []any{"go_version", runtime.Version()}

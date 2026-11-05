@@ -30,9 +30,12 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
+	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type App struct {
+	tracer              trace.Tracer
 	authorizer          authorization.Service
 	authorizationMember func(context.Context, snowflake.ID, snowflake.ID) (*discord.Member, error)
 	helpCatalog         *helpui.Catalog
@@ -54,7 +57,7 @@ type App struct {
 	daveClosers         sync.Map
 }
 
-func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error) {
+func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ...trace.TracerProvider) (*App, error) {
 	authorizer, authorizationErr := authorization.NewCedar(c.Authorization)
 	if authorizationErr != nil {
 		return nil, authorizationErr
@@ -75,6 +78,11 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	var provider trace.TracerProvider = noop.NewTracerProvider()
+	if len(providers) > 0 && providers[0] != nil {
+		provider = providers[0]
+	}
+	a.tracer = provider.Tracer("asterinmusic/discordbot")
 	a.authorizer = authorizer
 	a.logger = logging.Component(logger, "app")
 	a.helpEpoch = rand.Text()

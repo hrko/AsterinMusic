@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Options struct {
@@ -242,10 +244,13 @@ func (h *handler) Handle(ctx context.Context, r slog.Record) error {
 	for _, key := range order {
 		// These keys belong to the output Handler. Do not create ambiguous JSON
 		// by accepting application attributes with the same top-level names.
-		if key == slog.TimeKey || key == slog.LevelKey || key == slog.MessageKey {
+		if key == slog.TimeKey || key == slog.LevelKey || key == slog.MessageKey || key == "trace_id" || key == "span_id" || key == "trace_sampled" {
 			continue
 		}
 		n.AddAttrs(attrs[key])
+	}
+	if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+		n.AddAttrs(slog.String("trace_id", sc.TraceID().String()), slog.String("span_id", sc.SpanID().String()), slog.Bool("trace_sampled", sc.IsSampled()))
 	}
 	return h.output.Handle(ctx, n)
 }

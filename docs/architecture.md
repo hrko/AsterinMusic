@@ -116,6 +116,10 @@ flowchart LR
 
 ## 運用ログ
 
+トレース基盤は`internal/telemetry`が担当し、CLIでProviderを生成してAppへ注入する。SDK・OTLP/HTTP exporterはv1.47.0。既定は無効で、ログのContextに有効なSpanContextがある場合のみ`trace_id`・`span_id`・`trace_sampled`をルート属性へ追加する。処理ごとの計装は導入中であり、対象と完了条件は[計装方針](tracing-plan.md)を参照する。
+
+送信は最大1024spanの非ブロッキングキュー、128span単位、最大1秒待ち、送信期限2秒で行う。再送は無効、終了flushは最大3秒。resourceはサービス名・バージョン・起動IDのみを出力する。環境由来のresourceはexport境界で除外し、exporterエラー原文はSDKへ渡さない。アプリ終了処理の後にProviderを終了する。
+
 `internal/logging`が標準slog Handlerを包み、コンポーネント別のレベル判定、属性の重複解消、制御文字の処理を担当する。CLIが設定からロガーを作り、App・再生セッション・接続管理・キュー・メタデータ取得へ明示的に渡す。サーバーIDはセッションの固定属性とし、VC IDと世代は接続イベントの発生時に取得する。ロガーをContextへ格納しない。
 
 依存ライブラリには原文・任意属性を除外するアダプターを渡す。dave-go v0.5.1には、注入ロガーをMLSへ渡さない経路と`slog.Default`を直接使う経路があるため、CLI起動時に互換用の既定ロガーを無出力にする。これらの経路から暗号処理の詳細が漏れたり、JSON出力へ別形式が混在したりすることを防ぐ。明示的に注入したロガーには影響しない。

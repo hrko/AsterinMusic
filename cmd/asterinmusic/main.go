@@ -20,6 +20,7 @@ import (
 	"asterinmusic/internal/process"
 	"asterinmusic/internal/runcontrol"
 	"asterinmusic/internal/source"
+	"asterinmusic/internal/telemetry"
 	"asterinmusic/internal/updater"
 )
 
@@ -191,7 +192,17 @@ func run(ctx context.Context, args []string, opts config.Options) error {
 		// its crypto details are neither safe nor useful as application events.
 		// Explicitly injected dependency loggers remain enabled.
 		slog.SetDefault(slog.New(slog.DiscardHandler))
-		a, err := discordbot.New(ctx, c, logger)
+		telemetry.ConfigureDiagnostics(logger)
+		tracing, err := telemetry.New(ctx, c.Tracing, logging.BuildVersion())
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := tracing.Shutdown(); err != nil {
+				logger.Warn("tracing shutdown incomplete", "event", "tracing.shutdown.failed")
+			}
+		}()
+		a, err := discordbot.New(ctx, c, logger, tracing.Provider)
 		if err != nil {
 			if args[0] == "serve" {
 				logging.Component(logger, "app").ErrorContext(ctx, "application initialization failed", "event", "app.startup.failed", "stage", "initialize")
