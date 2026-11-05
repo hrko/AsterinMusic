@@ -262,7 +262,16 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 }
 
 func (a *App) editQueue(response responseRef, s *session, owner snowflake.ID, page int, previous string) {
+	epoch := s.version()
 	embed, components := s.queueView(owner, page, previous)
+	if err := s.checkPermission(owner, authorization.QueueView); err != nil {
+		a.edit(response, userError(err), nil)
+		return
+	}
+	if epoch != s.version() {
+		a.edit(response, userError(errQueueChanged), nil)
+		return
+	}
 	embeds := []discord.Embed{embed}
 	empty := ""
 	_, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &components, AllowedMentions: &discord.AllowedMentions{}})

@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/config"
 	"asterinmusic/internal/logging"
+	"asterinmusic/internal/music"
 	"context"
 	"encoding/json"
 	"errors"
@@ -166,6 +167,44 @@ forbid(principal, action, resource);`}}})
 	text = out.String()
 	if strings.Contains(text, "PRIVATE") || !strings.Contains(text, `"level":"WARN"`) {
 		t.Fatal("incorrect failure log", text)
+	}
+}
+
+func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
+	for _, scenario := range []string{"voice", "track", "exit", "save", "epoch"} {
+		t.Run(scenario, func(t *testing.T) {
+			c := cache.New(cache.WithCaches(cache.FlagVoiceStates))
+			voice := snowflake.ID(3)
+			c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+			a := &App{ctx: t.Context(), config: config.Config{GuildID: 2}, client: &bot.Client{Caches: c}}
+			authorizationFixture(t, a)
+			s := newSession(a, 2)
+			s.channel = 3
+			before := s.volume.Percent()
+			a.authorizationMember = func(_ context.Context, g, u snowflake.ID) (*discord.Member, error) {
+				s.mu.Lock()
+				switch scenario {
+				case "voice":
+					s.moveVoiceLocked(4)
+				case "track":
+					s.current = &music.Entry{ID: "new"}
+				case "exit":
+					a.client.Caches.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1})
+				case "save":
+					s.queueSaving = make(chan struct{})
+				case "epoch":
+					s.epoch++
+				}
+				s.mu.Unlock()
+				return &discord.Member{GuildID: g, User: discord.User{ID: u}}, nil
+			}
+			if err := s.controlAs(1, authorization.VolumeSet, 99); !errors.Is(err, errQueueChanged) && !errors.Is(err, errPermission) {
+				t.Fatal("stale permission accepted", err)
+			}
+			if s.volume.Percent() != before {
+				t.Fatal("mutation ran despite stale permission")
+			}
+		})
 	}
 }
 

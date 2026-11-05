@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/music"
 	"asterinmusic/internal/source"
 	"context"
@@ -135,7 +136,16 @@ func (a *App) autoplayCommand(e *events.ApplicationCommandInteractionCreate, s *
 			return
 		}
 	}
-	s.mu.Lock()
+	permission := authorization.AutoplayView
+	if action != "status" {
+		permission = authorization.AutoplaySet
+	}
+	if err := s.lockAuthorized(e.User().ID, permission); err != nil {
+		if action == "status" || !a.rejectDeferredAuthorization(responseFor(e), err, false) {
+			a.edit(responseFor(e), userError(err), nil)
+		}
+		return
+	}
 	if action != "status" {
 		if err := s.mutableLocked(); err != nil {
 			s.mu.Unlock()

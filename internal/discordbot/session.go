@@ -101,16 +101,14 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	if len(tracks) == 0 {
 		action = authorization.PlaybackResume
 	}
-	if err := s.checkPermission(user, action); err != nil {
-		return 0, "", err
-	}
 	channel, err := s.authorize(user)
 	if err != nil {
 		return 0, "", err
 	}
-	s.mu.Lock()
+	if err := s.lockAuthorized(user, action); err != nil {
+		return 0, "", err
+	}
 	defer s.mu.Unlock()
-	s.waitQueueLocked()
 	if err := s.mutableLocked(); err != nil {
 		return 0, "", err
 	}

@@ -44,6 +44,16 @@ type authorizationTarget struct {
 }
 
 func (s *session) checkPermission(user snowflake.ID, action authorization.Action) error {
+	if err := s.lockAuthorized(user, action); err != nil {
+		return err
+	}
+	s.mu.Unlock()
+	return nil
+}
+
+// lockAuthorized returns with mu held only on success. No external I/O runs
+// under the mutex, and a delayed/stale decision is never used for mutation.
+func (s *session) lockAuthorized(user snowflake.ID, action authorization.Action) error {
 	s.mu.Lock()
 	if s.conn != nil {
 		s.syncVoiceLocked()
@@ -56,17 +66,32 @@ func (s *session) checkPermission(user snowflake.ID, action authorization.Action
 		target.requester = s.current.Requester.ID
 	}
 	epoch := s.epoch
+	current := s.current
+	voiceState, _ := s.app.client.Caches.VoiceState(s.guild, user)
+	callerVoice := snowflake.ID(0)
+	if voiceState.ChannelID != nil {
+		callerVoice = *voiceState.ChannelID
+	}
 	s.mu.Unlock()
 	if err := s.app.authorizeTarget(s.app.ctx, user, action, target); err != nil {
 		return err
 	}
+	checkedAt := time.Now()
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	if s.conn != nil {
+		s.syncVoiceLocked()
+	}
 	voice := s.channel
 	if voice == 0 {
 		voice = s.accessVoice
 	}
-	if epoch != s.epoch || voice != target.voice {
+	latest, _ := s.app.client.Caches.VoiceState(s.guild, user)
+	latestVoice := snowflake.ID(0)
+	if latest.ChannelID != nil {
+		latestVoice = *latest.ChannelID
+	}
+	if epoch != s.epoch || voice != target.voice || current != s.current || callerVoice != latestVoice || s.queueSaving != nil || time.Since(checkedAt) > 250*time.Millisecond {
+		s.mu.Unlock()
 		return errQueueChanged
 	}
 	return nil

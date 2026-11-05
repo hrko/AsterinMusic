@@ -156,8 +156,12 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 				reply(userError(err))
 				return
 			}
-			s.mu.Lock()
-			s.waitQueueLocked()
+			if err := s.lockAuthorized(user.ID, authorization.QueueClear); err != nil {
+				if !a.rejectDeferredAuthorization(responseFor(e), err, false) {
+					reply(userError(err))
+				}
+				return
+			}
 			if err := s.mutableLocked(); err != nil {
 				s.mu.Unlock()
 				reply(userError(err))
@@ -184,7 +188,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		a.editQueue(responseFor(e), s, user.ID, max(1, data.Int("page")), "")
 		s.queueViewMu.Unlock()
 	case "nowplaying":
-		s.mu.Lock()
+		if err := s.lockAuthorized(user.ID, authorization.PlaybackView); err != nil {
+			reply(userError(err))
+			return
+		}
 		var current *music.Entry
 		if s.current != nil {
 			copy := *s.current
@@ -211,7 +218,10 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 				reply(userError(err))
 				return
 			}
-			if err := s.setVolume(p); err != nil {
+			if err := s.controlAs(user.ID, authorization.VolumeSet, p); err != nil {
+				if a.rejectDeferredAuthorization(responseFor(e), err, false) {
+					return
+				}
 				reply(userError(err))
 				return
 			}
@@ -230,12 +240,18 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			return
 		}
 		if data.CommandName() == "stop" {
-			if err := s.stop(); err != nil {
+			if err := s.controlAs(user.ID, authorization.PlaybackStop, 0); err != nil {
+				if a.rejectDeferredAuthorization(responseFor(e), err, false) {
+					return
+				}
 				reply(userError(err))
 				return
 			}
 			reply("停止して切断しました。待機キューは保持しています。")
-		} else if err := s.skip(); err != nil {
+		} else if err := s.controlAs(user.ID, authorization.PlaybackSkip, 0); err != nil {
+			if a.rejectDeferredAuthorization(responseFor(e), err, false) {
+				return
+			}
 			reply(userError(err))
 		} else {
 			reply("次の曲へ進みます。")
