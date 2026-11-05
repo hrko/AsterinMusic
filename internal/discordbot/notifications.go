@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"asterinmusic/internal/music"
 	"context"
 	"github.com/disgoorg/disgo/discord"
@@ -56,10 +57,12 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 	if track != nil {
 		embed.Description = singleLink(*track) + "\n\n" + text
 	}
+	operation := "create"
 	err := s.failureNotice.publish(sequence, channel, embed, func(id snowflake.ID, e discord.Embed) (snowflake.ID, error) {
 		ctx, cancel := context.WithTimeout(s.app.ctx, 10*time.Second)
 		defer cancel()
 		if id != 0 {
+			operation = "update"
 			m, err := s.app.client.Rest.UpdateMessage(channel, id, messageUpdate("", &e, nil), rest.WithCtx(ctx))
 			if err == nil {
 				return m.ID, nil
@@ -68,11 +71,12 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 				return 0, err
 			}
 		}
+		operation = "create"
 		m, err := s.app.client.Rest.CreateMessage(channel, discord.MessageCreate{Embeds: []discord.Embed{e}, AllowedMentions: &discord.AllowedMentions{}}, rest.WithCtx(ctx))
 		if err != nil {
 			return 0, err
 		}
 		return m.ID, nil
 	})
-	s.logOperationFailure("notification.playback_failure", err)
+	logFailure(s.app.ctx, logging.OrDiscard(s.logger).With("notification_channel_id", channel.String(), "notification_operation", operation), "notification.playback_failure", err)
 }

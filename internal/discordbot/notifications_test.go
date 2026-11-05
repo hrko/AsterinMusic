@@ -1,11 +1,37 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
+	"bytes"
 	"errors"
+	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 )
+
+func TestNotificationAccessFailureLogsDestination(t *testing.T) {
+	var out bytes.Buffer
+	logger, _ := logging.New(&out, logging.Options{Format: "json"})
+	transport := historyTransport(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 403, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(strings.NewReader(`{"code":50001,"message":"PRIVATE_DETAIL"}`)), Request: r}, nil
+	})
+	a := &App{ctx: t.Context(), client: &bot.Client{Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
+	s := &session{app: a, text: 7, logger: logger}
+	s.notifyFailure(7, nil, "PRIVATE_NOTICE", true)
+	for _, want := range []string{`"notification_channel_id":"7"`, `"notification_operation":"create"`, `"http_status":403`, `"discord_code":50001`} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("missing %s: %s", want, out.String())
+		}
+	}
+	if strings.Contains(out.String(), "PRIVATE") {
+		t.Fatal("notification details leaked")
+	}
+}
 
 func TestFailureSeries(t *testing.T) {
 	var n failureNotice
