@@ -37,9 +37,10 @@ func ConfigureDiagnostics(logger *slog.Logger) {
 }
 
 type Runtime struct {
-	Provider  trace.TracerProvider
-	sdk       *sdktrace.TracerProvider
-	transport *http.Transport
+	Provider     trace.TracerProvider
+	sdk          *sdktrace.TracerProvider
+	transport    *http.Transport
+	cancelExport context.CancelFunc
 }
 
 func New(ctx context.Context, o Options, version string) (*Runtime, error) {
@@ -76,12 +77,14 @@ func New(ctx context.Context, o Options, version string) (*Runtime, error) {
 		return nil, errors.New("tracing instance ID initialization failed")
 	}
 	res := resource.NewSchemaless(attribute.String("service.name", "asterinmusic"), attribute.String("service.version", version), attribute.String("service.instance.id", hex.EncodeToString(id[:])))
+	exportContext, cancelExport := context.WithCancel(context.Background())
+	r.cancelExport = cancelExport
 	r.sdk = sdktrace.NewTracerProvider(
 		sdktrace.WithResource(res),
 		sdktrace.WithoutPanicRecording(),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithRawSpanLimits(sdktrace.SpanLimits{AttributeValueLengthLimit: 256, AttributeCountLimit: 32, EventCountLimit: 32, LinkCountLimit: 4, AttributePerEventCountLimit: 8, AttributePerLinkCountLimit: 4}),
-		sdktrace.WithBatcher(safeExporter{SpanExporter: exporter, resource: res}, sdktrace.WithMaxQueueSize(1024), sdktrace.WithMaxExportBatchSize(128), sdktrace.WithBatchTimeout(time.Second), sdktrace.WithExportTimeout(2*time.Second)),
+		sdktrace.WithBatcher(safeExporter{SpanExporter: exporter, resource: res, lifetime: exportContext}, sdktrace.WithMaxQueueSize(1024), sdktrace.WithMaxExportBatchSize(128), sdktrace.WithBatchTimeout(time.Second), sdktrace.WithExportTimeout(2*time.Second)),
 	)
 	r.Provider = r.sdk
 	r.transport = transport
@@ -95,6 +98,9 @@ func (r *Runtime) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), ShutdownTimeout)
 	defer cancel()
 	defer r.transport.CloseIdleConnections()
+	// The SDK drains on its own background context even after Shutdown times
+	// out. Cancel active and queued exports as well as bounding our caller.
+	defer r.cancelExport()
 	if err := r.sdk.Shutdown(ctx); err != nil {
 		return errors.New("tracing shutdown incomplete")
 	}
@@ -106,6 +112,7 @@ func (r *Runtime) Shutdown() error {
 type safeExporter struct {
 	sdktrace.SpanExporter
 	resource *resource.Resource
+	lifetime context.Context
 }
 
 type exportSpan struct {
@@ -116,6 +123,13 @@ type exportSpan struct {
 func (s exportSpan) Resource() *resource.Resource { return s.resource }
 
 func (s safeExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
+	if s.lifetime.Err() != nil {
+		return errors.New("tracing export stopped")
+	}
+	ctx, cancel := context.WithCancel(ctx)
+	stop := context.AfterFunc(s.lifetime, cancel)
+	defer stop()
+	defer cancel()
 	// SDK WithResource also merges OTEL_RESOURCE_ATTRIBUTES. Replace the
 	// exported resource with the application's explicit allowlist.
 	clean := make([]sdktrace.ReadOnlySpan, len(spans))
