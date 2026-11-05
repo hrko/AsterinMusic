@@ -3,6 +3,7 @@ module asterinmusic
 go 1.27.2
 
 require (
+	github.com/cedar-policy/cedar-go v1.8.0
 	github.com/clipperhouse/displaywidth v0.11.0
 	github.com/disgoorg/disgo v0.19.6
 	github.com/disgoorg/godave v0.3.0
@@ -38,6 +39,7 @@ require (
 	github.com/sasha-s/go-csync v0.0.0-20240107134140-fcbab37b09ad // indirect
 	github.com/thomas-vilte/mls-go v1.6.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/exp v0.0.0-20220921023135-46d9e7742f1e // indirect
 	modernc.org/libc v1.79.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
