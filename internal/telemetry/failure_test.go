@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -163,4 +164,44 @@ func TestDiagnosticsSuppressRawErrorsAndRateLimit(t *testing.T) {
 	if strings.Count(output.String(), "tracing.diagnostic.failed") != 1 {
 		t.Fatal("SDK diagnostics were not rate limited")
 	}
+}
+
+func TestRepeatedRuntimePressureReleasesWorkersAndHeap(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+		w.Header().Set("Content-Type", "application/x-protobuf")
+	}))
+	defer srv.Close()
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	workers := runtime.NumGoroutine()
+	for range 10 {
+		r, err := New(context.Background(), Options{Enabled: true, Endpoint: srv.URL + "/v1/traces"}, "test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		tracer := r.Provider.Tracer("test")
+		for range 5000 {
+			_, span := tracer.Start(context.Background(), "voice.connect")
+			span.End()
+		}
+		if err := r.Shutdown(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := time.Now().Add(3 * time.Second)
+	for runtime.NumGoroutine() > workers+4 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if got := runtime.NumGoroutine(); got > workers+4 {
+		t.Fatalf("workers retained: before=%d after=%d", workers, got)
+	}
+	runtime.GC()
+	runtime.ReadMemStats(&after)
+	// Allow lazy HTTP/protobuf caches, but not retained queues for every runtime.
+	if after.HeapAlloc > before.HeapAlloc+16<<20 {
+		t.Fatalf("heap retained across lifetimes: before=%d after=%d", before.HeapAlloc, after.HeapAlloc)
+	}
+	t.Logf("50,000 spans / 10 lifetimes: goroutines %d -> %d, live heap %d -> %d bytes", workers, runtime.NumGoroutine(), before.HeapAlloc, after.HeapAlloc)
 }
