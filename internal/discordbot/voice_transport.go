@@ -10,6 +10,7 @@ import (
 	"github.com/disgoorg/godave"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type voiceStageError struct {
@@ -23,14 +24,16 @@ func (e *voiceStageError) Unwrap() error { return e.err }
 // A transport owns exactly one immutable set of credentials, one UDP socket,
 // and one DAVE session. Closing it never sends a guild voice-state update.
 type discordVoiceTransport struct {
-	mu       sync.Mutex
-	invalid  atomic.Bool
-	conn     voice.Conn
-	dave     godave.Session
-	speaking bool
-	closed   sync.Once
-	cleanup  func()
-	state    voice.State
+	tracer     trace.Tracer
+	traceCause trace.SpanContext
+	mu         sync.Mutex
+	invalid    atomic.Bool
+	conn       voice.Conn
+	dave       godave.Session
+	speaking   bool
+	closed     sync.Once
+	cleanup    func()
+	state      voice.State
 }
 
 func (t *discordVoiceTransport) Invalidate() { t.invalid.Store(true) }
@@ -46,6 +49,7 @@ func (t *discordVoiceTransport) Resume(ctx context.Context) error {
 	}
 	t.mu.Lock()
 	t.speaking = false // Re-announce speaking before sending on the resumed socket.
+	t.traceCause = trace.SpanContextFromContext(ctx)
 	t.mu.Unlock()
 	for !t.Ready() {
 		select {
@@ -73,7 +77,14 @@ func (t *discordVoiceTransport) Write(ctx context.Context, p []byte) error {
 		return errDaveNotReady
 	}
 	if !t.speaking {
-		if err := t.conn.SetSpeaking(ctx, voice.SpeakingFlagMicrophone); err != nil {
+		opts := []trace.SpanStartOption{}
+		if t.traceCause.IsValid() {
+			opts = append(opts, trace.WithLinks(trace.Link{SpanContext: t.traceCause}))
+		}
+		speakCtx, span := tracerOrNoop(t.tracer).Start(ctx, "voice.speaking", opts...)
+		err := t.conn.SetSpeaking(speakCtx, voice.SpeakingFlagMicrophone)
+		finishTrace(span, err)
+		if err != nil {
 			return err
 		}
 		t.speaking = true
@@ -103,7 +114,7 @@ func (a *App) openVoiceTransport(ctx context.Context, state voice.State, closed 
 }
 
 func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.State, closed func(error, bool), opts []voice.ConnConfigOpt, dialer *websocket.Dialer) (voiceTransport, error) {
-	t := &discordVoiceTransport{state: state}
+	t := &discordVoiceTransport{state: state, tracer: a.tracer, traceCause: trace.SpanContextFromContext(ctx)}
 	described := make(chan error, 1)
 	options := append([]voice.ConnConfigOpt(nil), opts...)
 	options = append(options, voice.WithConnGatewayCreateFunc(func(dave godave.Session, event voice.EventHandlerFunc, _ voice.CloseHandlerFunc, opts ...voice.GatewayConfigOpt) voice.Gateway {

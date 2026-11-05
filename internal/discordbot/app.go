@@ -319,7 +319,12 @@ func (a *App) Serve() error {
 		return fmt.Errorf("restore playback: %w", err)
 	}
 	if restored != nil {
+		s.beginRestore(restored)
+		defer s.restore.finish("startup_ended", context.Canceled)
 		s.restoreSettings(restored)
+		if !restored.Playing {
+			s.restore.finish("settings_restored", nil)
+		}
 	}
 	if raw := queue.AccessScope(); raw != "" {
 		id, parseErr := snowflake.Parse(raw)
@@ -359,10 +364,13 @@ func (a *App) Serve() error {
 		}
 		if os.Getenv("ASTERINMUSIC_RESUME") == "true" {
 			if err := s.resumeCheckpoint(restored); err != nil {
-				logging.OrDiscard(a.logger).ErrorContext(a.ctx, "playback restore could not reconnect", "event", "state.playback.restore_failed", "reason", failureClass(err), "queue_retained", true)
+				s.restore.finish("connection_failed", err)
+				logging.OrDiscard(a.logger).ErrorContext(s.restore.ctx, "playback restore could not reconnect", "event", "state.playback.restore_failed", "reason", failureClass(err), "queue_retained", true)
 			} else {
-				logging.OrDiscard(a.logger).InfoContext(a.ctx, "playback state restored", "event", "state.playback.restored", "playing", restored.Playing, "autoplay", restored.AutoEnabled)
+				logging.OrDiscard(a.logger).InfoContext(s.restore.ctx, "playback state restored", "event", "state.playback.restored", "playing", restored.Playing, "autoplay", restored.AutoEnabled)
 			}
+		} else {
+			s.restore.finish("resume_not_requested", nil)
 		}
 	}
 	logging.OrDiscard(a.logger).InfoContext(a.ctx, "AsterinMusic connected; waiting for commands", "event", "app.ready", "dave", daveBackend)

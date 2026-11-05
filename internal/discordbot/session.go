@@ -21,6 +21,7 @@ import (
 )
 
 type session struct {
+	restore                            *restoreTrace
 	playbackLog                        *playbackLog
 	logger                             *slog.Logger
 	historySessionID                   string
@@ -186,6 +187,7 @@ func (s *session) startLocked(channel snowflake.ID) error {
 	}
 	if needsOpen {
 		ctx, cancel := context.WithTimeout(s.app.ctx, voiceRecoveryTimeout)
+		ctx = s.restoreContext(ctx)
 		s.connectCancel = cancel
 		s.connecting = true
 		s.stopped = false
@@ -256,12 +258,14 @@ func (s *session) startLocked(channel snowflake.ID) error {
 	s.running = true
 	s.idleSince = time.Time{}
 	s.done = make(chan struct{})
+	s.restore.prepare()
 	go s.loop(s.done)
 	return nil
 }
 
 func (s *session) loop(done chan struct{}) {
 	defer close(done)
+	defer func() { s.mu.Lock(); r := s.restore; s.mu.Unlock(); r.finish("stopped_before_audio", context.Canceled) }()
 	failures := 0
 	for {
 		entry, automatic, ok := s.nextEntry()
@@ -297,7 +301,8 @@ func (s *session) loop(done chan struct{}) {
 		s.started = false
 		s.currentRevision = s.auto.revision
 		ctx, cancel := context.WithCancel(s.app.ctx)
-		playLog := newPlaybackLog(ctx, s.logger, rand.Text(), automatic)
+		ctx = s.restoreContext(ctx)
+		playLog := newPlaybackLog(ctx, s.logger, rand.Text(), automatic, s.restore)
 		s.playbackLog = playLog
 		s.trackCancel = cancel
 		s.position = 0
@@ -315,6 +320,13 @@ func (s *session) loop(done chan struct{}) {
 			return nil
 		})
 		playLog.join()
+		if s.restore != nil {
+			if err != nil {
+				s.restore.finish("preparation_failed", err)
+			} else {
+				s.restore.finish("no_audio", errors.New("restored playback produced no audio"))
+			}
+		}
 		cancel()
 		s.mu.Lock()
 		s.waitQueueLocked()
@@ -492,6 +504,7 @@ func (s *session) stopLocked() {
 
 // Stop scheduling and playback without leaving the voice channel.
 func (s *session) haltPlaybackLocked() {
+	s.restore.finish("stopped", context.Canceled)
 	if s.recoveryHeld && !s.shuttingDown {
 		current, _ := s.queue.Snapshot()
 		if current != nil {

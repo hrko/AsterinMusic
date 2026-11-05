@@ -118,7 +118,9 @@ flowchart LR
 
 トレース基盤は`internal/telemetry`が担当し、CLIでProviderを生成してAppへ注入する。SDK・OTLP/HTTP exporterはv1.47.0。既定は無効で、ログのContextに有効なSpanContextがある場合のみ`trace_id`・`span_id`・`trace_sampled`をルート属性へ追加する。対象と完了条件は[計装方針](tracing-plan.md)を参照する。
 
-接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。通知待ち、Resume、参加・退出要求、再入室権限確認を子spanとして記録する。通信確立はGateway、UDP検出・プロトコル選択・通信鍵待ちの複合区間、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。再生復元・Speakingの計装と閲覧環境は導入中。
+接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。通知待ち、Resume、参加・退出要求、再入室権限確認を子spanとして記録する。通信確立はGateway、UDP検出・プロトコル選択・通信鍵待ちの複合区間、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。
+
+状態適用からの`playback.restore`は、停止状態なら設定復元で、再生状態なら最初の音声送信成功または準備失敗・中断で終了する。接続後から音声開始までを`playback.restore_prepare`で計測し、音声開始の既存観測処理で終了するためフレーム経路に新しいobserverを作らない。後続曲は終了済みの復元Contextを引き継がない。`voice.speaking`はSpeaking開始要求時のみ作り、接続・Resumeとの関係をlinkで記録する。閲覧環境と総合検証は導入中。
 
 送信は最大1024spanの非ブロッキングキュー、128span単位、最大1秒待ち、送信期限2秒で行う。再送は無効、終了flushは最大3秒。resourceはサービス名・バージョン・起動IDのみを出力する。環境由来のresourceはexport境界で除外し、exporterエラー原文はSDKへ渡さない。アプリ終了処理の後にProviderを終了する。
 

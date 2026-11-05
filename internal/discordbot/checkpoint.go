@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/history"
 	"asterinmusic/internal/music"
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -229,12 +230,14 @@ func (s *session) restoreSettings(v *playbackCheckpoint) {
 
 func (s *session) resumeCheckpoint(v *playbackCheckpoint) error {
 	if v == nil || !v.Playing || v.Channel == 0 {
+		s.restore.finish("settings_restored", nil)
 		return nil
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// Do not override a user action received after READY.
 	if s.running || s.stopped || s.epoch != 0 {
+		s.restore.finish("superseded", context.Canceled)
 		return nil
 	}
 	return s.startLocked(v.Channel)

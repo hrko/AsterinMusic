@@ -23,11 +23,14 @@ type playbackLog struct {
 	joined  chan struct{}
 }
 
-func newPlaybackLog(ctx context.Context, logger *slog.Logger, id string, automatic bool) *playbackLog {
+func newPlaybackLog(ctx context.Context, logger *slog.Logger, id string, automatic bool, restores ...*restoreTrace) *playbackLog {
 	p := &playbackLog{logger: logging.OrDiscard(logger).With("playback_id", id), started: make(chan playbackStart, 1), done: make(chan struct{}), joined: make(chan struct{})}
 	go func() {
 		defer close(p.joined)
 		emit := func(s playbackStart) {
+			if len(restores) > 0 {
+				restores[0].finish("audio_started", nil)
+			}
 			p.logger.InfoContext(ctx, "audio playback started", "event", "playback.started", "channel_id", s.channel, "automatic", automatic, "audio_started_at", s.at)
 			if s.historyFailed {
 				logging.Component(p.logger, "history").ErrorContext(ctx, "history enqueue failed", "event", "history.queue_full.failed", "reason", "queue_unavailable", "action", "persistence_failed")
