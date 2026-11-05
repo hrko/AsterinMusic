@@ -46,6 +46,14 @@ func (s *session) moveVoiceLocked(channel snowflake.ID) {
 	if !s.idleSince.IsZero() {
 		s.idleSince = time.Now()
 	}
+	if channel != 0 {
+		s.waitQueueLocked()
+		// A newer move may have arrived while the previous disk write completed.
+		if s.accessVoice != channel {
+			return
+		}
+		s.queueIOLocked(func() { _ = s.queue.SetAccessScope(channel.String()) })
+	}
 }
 func (s *session) bindNotificationChannel(user, text snowflake.ID) {
 	state, ok := s.app.client.Caches.VoiceState(s.guild, user)

@@ -158,6 +158,10 @@ func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embe
 	for _, ex := range ref.Examples {
 		examples = append(examples, "- "+ex.Purpose+"\n  ```\n  "+ex.Command+"\n  ```")
 	}
-	e.Fields = append(e.Fields, discord.EmbedField{Name: "使用例", Value: strings.Join(examples, "\n")}, discord.EmbedField{Name: "利用条件", Value: ref.Conditions})
+	conditions := ref.Conditions + "\nサーバーの権限設定により利用できる操作が異なります。"
+	if cmd.Name != "help" {
+		conditions += "音楽情報の表示には対象VCの閲覧権限が必要です。"
+	}
+	e.Fields = append(e.Fields, discord.EmbedField{Name: "使用例", Value: strings.Join(examples, "\n")}, discord.EmbedField{Name: "利用条件", Value: conditions})
 	return e, nil
 }

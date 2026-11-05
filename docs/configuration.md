@@ -80,6 +80,10 @@ yt-dlpが既定の`yt-dlp`の場合、従来の更新管理で選択済みのバ
 
 ## 開発環境の移行
 
+認可設定は`servers.<名前>.authorization`に指定する。`preset`は`collaborative`（既定）または`dj`。`dj_role_ids`は引用符付きDiscordロールIDの配列で、DJ方式では1件以上必要。`policies`は`id`と`policy`を持つ配列で、`policy`にCedarのpermitまたはforbidを1つ記述する。[設定例・許可表・上限](authorization-model.md)を参照。
+
+ルールの不正・未知のキー・型違いは`config-check`と管理再起動の事前検証で拒否する。ルールの部分適用や許可の広い既定値への代替は行わない。変更には再起動が必要。認可エンジン、外部ルールファイル、実行中の編集UIは初期版では選択しない。
+
 ローカルの`asterinmusic.yaml`は`${DISCORD_BOT_TOKEN}`など既存のmise環境変数を明示参照し、`runtime.state_dir: ./.dev/state`として既存キューを維持する。環境変数名からの自動設定は廃止。miseは開発用の環境変数供給・タスクランナーであり、配布バイナリの必須依存ではない。
 
 ```text

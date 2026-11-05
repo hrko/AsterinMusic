@@ -172,6 +172,9 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester},
 		Facts:    authorization.Facts{Complete: true, CanView: target.voice == 0 || permissions.Has(discord.PermissionViewChannel), InVoice: currentVoice != 0, SameVoice: currentVoice != 0 && (target.voice == 0 || currentVoice == target.voice)}}
 	request.Facts.ScopeUnknown = target.unknown
+	if action == authorization.HistoryView || action == authorization.HistoryReadd || action == authorization.HistoryReaddNext {
+		request.Facts.CanView = request.Facts.CanView && permissions.Has(discord.PermissionConnect)
+	}
 	decision, err = a.authorizer.Authorize(ctx, request)
 	if err != nil {
 		return errPermissionFacts

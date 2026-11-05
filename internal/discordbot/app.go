@@ -207,6 +207,21 @@ func (a *App) Check() error {
 	if _, err := a.client.Rest.GetGuild(a.config.GuildID, false, rest.WithCtx(ctx)); err != nil {
 		return errors.New("cannot access configured guild; check bot installation and guild ID")
 	}
+	if len(a.config.Authorization.DJRoleIDs) > 0 {
+		roles, err := a.client.Rest.GetRoles(a.config.GuildID, rest.WithCtx(ctx))
+		if err != nil {
+			return errors.New("cannot validate configured DJ roles")
+		}
+		known := make(map[string]bool, len(roles))
+		for _, role := range roles {
+			known[role.ID.String()] = true
+		}
+		for _, id := range a.config.Authorization.DJRoleIDs {
+			if !known[id] {
+				return errors.New("configured DJ role does not exist in the server")
+			}
+		}
+	}
 	// Read-only validation also runs in restart preflight, before the old Bot stops.
 	if err := history.Check(filepath.Join(a.config.StateDir, "history.sqlite")); err != nil {
 		return errors.New("cannot restore history database")

@@ -42,3 +42,10 @@ servers:
     id: "YOUR_SERVER_ID"
     bots: [main]
     command_bot: main
+    authorization:
+      preset: collaborative
+      # For DJ control, set preset to dj and assign at least one role:
+      # dj_role_ids: ["YOUR_DJ_ROLE_ID"]
+      # policies:
+      #   - id: forbid_stop
+      #     policy: 'forbid(principal, action == Action::"playback.stop", resource);'

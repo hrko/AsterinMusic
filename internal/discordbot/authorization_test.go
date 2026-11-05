@@ -35,7 +35,7 @@ func authorizationFixture(t *testing.T, a *App) {
 	c := cache.New(cache.WithCaches(cache.FlagGuilds, cache.FlagRoles, cache.FlagChannels, cache.FlagVoiceStates))
 	guild := a.config.GuildID
 	c.AddGuild(discord.Guild{ID: guild, OwnerID: 999})
-	c.AddRole(discord.Role{ID: guild, GuildID: guild, Permissions: discord.PermissionViewChannel})
+	c.AddRole(discord.Role{ID: guild, GuildID: guild, Permissions: discord.PermissionViewChannel | discord.PermissionConnect})
 	if a.client.Caches != nil {
 		for state := range a.client.Caches.VoiceStates(guild) {
 			c.AddVoiceState(state)

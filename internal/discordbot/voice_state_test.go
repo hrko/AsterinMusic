@@ -101,14 +101,21 @@ func TestMoveRetainsPlaybackAndResetsOnlyScope(t *testing.T) {
 	s.queue.Add(music.Requester{ID: "user"}, []music.Track{autoTrack("bbbbbbbbbbb")}, "", "")
 	s.emptySince = time.Now().Add(-time.Hour)
 	oldEpoch, revision, entry := s.epoch, s.auto.revision, s.current
+	s.mu.Lock()
 	s.moveVoiceLocked(4)
+	s.mu.Unlock()
+	if s.queue.AccessScope() != "4" {
+		t.Fatal("move did not persist access scope")
+	}
 	_, pending := s.queue.Snapshot()
 	if s.channel != 4 || s.text != 0 || !s.emptySince.IsZero() || s.epoch != oldEpoch+1 || s.auto.revision != revision || !s.auto.enabled || s.current != entry || !s.started || s.position != 42*time.Second || s.conn != conn || conn.closed || len(pending) != 1 || s.playbackHistory.VoiceID != "3" {
 		t.Fatal("move changed playback or retained old scope")
 	}
 	s.notifyFailure(7, &entry.Track, "must not send to old channel", false) // no REST client: a leak would panic
 
+	s.mu.Lock()
 	s.moveVoiceLocked(4)
+	s.mu.Unlock()
 	if s.epoch != oldEpoch+1 {
 		t.Fatal("duplicate event reset transition")
 	}
