@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -24,11 +25,21 @@ type pendingDaveSession struct{ godave.Session }
 
 func (*pendingDaveSession) Ready() bool { return false }
 
+type failedDiscoveryUDP struct{ protocolTestUDP }
+
+func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, int, error) {
+	return "", 0, errors.New("synthetic-secret: discovery failed")
+}
+
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, stage := range []string{"gateway", "udp_protocol_transport_key", "dave"} {
-		t.Run(stage, func(t *testing.T) {
+	for _, fault := range []string{"gateway", "udp_protocol_transport_key", "udp_discovery", "dave"} {
+		t.Run(fault, func(t *testing.T) {
+			stage := fault
+			if fault == "udp_discovery" {
+				stage = "udp_protocol_transport_key"
+			}
 			recorder := tracetest.NewSpanRecorder()
 			provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
 			defer provider.Shutdown(context.Background())
@@ -64,6 +75,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			a := &App{tracer: provider.Tracer("test")}
 			opts := []voice.ConnConfigOpt{
 				voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
+					if fault == "udp_discovery" {
+						return &failedDiscoveryUDP{}
+					}
 					return &protocolTestUDP{}
 				}),
 				voice.WithConnDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, cb godave.Callbacks) godave.Session {

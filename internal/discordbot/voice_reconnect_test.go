@@ -196,6 +196,10 @@ func TestExpiredResumeFallsBackToFreshConnection(t *testing.T) {
 func testResumeFallback(t *testing.T, code, attempts int) {
 	t.Helper()
 	c := testVoiceController(t)
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	defer provider.Shutdown(context.Background())
+	c.tracer = provider.Tracer("test")
 	transport := &rejectedResume{fakeVoiceTransport: newFakeVoiceTransport(), code: code}
 	var opens atomic.Int32
 	c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
@@ -223,6 +227,31 @@ func testResumeFallback(t *testing.T, code, attempts int) {
 	waitVoice(t, c)
 	if transport.calls.Load() != int32(attempts) || joins.Load() != 1 || opens.Load() != 2 {
 		t.Fatal("resume budget or fallback incorrect")
+	}
+	deadline := time.Now().Add(time.Second)
+	for len(recorder.Started()) != len(recorder.Ended()) && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if len(recorder.Started()) != len(recorder.Ended()) {
+		t.Fatal("Resume trace did not finish")
+	}
+	failedResumes, recovered := 0, 0
+	for _, span := range recorder.Ended() {
+		if span.Name() == "voice.resume" {
+			if span.Status().Code != codes.Error {
+				t.Fatal("rejected Resume not marked failed")
+			}
+			if !span.Parent().IsValid() {
+				t.Fatal("Resume is not attached to recovery")
+			}
+			failedResumes++
+		}
+		if span.Name() == "voice.recovery" && span.Status().Code == codes.Unset && spanString(span, "asterinmusic.result") == "ready" {
+			recovered++
+		}
+	}
+	if failedResumes != attempts || recovered != 2 {
+		t.Fatalf("lost retry outcome: failures=%d recoveries=%d", failedResumes, recovered)
 	}
 }
 
