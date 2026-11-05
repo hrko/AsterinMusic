@@ -46,6 +46,12 @@ func (a *App) historyVoice(guild, user snowflake.ID) (snowflake.ID, error) {
 	if err := a.authorizeTarget(a.ctx, user, authorization.HistoryView, authorizationTarget{guild: guild, voice: *state.ChannelID}); err != nil {
 		return 0, err
 	}
+	// Participation is a fixed privacy boundary, even when an extra permit
+	// grants history.view without a sameVoice condition.
+	latest, ok := a.client.Caches.VoiceState(guild, user)
+	if !ok || latest.ChannelID == nil || *latest.ChannelID != *state.ChannelID {
+		return 0, errHistoryView
+	}
 	return *state.ChannelID, nil
 }
 

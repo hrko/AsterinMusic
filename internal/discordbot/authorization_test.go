@@ -208,6 +208,26 @@ func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
 	}
 }
 
+func TestExtraPermitCannotBypassHistoryParticipation(t *testing.T) {
+	c := cache.New(cache.WithCaches(cache.FlagVoiceStates))
+	voice := snowflake.ID(3)
+	c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+	a := &App{ctx: t.Context(), config: config.Config{GuildID: 2}, client: &bot.Client{Caches: c}}
+	authorizationFixture(t, a)
+	var err error
+	a.authorizer, err = authorization.NewCedar(authorization.Config{Policies: []authorization.Policy{{ID: "wide_history", Text: `permit(principal, action == Action::"history.view", resource);`}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.authorizationMember = func(_ context.Context, g, u snowflake.ID) (*discord.Member, error) {
+		a.client.Caches.AddVoiceState(discord.VoiceState{GuildID: g, UserID: u})
+		return &discord.Member{GuildID: g, User: discord.User{ID: u}}, nil
+	}
+	if _, err = a.historyVoice(2, 1); err == nil {
+		t.Fatal("extra permit bypassed fixed participation after exit")
+	}
+}
+
 func TestAuthorizationOverwritePrecedence(t *testing.T) {
 	member := discord.Member{GuildID: 1, User: discord.User{ID: 2}, RoleIDs: []snowflake.ID{3, 4}}
 	roles := map[snowflake.ID]discord.Permissions{1: discord.PermissionViewChannel, 3: 0, 4: 0}
