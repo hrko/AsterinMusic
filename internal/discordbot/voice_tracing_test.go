@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"sync"
 	"testing"
 	"time"
 )
@@ -160,6 +161,35 @@ func TestVoiceMissingNotificationTrace(t *testing.T) {
 		}
 		if s.Name() == "voice.recovery" && spanString(s, "asterinmusic.stage") != "server_notification" {
 			t.Fatal("missing notification not identified")
+		}
+	}
+}
+
+func TestVoiceAttemptConcurrentProgressAndCancellation(t *testing.T) {
+	recorder := tracetest.NewSpanRecorder()
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	defer provider.Shutdown(context.Background())
+	tracer := provider.Tracer("test")
+	for range 100 {
+		ctx, span := tracer.Start(context.Background(), "voice.connect")
+		a := &voiceTraceAttempt{ctx: ctx, span: span, tracer: tracer}
+		var workers sync.WaitGroup
+		workers.Go(func() { a.progress("gateway") })
+		workers.Go(func() { a.progress("dave") })
+		workers.Go(func() { a.end(context.Canceled) })
+		workers.Wait()
+		a.progress("late_progress")
+		a.end(context.DeadlineExceeded)
+		if a.span != nil || a.stage != nil {
+			t.Fatal("completed attempt retained recording span")
+		}
+	}
+	if len(recorder.Started()) != len(recorder.Ended()) {
+		t.Fatal("attempt leaked spans")
+	}
+	for _, span := range recorder.Ended() {
+		if span.Name() == "voice.late_progress" || span.Status().Code == codes.Error {
+			t.Fatal("late completion changed retired attempt")
 		}
 	}
 }

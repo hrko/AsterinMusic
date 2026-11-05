@@ -29,7 +29,7 @@ func newPlaybackLog(ctx context.Context, logger *slog.Logger, id string, automat
 		defer close(p.joined)
 		emit := func(s playbackStart) {
 			if len(restores) > 0 {
-				restores[0].finish("audio_started", nil)
+				restores[0].audioStarted(id, s.channel, s.at)
 			}
 			p.logger.InfoContext(ctx, "audio playback started", "event", "playback.started", "channel_id", s.channel, "automatic", automatic, "audio_started_at", s.at)
 			if s.historyFailed {

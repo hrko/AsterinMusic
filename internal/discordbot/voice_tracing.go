@@ -16,7 +16,7 @@ func tracerOrNoop(t trace.Tracer) trace.Tracer {
 	}
 	return t
 }
-func finishTrace(span trace.Span, err error) {
+func finishTrace(span trace.Span, err error, opts ...trace.SpanEndOption) {
 	if err != nil {
 		reason := failureClass(err)
 		span.SetAttributes(attribute.String("asterinmusic.reason", reason))
@@ -25,7 +25,7 @@ func finishTrace(span trace.Span, err error) {
 			span.SetAttributes(attribute.String("error.type", reason))
 		}
 	}
-	span.End()
+	span.End(opts...)
 }
 
 // voiceTrace belongs to a bounded recovery, including notification-only VC
@@ -140,8 +140,11 @@ func (a *voiceTraceAttempt) end(err error) {
 	a.span.SetAttributes(attribute.String("asterinmusic.stage", a.name))
 	if a.stage != nil {
 		finishTrace(a.stage, err)
+		a.stage = nil
 	}
 	finishTrace(a.span, err)
+	a.span = nil
+	a.ctx = context.Background()
 }
 func traceVoiceStage(ctx context.Context, name string) {
 	if a, ok := ctx.Value(voiceTraceKey{}).(*voiceTraceAttempt); ok {
