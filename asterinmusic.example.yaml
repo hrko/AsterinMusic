@@ -44,7 +44,8 @@ servers:
     command_bot: main
     authorization:
       preset: collaborative
-      # For DJ control, set preset to dj and assign at least one role:
+      # Presets: collaborative, dj_control, dj_control_self_skip, dj_only.
+      # All DJ presets require at least one role. The old name dj is not accepted.
       # dj_role_ids: ["YOUR_DJ_ROLE_ID"]
       # policies:
       #   - id: forbid_stop

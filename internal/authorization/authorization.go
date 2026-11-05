@@ -1,7 +1,29 @@
 // Package authorization defines the application's engine-independent access decisions.
 package authorization
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+const (
+	PresetCollaborative     = "collaborative"
+	PresetDJControl         = "dj_control"
+	PresetDJControlSelfSkip = "dj_control_self_skip"
+	PresetDJOnly            = "dj_only"
+)
+
+// NormalizePreset applies the default and rejects unknown or retired names.
+func NormalizePreset(name string) (string, error) {
+	switch name {
+	case "":
+		return PresetCollaborative, nil
+	case PresetCollaborative, PresetDJControl, PresetDJControlSelfSkip, PresetDJOnly:
+		return name, nil
+	default:
+		return "", errors.New("unknown authorization preset")
+	}
+}
 
 type Action string
 
@@ -41,7 +63,10 @@ type Principal struct {
 	RoleIDs              []string
 	Administrator, Owner bool
 }
-type Resource struct{ GuildID, BotID, SessionID, VoiceID, RequesterID string }
+type Resource struct {
+	GuildID, BotID, SessionID, VoiceID, RequesterID string
+	Automatic                                       bool
+}
 type Facts struct{ Complete, CanView, SameVoice, InVoice, ScopeUnknown bool }
 
 type Reason string

@@ -77,7 +77,7 @@ func TestAuthorizationRefreshesMemberAndFailsClosed(t *testing.T) {
 		}
 		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body)), Request: r}, nil
 	})
-	svc, err := authorization.NewCedar(authorization.Config{Preset: "dj", DJRoleIDs: []string{"5"}})
+	svc, err := authorization.NewCedar(authorization.Config{Preset: "dj_control", DJRoleIDs: []string{"5"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ forbid(principal, action, resource);`}}})
 }
 
 func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
-	for _, scenario := range []string{"voice", "track", "exit", "save", "epoch"} {
+	for _, scenario := range []string{"voice", "track", "exit", "save", "epoch", "requester", "automatic"} {
 		t.Run(scenario, func(t *testing.T) {
 			c := cache.New(cache.WithCaches(cache.FlagVoiceStates))
 			voice := snowflake.ID(3)
@@ -180,6 +180,7 @@ func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
 			authorizationFixture(t, a)
 			s := newSession(a, 2)
 			s.channel = 3
+			s.current = &music.Entry{Requester: music.Requester{ID: "1"}}
 			before := s.volume.Percent()
 			a.authorizationMember = func(_ context.Context, g, u snowflake.ID) (*discord.Member, error) {
 				s.mu.Lock()
@@ -194,6 +195,10 @@ func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
 					s.queueSaving = make(chan struct{})
 				case "epoch":
 					s.epoch++
+				case "requester":
+					s.current.Requester.ID = "9"
+				case "automatic":
+					s.currentAuto = true
 				}
 				s.mu.Unlock()
 				return &discord.Member{GuildID: g, User: discord.User{ID: u}}, nil
@@ -205,6 +210,34 @@ func TestMutationRejectsChangesDuringAuthorization(t *testing.T) {
 				t.Fatal("mutation ran despite stale permission")
 			}
 		})
+	}
+}
+
+func TestSelfSkipUsesCurrentManualRequester(t *testing.T) {
+	c := cache.New(cache.WithCaches(cache.FlagVoiceStates))
+	voice := snowflake.ID(3)
+	c.AddVoiceState(discord.VoiceState{GuildID: 2, UserID: 1, ChannelID: &voice})
+	a := &App{ctx: t.Context(), config: config.Config{GuildID: 2}, client: &bot.Client{Caches: c}}
+	authorizationFixture(t, a)
+	var err error
+	a.authorizer, err = authorization.NewCedar(authorization.Config{Preset: authorization.PresetDJControlSelfSkip, DJRoleIDs: []string{"5"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := newSession(a, 2)
+	s.channel = 3
+	s.current = &music.Entry{Requester: music.Requester{ID: "1"}}
+	if err := s.checkPermission(1, authorization.PlaybackSkip); err != nil {
+		t.Fatal(err)
+	}
+	s.currentAuto = true
+	if err := s.checkPermission(1, authorization.PlaybackSkip); !errors.Is(err, errPermission) {
+		t.Fatal("autoplay owner allowed", err)
+	}
+	s.currentAuto = false
+	s.current.Requester.ID = "9"
+	if err := s.checkPermission(1, authorization.PlaybackSkip); !errors.Is(err, errPermission) {
+		t.Fatal("other requester allowed", err)
 	}
 }
 
@@ -246,7 +279,7 @@ func TestDJRolePreflight(t *testing.T) {
 				}
 				return &http.Response{StatusCode: status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body)), Request: r}, nil
 			})
-			a := &App{ctx: t.Context(), config: config.Config{GuildID: 2, ApplicationID: 8, StateDir: t.TempDir(), QueueLimit: 10, Authorization: authorization.Config{Preset: "dj", DJRoleIDs: []string{"5"}}}, client: &bot.Client{ApplicationID: 8, Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
+			a := &App{ctx: t.Context(), config: config.Config{GuildID: 2, ApplicationID: 8, StateDir: t.TempDir(), QueueLimit: 10, Authorization: authorization.Config{Preset: "dj_control", DJRoleIDs: []string{"5"}}}, client: &bot.Client{ApplicationID: 8, Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
 			err := a.Check()
 			if (err == nil) != (scenario == "present") {
 				t.Fatalf("%s: %v", scenario, err)

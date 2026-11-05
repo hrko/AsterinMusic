@@ -42,6 +42,7 @@ type authorizationTarget struct {
 	unknown            bool
 	guild, voice       snowflake.ID
 	session, requester string
+	automatic          bool
 }
 
 func (s *session) checkPermission(user snowflake.ID, action authorization.Action) error {
@@ -69,6 +70,7 @@ func (s *session) lockAuthorized(user snowflake.ID, action authorization.Action)
 	}
 	if s.current != nil {
 		target.requester = s.current.Requester.ID
+		target.automatic = s.currentAuto
 	}
 	epoch := s.epoch
 	current := s.current
@@ -95,7 +97,7 @@ func (s *session) lockAuthorized(user snowflake.ID, action authorization.Action)
 	if latest.ChannelID != nil {
 		latestVoice = *latest.ChannelID
 	}
-	if epoch != s.epoch || voice != target.voice || current != s.current || callerVoice != latestVoice || s.queueSaving != nil || time.Since(checkedAt) > 250*time.Millisecond {
+	if epoch != s.epoch || voice != target.voice || current != s.current || (s.current != nil && (s.currentAuto != target.automatic || s.current.Requester.ID != target.requester)) || callerVoice != latestVoice || s.queueSaving != nil || time.Since(checkedAt) > 250*time.Millisecond {
 		s.mu.Unlock()
 		return errQueueChanged
 	}
@@ -169,7 +171,7 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 		voice = target.voice.String()
 	}
 	request := authorization.Request{Action: action, Principal: principal,
-		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester},
+		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester, Automatic: target.automatic},
 		Facts:    authorization.Facts{Complete: true, CanView: target.voice == 0 || permissions.Has(discord.PermissionViewChannel), InVoice: currentVoice != 0, SameVoice: currentVoice != 0 && (target.voice == 0 || currentVoice == target.voice)}}
 	request.Facts.ScopeUnknown = target.unknown
 	if action == authorization.HistoryView || action == authorization.HistoryReadd || action == authorization.HistoryReaddNext {

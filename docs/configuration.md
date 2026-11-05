@@ -80,7 +80,7 @@ yt-dlpが既定の`yt-dlp`の場合、従来の更新管理で選択済みのバ
 
 ## 開発環境の移行
 
-認可設定は`servers.<名前>.authorization`に指定する。`preset`は`collaborative`（既定）または`dj`。`dj_role_ids`は引用符付きDiscordロールIDの配列で、DJ方式では1件以上必要。`policies`は`id`と`policy`を持つ配列で、`policy`にCedarのpermitまたはforbidを1つ記述する。[設定例・許可表・上限](authorization-model.md)を参照。
+認可設定は`servers.<名前>.authorization`に指定する。`preset`は`collaborative`（共同操作・既定）、`dj_control`（DJ操作・参加者選曲）、`dj_control_self_skip`（同方式＋本人スキップ）、`dj_only`（DJ専用）。旧名`dj`は廃止したため、既存設定は`dj_control`へ変更する。`dj_role_ids`は引用符付きDiscordロールIDの配列で、すべてのDJ方式で1件以上必要。`policies`は`id`と`policy`を持つ配列で、`policy`にCedarのpermitまたはforbidを1つ記述する。[設定例・許可表・上限](authorization-model.md)を参照。
 
 ルールの不正・未知のキー・型違いは`config-check`と管理再起動の事前検証で拒否する。ルールの部分適用や許可の広い既定値への代替は行わない。変更には再起動が必要。認可エンジン、外部ルールファイル、実行中の編集UIは初期版では選択しない。
 

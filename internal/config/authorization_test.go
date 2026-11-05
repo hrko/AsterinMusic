@@ -11,7 +11,7 @@ func TestAuthorizationConfiguration(t *testing.T) {
 		t.Fatal("authorization defaults", err)
 	}
 	text := valid + `    authorization:
-      preset: dj
+      preset: dj_control
       dj_role_ids: ["456"]
       policies:
         - id: forbid_stop
@@ -21,7 +21,7 @@ func TestAuthorizationConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Authorization.Preset != "dj" || len(c.Authorization.DJRoleIDs) != 1 || len(c.Authorization.Policies) != 1 {
+	if c.Authorization.Preset != "dj_control" || len(c.Authorization.DJRoleIDs) != 1 || len(c.Authorization.Policies) != 1 {
 		t.Fatal("missing authorization config")
 	}
 }
@@ -29,7 +29,8 @@ func TestAuthorizationConfiguration(t *testing.T) {
 func TestAuthorizationConfigurationRejectsInvalid(t *testing.T) {
 	for _, block := range []string{
 		"      preset: unknown\n",
-		"      preset: dj\n",
+		"      preset: dj\n      dj_role_ids: [\"456\"]\n",
+		"      preset: dj_control\n",
 		"      dj_role_ids: [456]\n",
 		"      typo: secret-value\n",
 		"      policies:\n        - id: broken\n          policy: 'secret-value'\n",
@@ -41,6 +42,15 @@ func TestAuthorizationConfigurationRejectsInvalid(t *testing.T) {
 		}
 		if strings.Contains(err.Error(), "secret-value") {
 			t.Fatal("policy content leaked")
+		}
+	}
+}
+
+func TestAllAuthorizationPresetsLoad(t *testing.T) {
+	for _, preset := range []string{"collaborative", "dj_control", "dj_control_self_skip", "dj_only"} {
+		c, err := Read(setup(t, valid+"    authorization:\n      preset: "+preset+"\n      dj_role_ids: [\"456\"]\n"), lookup)
+		if err != nil || c.Authorization.Preset != preset {
+			t.Fatal(preset, err)
 		}
 	}
 }

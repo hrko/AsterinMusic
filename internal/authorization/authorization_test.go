@@ -62,7 +62,7 @@ func TestConfigurationLimits(t *testing.T) {
 func BenchmarkService(b *testing.B) {
 	for _, n := range []int{0, MaxPolicies} {
 		b.Run(fmt.Sprint(n), func(b *testing.B) {
-			config := Config{Preset: "dj", DJRoleIDs: []string{"5"}}
+			config := Config{Preset: "dj_control", DJRoleIDs: []string{"5"}}
 			for i := 0; i < n; i++ {
 				config.Policies = append(config.Policies, Policy{fmt.Sprintf("role%d", i), `permit(principal in Role::"1/5", action, resource) when {context.sameVoice};`})
 			}
@@ -125,7 +125,7 @@ func sample() Request {
 	return Request{Action: PlaybackSkip, Principal: Principal{GuildID: "1", UserID: "2"}, Resource: Resource{GuildID: "1", BotID: "3", SessionID: "session", VoiceID: "4"}, Facts: Facts{Complete: true, CanView: true, SameVoice: true, InVoice: true}}
 }
 func TestPresets(t *testing.T) {
-	for _, preset := range []string{"collaborative", "dj"} {
+	for _, preset := range []string{PresetCollaborative, PresetDJControl, PresetDJControlSelfSkip, PresetDJOnly} {
 		svc, err := NewCedar(Config{Preset: preset, DJRoleIDs: []string{"5"}})
 		if err != nil {
 			t.Fatal(err)
@@ -134,7 +134,9 @@ func TestPresets(t *testing.T) {
 			r := sample()
 			r.Action = a
 			got, err := svc.Authorize(context.Background(), r)
-			want := preset == "collaborative" || a == HelpView || a == QueueAdd || a == QueueAddNext || a == QueueView || a == PlaybackView || a == VolumeView || a == AutoplayView || a == HistoryView || a == HistoryReadd || a == HistoryReaddNext
+			read := a == HelpView || a == QueueView || a == PlaybackView || a == VolumeView || a == AutoplayView || a == HistoryView
+			add := a == QueueAdd || a == QueueAddNext || a == HistoryReadd || a == HistoryReaddNext
+			want := preset == PresetCollaborative || read || (add && preset != PresetDJOnly)
 			if err != nil || got.Allowed != want {
 				t.Errorf("%s %s: %+v %v", preset, a, got, err)
 			}
@@ -149,11 +151,84 @@ func TestPresets(t *testing.T) {
 			case "owner":
 				r.Principal.Owner = true
 			}
-			d, e := svc.Authorize(context.Background(), r)
-			if e != nil || !d.Allowed {
-				t.Fatalf("%s %s: %+v %v", preset, kind, d, e)
+			for _, action := range Actions() {
+				r.Action = action
+				d, e := svc.Authorize(context.Background(), r)
+				if e != nil || !d.Allowed {
+					t.Fatalf("%s %s %s: %+v %v", preset, kind, action, d, e)
+				}
 			}
 		}
+	}
+}
+
+func TestSelfSkipPreset(t *testing.T) {
+	for _, tc := range []struct {
+		name, requester              string
+		automatic, sameVoice, permit bool
+	}{
+		{"own manual track", "2", false, true, true},
+		{"someone else's track", "9", false, true, false},
+		{"no current track", "", false, true, false},
+		{"autoplay enabler", "2", true, true, false},
+		{"outside VC", "2", false, false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s, err := NewCedar(Config{Preset: PresetDJControlSelfSkip, DJRoleIDs: []string{"5"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			r := sample()
+			r.Resource.RequesterID = tc.requester
+			r.Resource.Automatic = tc.automatic
+			r.Facts.SameVoice = tc.sameVoice
+			d, err := s.Authorize(t.Context(), r)
+			if err != nil || d.Allowed != tc.permit {
+				t.Fatal(d, err)
+			}
+			for _, action := range []Action{PlaybackStop, QueueClear, VolumeSet, AutoplaySet} {
+				r.Action = action
+				d, err = s.Authorize(t.Context(), r)
+				if err != nil || d.Allowed {
+					t.Fatalf("self-skip granted %s", action)
+				}
+			}
+		})
+	}
+}
+
+func TestNewPresetsPolicyComposition(t *testing.T) {
+	for _, preset := range []string{PresetDJControlSelfSkip, PresetDJOnly} {
+		if _, err := NewCedar(Config{Preset: preset}); err == nil {
+			t.Fatal("missing DJ role accepted")
+		}
+		s, err := NewCedar(Config{Preset: preset, DJRoleIDs: []string{"5"}, Policies: []Policy{{"deny_skip", `forbid(principal, action == Action::"playback.skip", resource);`}, {"allow_add", `permit(principal, action == Action::"queue.add", resource);`}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		r := sample()
+		r.Resource.RequesterID = "2"
+		for _, owner := range []bool{false, true} {
+			r.Principal.Owner = owner
+			d, e := s.Authorize(t.Context(), r)
+			if e != nil || d.Allowed {
+				t.Fatal("explicit deny bypassed", d, e)
+			}
+		}
+		r.Principal.Owner = false
+		r.Action = QueueAdd
+		d, e := s.Authorize(t.Context(), r)
+		if e != nil || !d.Allowed {
+			t.Fatal("extra permit failed", d, e)
+		}
+		r.Facts.CanView = false
+		d, e = s.Authorize(t.Context(), r)
+		if e != nil || d.Allowed {
+			t.Fatal("privacy bypassed", d, e)
+		}
+	}
+	if _, err := NewCedar(Config{Preset: "dj", DJRoleIDs: []string{"5"}}); err == nil {
+		t.Fatal("retired preset accepted")
 	}
 }
 func TestFixedBoundaries(t *testing.T) {
@@ -203,7 +278,7 @@ func TestExtraPolicies(t *testing.T) {
 		{"deny admin", `forbid(principal, action == Action::"queue.add", resource);`, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			s, e := NewCedar(Config{Preset: "dj", DJRoleIDs: []string{"5"}, Policies: []Policy{{"custom", tc.text}}})
+			s, e := NewCedar(Config{Preset: "dj_control", DJRoleIDs: []string{"5"}, Policies: []Policy{{"custom", tc.text}}})
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -222,7 +297,7 @@ func TestExtraPolicies(t *testing.T) {
 	}
 }
 func TestInvalidConfiguration(t *testing.T) {
-	for _, c := range []Config{{Preset: "bad"}, {Preset: "dj"}, {DJRoleIDs: []string{"x"}}, {Policies: []Policy{{"builtin.override", `permit(principal, action, resource);`}}}, {Policies: []Policy{{"bad", `permit(principal, action == Action::"typo", resource);`}}}, {Policies: []Policy{{"bad", `permit(principal, action, resource) when {context.missing};`}}}} {
+	for _, c := range []Config{{Preset: "bad"}, {Preset: "dj_control"}, {DJRoleIDs: []string{"x"}}, {Policies: []Policy{{"builtin.override", `permit(principal, action, resource);`}}}, {Policies: []Policy{{"bad", `permit(principal, action == Action::"typo", resource);`}}}, {Policies: []Policy{{"bad", `permit(principal, action, resource) when {context.missing};`}}}} {
 		if _, err := NewCedar(c); err == nil {
 			t.Fatalf("accepted invalid config: %+v", c)
 		}

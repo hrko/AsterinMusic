@@ -239,8 +239,9 @@ func (d Document) resolve(base string) (Config, error) {
 		}
 		c.GuildID = id
 		c.Authorization = authorization.Config{Preset: s.Authorization.Preset, DJRoleIDs: s.Authorization.DJRoleIDs}
-		if c.Authorization.Preset == "" {
-			c.Authorization.Preset = "collaborative"
+		c.Authorization.Preset, err = authorization.NormalizePreset(c.Authorization.Preset)
+		if err != nil {
+			return Config{}, err
 		}
 		for _, p := range s.Authorization.Policies {
 			c.Authorization.Policies = append(c.Authorization.Policies, authorization.Policy{ID: p.ID, Text: p.Policy})

@@ -30,11 +30,10 @@ type cedarService struct {
 
 // NewCedar compiles a complete immutable policy snapshot. Errors never include policy text.
 func NewCedar(c Config) (Service, error) {
-	if c.Preset == "" {
-		c.Preset = "collaborative"
-	}
-	if c.Preset != "collaborative" && c.Preset != "dj" {
-		return nil, errors.New("unknown authorization preset")
+	var err error
+	c.Preset, err = NormalizePreset(c.Preset)
+	if err != nil {
+		return nil, err
 	}
 	if len(c.Policies) > MaxPolicies || len(c.DJRoleIDs) > MaxRoles {
 		return nil, errors.New("authorization configuration exceeds limits")
@@ -44,13 +43,13 @@ func NewCedar(c Config) (Service, error) {
 			return nil, errors.New("invalid DJ role ID")
 		}
 	}
-	if c.Preset == "dj" && len(c.DJRoleIDs) == 0 {
+	if c.Preset != PresetCollaborative && len(c.DJRoleIDs) == 0 {
 		return nil, errors.New("DJ preset requires at least one role")
 	}
 	var schemaText strings.Builder
 	schemaText.WriteString(`entity Role; entity User in [Role] { administrator: Bool, owner: Bool }; entity Session { requester: String };`)
 	for _, action := range Actions() {
-		fmt.Fprintf(&schemaText, `action %q appliesTo {principal: User, resource: Session, context: {sameVoice: Bool, inVoice: Bool, dj: Bool}};`, action)
+		fmt.Fprintf(&schemaText, `action %q appliesTo {principal: User, resource: Session, context: {sameVoice: Bool, inVoice: Bool, dj: Bool, ownTrack: Bool}};`, action)
 	}
 	var s schema.Schema
 	if err := s.UnmarshalCedar([]byte(schemaText.String())); err != nil {
@@ -64,13 +63,20 @@ func NewCedar(c Config) (Service, error) {
 	base := []Policy{
 		{"builtin.read", `permit(principal, action in [Action::"help.view", Action::"queue.view", Action::"playback.view", Action::"volume.view", Action::"autoplay.view"], resource);`},
 		{"builtin.history", `permit(principal, action == Action::"history.view", resource) when {context.inVoice && context.sameVoice};`},
-		{"builtin.add", `permit(principal, action in [Action::"queue.add", Action::"queue.add_next", Action::"history.readd", Action::"history.readd_next"], resource) when {context.inVoice && context.sameVoice};`},
 	}
 	condition := `context.inVoice && context.sameVoice`
-	if c.Preset == "dj" {
+	addCondition := condition
+	if c.Preset == PresetDJOnly {
+		addCondition += ` && (context.dj || principal.administrator || principal.owner)`
+	}
+	base = append(base, Policy{"builtin.add", `permit(principal, action in [Action::"queue.add", Action::"queue.add_next", Action::"history.readd", Action::"history.readd_next"], resource) when {` + addCondition + `};`})
+	if c.Preset != PresetCollaborative {
 		condition += ` && (context.dj || principal.administrator || principal.owner)`
 	}
 	base = append(base, Policy{"builtin.control", `permit(principal, action in [Action::"playback.resume", Action::"playback.stop", Action::"playback.skip", Action::"queue.clear", Action::"volume.set", Action::"autoplay.set"], resource) when {` + condition + `};`})
+	if c.Preset == PresetDJControlSelfSkip {
+		base = append(base, Policy{"builtin.self_skip", `permit(principal, action == Action::"playback.skip", resource) when {context.inVoice && context.sameVoice && context.ownTrack};`})
+	}
 	hash := sha256.New()
 	fmt.Fprintf(hash, "%s\x00%v\x00", c.Preset, c.DJRoleIDs)
 	total := 0
@@ -148,7 +154,7 @@ func (s *cedarService) Authorize(ctx context.Context, r Request) (Decision, erro
 	}
 	entities[user] = cedar.Entity{UID: user, Parents: cedar.NewEntityUIDSet(parents...), Attributes: cedar.NewRecord(cedar.RecordMap{"administrator": cedar.Boolean(r.Principal.Administrator), "owner": cedar.Boolean(r.Principal.Owner)})}
 	entities[target] = cedar.Entity{UID: target, Attributes: cedar.NewRecord(cedar.RecordMap{"requester": cedar.String(r.Resource.RequesterID)})}
-	req := cedar.Request{Principal: user, Action: cedar.NewEntityUID("Action", cedar.String(r.Action)), Resource: target, Context: cedar.NewRecord(cedar.RecordMap{"sameVoice": cedar.Boolean(r.Facts.SameVoice), "inVoice": cedar.Boolean(r.Facts.InVoice), "dj": cedar.Boolean(dj)})}
+	req := cedar.Request{Principal: user, Action: cedar.NewEntityUID("Action", cedar.String(r.Action)), Resource: target, Context: cedar.NewRecord(cedar.RecordMap{"sameVoice": cedar.Boolean(r.Facts.SameVoice), "inVoice": cedar.Boolean(r.Facts.InVoice), "dj": cedar.Boolean(dj), "ownTrack": cedar.Boolean(!r.Resource.Automatic && r.Resource.RequesterID != "" && r.Resource.RequesterID == r.Principal.UserID)})}
 	if s.validator.Request(req) != nil || s.validator.Entities(entities) != nil {
 		return result, errors.New("authorization facts failed schema validation")
 	}
