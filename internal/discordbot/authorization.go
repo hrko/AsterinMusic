@@ -3,9 +3,11 @@ package discordbot
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"asterinmusic/internal/authorization"
+	"asterinmusic/internal/logging"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
@@ -13,6 +15,26 @@ import (
 
 var errPermission = errors.New("この操作は許可されていません。サーバーの権限設定を確認してください。")
 var errPermissionFacts = errors.New("権限を確認できませんでした。少し待って操作し直してください。")
+
+func isAuthorizationError(err error) bool {
+	return errors.Is(err, errPermission) || errors.Is(err, errPermissionFacts)
+}
+
+// A public deferred response cannot become ephemeral. Send a private followup
+// and remove the pending command response, or clear the component result.
+func (a *App) rejectDeferredAuthorization(response responseRef, err error, component bool) bool {
+	if !isAuthorizationError(err) {
+		return false
+	}
+	if component {
+		a.edit(response, "操作を中止しました。", nil)
+	} else {
+		a.logInteractionFailure(response.operation, "interaction.clear_denied_response", a.client.Rest.DeleteInteractionResponse(a.config.ApplicationID, response.token))
+	}
+	_, sendErr := a.client.Rest.CreateFollowupMessage(a.config.ApplicationID, response.token, ephemeral(err.Error()))
+	a.logInteractionFailure(response.operation, "interaction.permission_followup", sendErr)
+	return true
+}
 
 // authorizationTarget is a snapshot, not a capability. Callers must still check
 // session/queue generations immediately before using the decision.
@@ -53,7 +75,17 @@ func (s *session) checkPermission(user snowflake.ID, action authorization.Action
 // authorizeTarget refreshes membership on every call, including the check after
 // slow source work. Roles/channels are kept current by the Guilds Gateway intent.
 // It must be called without holding a session lock.
-func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action authorization.Action, target authorizationTarget) error {
+func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action authorization.Action, target authorizationTarget) (resultErr error) {
+	var decision authorization.Decision
+	defer func() {
+		logger := logging.Component(a.logger, "interaction")
+		attrs := []any{"event", "authorization.decision", "action", string(action), "guild_id", target.guild.String(), "user_id", user.String(), "voice_channel_id", target.voice.String(), "policy_version", decision.Version, "policy_ids", strings.Join(decision.PolicyIDs, ",")}
+		if errors.Is(resultErr, errPermissionFacts) {
+			logger.WarnContext(ctx, "authorization unavailable", append(attrs, "reason", "facts_or_evaluation_failed")...)
+		} else {
+			logger.DebugContext(ctx, "authorization evaluated", append(attrs, "allowed", resultErr == nil, "reason", string(decision.Reason))...)
+		}
+	}()
 	if a.authorizer == nil || target.guild != a.config.GuildID {
 		return errPermissionFacts
 	}
@@ -109,7 +141,7 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	request := authorization.Request{Action: action, Principal: principal,
 		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester},
 		Facts:    authorization.Facts{Complete: true, CanView: target.voice == 0 || permissions.Has(discord.PermissionViewChannel), InVoice: currentVoice != 0, SameVoice: currentVoice != 0 && (target.voice == 0 || currentVoice == target.voice)}}
-	decision, err := a.authorizer.Authorize(ctx, request)
+	decision, err = a.authorizer.Authorize(ctx, request)
 	if err != nil {
 		return errPermissionFacts
 	}

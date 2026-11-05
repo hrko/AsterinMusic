@@ -3,9 +3,11 @@ package discordbot
 import (
 	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/config"
+	"asterinmusic/internal/logging"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
@@ -96,6 +98,74 @@ func TestAuthorizationRefreshesMemberAndFailsClosed(t *testing.T) {
 	}
 	if err := (&App{}).authorizeTarget(context.Background(), 2, authorization.QueueView, target); !errors.Is(err, errPermissionFacts) {
 		t.Fatal("missing authorizer allowed")
+	}
+}
+
+func TestDeferredAuthorizationDenialIsPrivate(t *testing.T) {
+	for _, component := range []bool{false, true} {
+		t.Run(fmt.Sprint(component), func(t *testing.T) {
+			var methods []string
+			transport := historyTransport(func(r *http.Request) (*http.Response, error) {
+				methods = append(methods, r.Method)
+				if r.Method != "DELETE" {
+					var body struct {
+						Content string `json:"content"`
+						Flags   int    `json:"flags"`
+						Embeds  []any  `json:"embeds"`
+					}
+					if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+						t.Fatal(err)
+					}
+					if r.Method == "POST" {
+						if body.Flags != 64 || body.Content != errPermission.Error() {
+							t.Fatal("denial was not private")
+						}
+					} else if strings.Contains(body.Content, errPermission.Error()) || len(body.Embeds) != 0 {
+						t.Fatal("shared response disclosed denial or metadata")
+					}
+				}
+				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"id":"4","channel_id":"7"}`)), Request: r}, nil
+			})
+			a := &App{ctx: t.Context(), config: config.Config{ApplicationID: 8}, client: &bot.Client{Rest: rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: transport})))}}
+			if !a.rejectDeferredAuthorization(responseRef{token: "test"}, errPermission, component) {
+				t.Fatal("not handled")
+			}
+			want := "DELETE"
+			if component {
+				want = "PATCH"
+			}
+			if len(methods) != 2 || methods[0] != want || methods[1] != "POST" {
+				t.Fatal(methods)
+			}
+		})
+	}
+}
+
+func TestAuthorizationLogsDoNotExposeFactsOrPolicy(t *testing.T) {
+	a := &App{ctx: t.Context(), config: config.Config{GuildID: 2}}
+	authorizationFixture(t, a)
+	var out logBuffer
+	a.logger, _ = logging.New(&out, logging.Options{Format: "json", Level: "debug"})
+	var err error
+	a.authorizer, err = authorization.NewCedar(authorization.Config{Policies: []authorization.Policy{{ID: "deny", Text: `// PRIVATE_POLICY
+forbid(principal, action, resource);`}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = a.authorizeTarget(t.Context(), 1, authorization.HelpView, authorizationTarget{guild: 2}); !errors.Is(err, errPermission) {
+		t.Fatal(err)
+	}
+	text := out.String()
+	if strings.Contains(text, "PRIVATE") || strings.Contains(text, `"level":"WARN"`) || !strings.Contains(text, `"allowed":false`) || !strings.Contains(text, `"policy_ids":"deny"`) {
+		t.Fatal("incorrect normal denial log", text)
+	}
+	a.authorizationMember = func(context.Context, snowflake.ID, snowflake.ID) (*discord.Member, error) {
+		return nil, errors.New("PRIVATE_HTTP")
+	}
+	_ = a.authorizeTarget(t.Context(), 1, authorization.HelpView, authorizationTarget{guild: 2})
+	text = out.String()
+	if strings.Contains(text, "PRIVATE") || !strings.Contains(text, `"level":"WARN"`) {
+		t.Fatal("incorrect failure log", text)
 	}
 }
 

@@ -40,6 +40,9 @@ func (a *App) mixCommand(e *events.ApplicationCommandInteractionCreate, s *sessi
 	}
 	selection := source.SelectMix(result.Tracks, seed.Tracks[0], count, true)
 	n, addErr := s.accept(e.User().ID, music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, selection.Tracks, result.Input.URL, "", e.Channel().ID(), epoch)
+	if a.rejectDeferredAuthorization(responseFor(e), addErr, false) {
+		return
+	}
 	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", seed.Tracks[0], e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
 	embed.Thumbnail = trackThumbnail(seed.Tracks[0])
 	a.editEmbed(responseFor(e), embed, nil)
@@ -55,6 +58,11 @@ func (a *App) mixComponent(e *events.ComponentInteractionCreate, s *session, o o
 	var addErr error
 	if len(selection.Tracks) > 0 {
 		n, _, addErr = s.acceptAt(e.User().ID, music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, selection.Tracks, o.URL, o.ID, e.Channel().ID(), epoch, o.Insertion)
+	}
+	if isAuthorizationError(addErr) {
+		a.offers.finish(o.ID, false)
+		a.rejectDeferredAuthorization(responseFor(e), addErr, true)
+		return
 	}
 	used := n > 0 || (fetchErr == nil && len(result.Tracks) > 0 && len(selection.Tracks) == 0)
 	a.offers.finish(o.ID, used)

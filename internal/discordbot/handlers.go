@@ -82,6 +82,9 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		who := music.Requester{ID: user.ID.String(), Name: user.Username}
 		if url == "" {
 			_, err := s.accept(user.ID, who, nil, "", "", e.Channel().ID(), epoch)
+			if a.rejectDeferredAuthorization(responseFor(e), err, false) {
+				return
+			}
 			if err != nil {
 				reply(userError(err))
 			} else {
@@ -103,6 +106,9 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			playlist = result.Input.URL
 		}
 		n, entryID, addErr := s.acceptAt(user.ID, who, result.Tracks, playlist, "", e.Channel().ID(), epoch, music.Insertion{Front: front})
+		if a.rejectDeferredAuthorization(responseFor(e), addErr, false) {
+			return
+		}
 		title := fmt.Sprintf("プレイリストから%d曲を追加しました", n)
 		body := listLink(playlist, result.PlaylistTitle) + "\n" + queueMention(user.ID.String())
 		if !result.Input.Playlist {
@@ -298,6 +304,11 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	var addErr error
 	if len(tracks) > 0 {
 		n, _, addErr = s.acceptAt(e.User().ID, music.Requester{ID: e.User().ID.String(), Name: e.User().Username}, tracks, o.URL, o.ID, e.Channel().ID(), epoch, o.Insertion)
+	}
+	if isAuthorizationError(addErr) {
+		a.offers.finish(id, false)
+		a.rejectDeferredAuthorization(responseFor(e), addErr, true)
+		return
 	}
 	used := n > 0 || (inspectErr == nil && len(result.Tracks) > 0 && len(tracks) == 0)
 	a.offers.finish(id, used)

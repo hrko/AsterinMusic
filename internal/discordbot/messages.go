@@ -80,6 +80,9 @@ func userError(err error) string {
 	if err == nil {
 		return ""
 	}
+	if isAuthorizationError(err) {
+		return err.Error()
+	}
 	var application operationError
 	if errors.As(err, &application) {
 		return application.Error()
