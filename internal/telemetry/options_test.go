@@ -18,3 +18,11 @@ func TestOptions(t *testing.T) {
 		}
 	}
 }
+
+func TestInvalidEndpointPortsAreRejectedBeforeStartup(t *testing.T) {
+	for _, endpoint := range []string{"http://127.0.0.1:0/v1/traces", "http://127.0.0.1:65536/v1/traces", "https://example.invalid:/v1/traces"} {
+		if err := (Options{Enabled: true, Endpoint: endpoint}).Validate(); err == nil {
+			t.Fatalf("invalid port accepted: %s", endpoint)
+		}
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/http/httpguts"
@@ -28,6 +29,14 @@ func (o Options) Validate() error {
 		u, err := url.Parse(o.Endpoint)
 		if err != nil || u.Hostname() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Opaque != "" || (u.Scheme != "https" && u.Scheme != "http") || !strings.HasPrefix(u.Path, "/") {
 			return errors.New("invalid tracing.endpoint: expected a complete HTTP(S) traces URL without credentials or query")
+		}
+		if port := u.Port(); port != "" {
+			value, err := strconv.ParseUint(port, 10, 16)
+			if err != nil || value == 0 {
+				return errors.New("invalid tracing.endpoint port")
+			}
+		} else if strings.HasSuffix(u.Host, ":") {
+			return errors.New("invalid tracing.endpoint port")
 		}
 		if u.Scheme == "http" {
 			ip := net.ParseIP(u.Hostname())

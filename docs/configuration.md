@@ -19,7 +19,7 @@ AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してか�
 | `logging.format` | `text`。`text` / `json` |
 | `logging.components` | 空。コンポーネント名をキー、上書きレベルを値とするマップ |
 | `tracing.enabled` | `false`。OpenTelemetryトレース送信を有効化 |
-| `tracing.endpoint` | 有効化時に必須。`https://collector.example/v1/traces`のようなパス込みのOTLP/HTTP URL。認証情報・query・fragmentは不可。HTTPはloopback IPのみ |
+| `tracing.endpoint` | 有効化時に必須。`https://collector.example/v1/traces`のようなパス込みのOTLP/HTTP URL。認証情報・query・fragmentは不可。HTTPはloopback IPのみ。明示するポートは1～65535 |
 | `tracing.headers` | 空。送信先認証ヘッダーのマップ。既存の変数展開を利用可能。最大16件、キー128バイト・値8192バイトまで |
 | `runtime.state_dir` | `./.asterinmusic/state` |
 | `tools.yt_dlp.path` | `yt-dlp` |
