@@ -125,6 +125,10 @@
 
 ## 判断の根拠
 
+ソケット終了時は、読み取り・heartbeatを停止する内部キャンセルと、呼び出し元へ返す終了原因を区別する。Resumeが4006で拒否された場合は、そのコードを失わず、新規接続へ移行する。明示停止や呼び出し元の期限切れは引き続き優先する。ローカルWebSocketで4006が`context.Canceled`に置き換わる問題を再現し、修正後に100回連続でコードを保持すること、および復旧管理が新規接続へ進むことを自動テストで確認した。
+
+Resume失敗はDEBUGの`voice.resume.failed`に、復旧ID、試行番号、接続世代、原因分類、切断コード、試行・復旧全体のコンテキスト終了と期限切れの有無を記録する。リモートのエラー本文は出力しない。
+
 - [Discord音声接続仕様](https://github.com/discord/discord-api-docs/blob/main/developers/topics/voice-connections.mdx)：所属・サーバー情報の待機、VC変更時の接続先情報更新と旧セッションの再利用禁止。実機ではトークン値が変わらない通知も確認したため、値の変化を接続開始の条件としない。
 - [Discord音声切断コード](https://github.com/discord/discord-api-docs/blob/main/developers/topics/opcodes-and-status-codes.mdx)：`4014`・`4022`と`4015`の扱い。
 - [discord.pyの接続管理](https://github.com/Rapptz/discord.py/blob/master/discord/voice_state.py)：`4014`・`4022`で移動の可能性を判定し、サーバー更新を待って新規接続する実装。

@@ -112,8 +112,6 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	case <-ctx.Done():
 		g.finish(r, ctx.Err(), false)
 		return ctx.Err()
-	case <-r.ctx.Done():
-		return context.Canceled
 	}
 }
 
@@ -127,6 +125,8 @@ func (g *voiceSocket) finish(r *voiceSocketRun, err error, notify bool) {
 	}
 	g.run = nil
 	g.status = voice.StatusDisconnected
+	// The run context stops reader/heartbeat work. Open/Resume receives the
+	// actual terminal cause through ready, never through this internal cancel.
 	r.cancel()
 	ws := r.ws
 	g.mu.Unlock()

@@ -223,8 +223,17 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			}
 			ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
 			err := resumable.Resume(ctx)
+			attemptContextErr := ctx.Err()
 			cancel()
 			c.mu.Lock()
+			if err != nil {
+				code := 0
+				var closed *websocket.CloseError
+				if errors.As(err, &closed) {
+					code = closed.Code
+				}
+				c.recordDiagnosticLocked(slog.LevelDebug, "voice resume failed", "event", "voice.resume.failed", "recovery_id", f.id, "generation", c.generation, "attempt", attempt, "reason", failureClass(err), "close_code", code, "attempt_context_done", attemptContextErr != nil, "recovery_context_done", f.ctx.Err() != nil, "attempt_timed_out", errors.Is(attemptContextErr, context.DeadlineExceeded), "recovery_timed_out", errors.Is(f.ctx.Err(), context.DeadlineExceeded))
+			}
 			if !c.recoveryValidLocked(f) {
 				c.mu.Unlock()
 				return

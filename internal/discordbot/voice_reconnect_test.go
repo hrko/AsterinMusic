@@ -157,8 +157,17 @@ func TestResumeKickNeverRejoins(t *testing.T) {
 }
 
 func TestResumeBudgetFallsBackToFreshConnection(t *testing.T) {
+	testResumeFallback(t, 1006, 2)
+}
+
+func TestExpiredResumeFallsBackToFreshConnection(t *testing.T) {
+	testResumeFallback(t, 4006, 1)
+}
+
+func testResumeFallback(t *testing.T, code, attempts int) {
+	t.Helper()
 	c := testVoiceController(t)
-	transport := &rejectedResume{fakeVoiceTransport: newFakeVoiceTransport(), code: 1006}
+	transport := &rejectedResume{fakeVoiceTransport: newFakeVoiceTransport(), code: code}
 	var opens atomic.Int32
 	c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
 		if opens.Add(1) == 1 {
@@ -183,7 +192,7 @@ func TestResumeBudgetFallsBackToFreshConnection(t *testing.T) {
 	c.mu.Unlock()
 	c.transportClosed(gen, &websocket.CloseError{Code: 1006}, true)
 	waitVoice(t, c)
-	if transport.calls.Load() != 2 || joins.Load() != 1 || opens.Load() != 2 {
+	if transport.calls.Load() != int32(attempts) || joins.Load() != 1 || opens.Load() != 2 {
 		t.Fatal("resume budget or fallback incorrect")
 	}
 }

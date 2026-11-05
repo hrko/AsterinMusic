@@ -130,6 +130,30 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	}
 }
 
+func TestVoiceSocketResumePreservesCloseCause(t *testing.T) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer ws.Close()
+		_ = ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(4006, "Session no longer valid"))
+	}))
+	defer server.Close()
+	for range 100 {
+		g := newVoiceSocket(nil, nil, nil, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+		g.established = true
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		err := g.Resume(ctx, voice.State{Endpoint: strings.TrimPrefix(server.URL, "https://")})
+		cancel()
+		g.Close()
+		var closed *websocket.CloseError
+		if !errors.As(err, &closed) || closed.Code != 4006 {
+			t.Fatalf("lost remote close cause: %v", err)
+		}
+	}
+}
+
 func TestVoiceSequencePresenceAndWrap(t *testing.T) {
 	for _, tc := range []struct {
 		kind    int
