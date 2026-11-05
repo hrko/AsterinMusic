@@ -8,7 +8,7 @@ AsterinMusicはkoanf v2でYAMLを読み込み、文字列値を展開してか�
 
 トレース送信はYAMLの`tracing`を設定元とする。OTLPのendpoint・headers・TLS・encoding・compression・timeoutはアプリ設定と固定値を明示し、`OTEL_EXPORTER_OTLP_*`の値を採用しない。サンプリングは有効時に全件、resourceは許可した属性のみ出力し、`OTEL_TRACES_SAMPLER`・`OTEL_RESOURCE_ATTRIBUTES`で変更しない。HTTP proxyは使用しない。SDKが環境変数を解析する際の診断も原文を出さない。Content-Type等の通信制御ヘッダーは指定できない。
 
-設定不正は起動時に拒否するが、収集先の停止・送信失敗でBotを停止しない。送信に失敗したトレースは失われる場合がある。ログレベルと送信有効化は独立しており、既存ログはトレースが無効でも継続する。現在は基盤の導入段階で、対象処理の計装状況は[方針書](tracing-plan.md)を参照する。
+設定不正は起動時に拒否するが、収集先の停止・送信失敗でBotを停止しない。送信に失敗したトレースは失われる場合がある。ログレベルと送信有効化は独立しており、既存ログはトレースが無効でも継続する。対象は接続・復旧・管理再起動後の再生復元で、詳細と観測限界は[方針書](tracing-plan.md)と[検証記録](tracing-verification.md)を参照する。
 
 名称変更前の`rainmusic.yaml`を使っている場合は、`asterinmusic.yaml`へ改名するか、`--config`で明示する。既定の状態保存先も`.rainmusic/state`から`.asterinmusic/state`へ変更したため、既存のキューを引き継ぐ場合は`runtime.state_dir`に従来の保存先を指定する。開発環境の`.dev/state`はそのまま使用できる。開発用の`RAINMUSIC_*`環境変数は`ASTERINMUSIC_*`へ改名する。YAML内の`${DISCORD_TOKEN}`など、利用者が指定する認証情報の変数名は変更不要。
 
