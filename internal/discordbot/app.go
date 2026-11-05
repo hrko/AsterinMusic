@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/config"
 	"asterinmusic/internal/helpui"
 	"asterinmusic/internal/history"
@@ -32,6 +33,7 @@ import (
 )
 
 type App struct {
+	authorizer       authorization.Service
 	helpCatalog      *helpui.Catalog
 	helpEpoch        string
 	logger           *slog.Logger
@@ -52,6 +54,10 @@ type App struct {
 }
 
 func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error) {
+	authorizer, authorizationErr := authorization.NewCedar(c.Authorization)
+	if authorizationErr != nil {
+		return nil, authorizationErr
+	}
 	logging.Component(logger, "app").InfoContext(ctx, "application starting", append([]any{"event", "app.starting"}, logging.BuildAttributes()...)...)
 	executable := c.YTDLP
 	if executable == "yt-dlp" {
@@ -68,6 +74,7 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger) (*App, error
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
 	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	a.authorizer = authorizer
 	a.logger = logging.Component(logger, "app")
 	a.helpEpoch = rand.Text()
 	var helpErr error
