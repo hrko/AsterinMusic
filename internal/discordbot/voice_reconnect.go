@@ -82,7 +82,7 @@ func (c *voiceConnection) recoveryValidLocked(f *voiceRecoveryFlow) bool {
 // One supervisor owns the recovery budget. Transport generations may change
 // within it, but never grant additional time or reset the rejoin limit.
 func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, sendJoin, explicit bool) {
-	c.startTraceLocked(parent)
+	c.startTraceLocked(parent, "recovery")
 	c.cancelRecoveryLocked()
 	if c.deadline.IsZero() {
 		c.recoveryStart = c.now()
@@ -90,6 +90,7 @@ func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, se
 		c.rejoins = 0
 	}
 	c.recoverySerial++
+	c.observation.span.SetAttributes(attribute.Int64("asterinmusic.recovery_id", int64(c.recoverySerial)))
 	ctx, cancel := context.WithDeadline(parent, c.deadline)
 	ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(c.traceContextLocked()))
 	f := &voiceRecoveryFlow{id: c.recoverySerial, ctx: ctx, cancel: cancel, explicit: explicit}
@@ -105,6 +106,9 @@ func (c *voiceConnection) recoveryStage(f *voiceRecoveryFlow, stage string, atte
 		return false
 	}
 	f.stage = stage
+	if c.observation != nil {
+		c.observation.span.AddEvent("recovery.stage", trace.WithAttributes(attribute.String("asterinmusic.stage", stage), attribute.Int("asterinmusic.attempt", attempt), attribute.Int64("asterinmusic.generation", int64(c.generation)), attribute.Int64("asterinmusic.remaining_ms", max(0, c.deadline.Sub(c.now()).Milliseconds()))))
+	}
 	c.recordDiagnosticLocked(slog.LevelDebug, "voice recovery attempt", "event", "voice.recovery.attempt", "recovery_id", f.id, "stage", stage, "attempt", attempt, "generation", c.generation, "remaining_ms", max(0, c.deadline.Sub(c.now()).Milliseconds()))
 	return true
 }
@@ -140,8 +144,21 @@ func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Durat
 	c.mu.Lock()
 	stage := f.stage
 	c.mu.Unlock()
-	ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.wait", trace.WithAttributes(attribute.String("asterinmusic.stage", stage)))
-	defer func() { finishTrace(observed, result) }()
+	until := "ready"
+	if leaving {
+		until = "leave_confirmation"
+	}
+	ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.wait", trace.WithAttributes(attribute.String("asterinmusic.stage", stage), attribute.String("asterinmusic.wait_until", until)))
+	defer func() {
+		if errors.Is(result, context.DeadlineExceeded) {
+			scope := "stage"
+			if errors.Is(f.ctx.Err(), context.DeadlineExceeded) {
+				scope = "recovery"
+			}
+			observed.SetAttributes(attribute.String("asterinmusic.deadline_scope", scope))
+		}
+		finishTrace(observed, result)
+	}()
 	for {
 		c.mu.Lock()
 		if c.phase == voiceReady && !leaving {
@@ -292,6 +309,7 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			return
 		}
 		c.discardLocked()
+		c.endNotificationTraceLocked(context.Canceled)
 		c.state = nil
 		c.server = nil
 		c.lastToken = ""
@@ -375,6 +393,7 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 		c.rejoinTimes = append(c.rejoinTimes, c.now())
 	}
 	c.discardLocked()
+	c.endNotificationTraceLocked(context.Canceled)
 	f.leaving = true
 	f.left = false
 	f.attemptErr = nil

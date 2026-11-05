@@ -14,6 +14,7 @@ import (
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -117,6 +118,9 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 }
 
 func (c *voiceConnection) signalLocked(phase voicePhase) {
+	if phase == voiceWaiting {
+		c.startNotificationTraceLocked()
+	}
 	if c.phase != phase {
 		c.recordDiagnosticLocked(slog.LevelDebug, "voice state", "event", "voice.state.changed", "channel_id", c.channel.String(), "generation", c.generation, "from", string(c.phase), "to", string(phase))
 		if phase == voiceReady {
@@ -178,7 +182,7 @@ func (c *voiceConnection) discardLocked() {
 	}
 }
 func (c *voiceConnection) beginLocked(reset bool, phase voicePhase) {
-	c.startTraceLocked(context.Background())
+	c.startTraceLocked(context.Background(), "voice_notification")
 	c.discardLocked()
 	if reset || c.deadline.IsZero() {
 		c.rejoins = 0
@@ -204,6 +208,12 @@ func (c *voiceConnection) expireLocked() {
 		}
 		if c.traceAttempt != nil {
 			c.failureStage = c.traceAttempt.current()
+		} else if c.phase == voiceWaiting {
+			if c.state == nil {
+				c.failureStage = "membership_notification"
+			} else if c.server == nil {
+				c.failureStage = "server_notification"
+			}
 		}
 		c.failureReason = "timeout"
 		c.discardLocked()
@@ -219,6 +229,7 @@ func (c *voiceConnection) launchLocked() {
 	if state.ChannelID == nil || state.SessionID == "" || state.Token == "" {
 		return
 	}
+	c.endNotificationTraceLocked(nil)
 	c.lastToken = state.Token
 	c.server = nil
 	c.statePending = false
@@ -285,11 +296,12 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		return
 	}
 	c.mu.Lock()
-	var diagnostic func()
+	var diagnostic func(context.Context)
 	defer func() {
+		ctx := c.traceContextLocked()
 		c.mu.Unlock()
 		if diagnostic != nil {
-			diagnostic()
+			diagnostic(ctx)
 		}
 	}()
 	if c.phase == voiceClosed {
@@ -322,7 +334,9 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 	}
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
 	attrs := []any{"event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil}
-	diagnostic = func() { logging.OrDiscard(c.logger).Debug("voice membership received", attrs...) }
+	diagnostic = func(ctx context.Context) {
+		logging.OrDiscard(c.logger).DebugContext(ctx, "voice membership received", attrs...)
+	}
 	c.channel = id
 	c.state = &e
 	if c.removed || c.phase == voiceFailed {
@@ -347,8 +361,9 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 	disposition := "accepted"
 	defer func() {
 		attrs := []any{"event", "voice.server.received", "channel_id", c.channel.String(), "generation", c.generation, "phase", string(c.phase), "disposition", disposition, "endpoint_present", e.Endpoint != nil, "membership_pending", c.statePending}
+		ctx := c.traceContextLocked()
 		c.mu.Unlock()
-		logging.OrDiscard(c.logger).Debug("voice server update received", attrs...)
+		logging.OrDiscard(c.logger).DebugContext(ctx, "voice server update received", attrs...)
 	}()
 	if c.phase == voiceClosed || c.phase == voiceFailed {
 		disposition = "terminal_state"
@@ -402,6 +417,8 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	c.failureStage = "transport"
 	c.failureReason = failureClass(err)
 	c.failureCode = code
+	c.startTraceLocked(context.Background(), "transport_closed")
+	c.observation.span.SetAttributes(attribute.Int("asterinmusic.close_code", code))
 	c.recordDiagnosticLocked(slog.LevelDebug, "voice transport closed", "event", "voice.transport.closed", "generation", generation, "code", code)
 	if c.recovery != nil && c.resuming {
 		// The Resume call receives its own socket error. Its supervisor owns
@@ -453,7 +470,7 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 	c.server = nil
 	c.lastToken = ""
 	c.endTraceLocked(voiceClosed)
-	c.startTraceLocked(ctx)
+	c.startTraceLocked(ctx, "explicit_join")
 	c.beginLocked(true, voiceWaiting)
 	c.startRecoveryLocked(ctx, false, true, true)
 	c.mu.Unlock()

@@ -118,7 +118,9 @@ flowchart LR
 
 トレース基盤は`internal/telemetry`が担当し、CLIでProviderを生成してAppへ注入する。SDK・OTLP/HTTP exporterはv1.47.0。既定は無効で、ログのContextに有効なSpanContextがある場合のみ`trace_id`・`span_id`・`trace_sampled`をルート属性へ追加する。対象と完了条件は[計装方針](tracing-plan.md)を参照する。
 
-接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。通知待ち、Resume、参加・退出要求、再入室権限確認を子spanとして記録する。通信確立はGateway、UDP検出・プロトコル選択・通信鍵待ちの複合区間、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。
+接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。`voice.notifications`は通知収集開始から必要な通知が揃うまでを表し、通信確立の開始前に終了する。既存の`voice.wait`は監督処理がreadyまたは退出確認まで待つ区間で、`wait_until`に待機対象を記録する。`stage=voice_notifications`でも通知だけの時間を表すものではない。Resume、参加・退出要求、再入室権限確認も子spanとして記録する。通信確立はGateway、UDP検出・プロトコル選択・通信鍵待ちの複合区間、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。
+
+復旧の開始契機、監督処理の復旧ID、接続試行の番号・世代を属性に持たせる。復旧段階の変更は残り時間付きのeventとし、SDKの件数上限を適用する。接続試行は復旧全体の期限を共有し、監督処理の段階待ちは段階期限と復旧期限のどちらで切れたかを区別する。通知ログも観測時のContextを使用して同じトレースへ関連付ける。
 
 状態適用からの`playback.restore`は、停止状態なら設定復元で、再生状態なら最初の音声送信成功または準備失敗・中断で終了する。接続後から音声開始までを`playback.restore_prepare`で計測し、音声開始の既存観測処理で終了するためフレーム経路に新しいobserverを作らない。後続曲は終了済みの復元Contextを引き継がない。`voice.speaking`はSpeaking開始要求時のみ作り、接続・Resumeとの関係をlinkで記録する。閲覧環境と総合検証は導入中。
 
