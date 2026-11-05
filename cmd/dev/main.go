@@ -63,6 +63,8 @@ func run() error {
 		return errors.New("unexpected task argument")
 	}
 	switch os.Args[1] {
+	case "traces-check":
+		return checkTraces()
 	case "serve":
 		return manage("start")
 	case "bot-start", "bot-stop", "bot-restart", "bot-status", "bot-logs", "bot-cleanup":

@@ -1,0 +1,37 @@
+# Local diagnostics only. Stopping Jaeger discards all traces.
+extensions:
+  jaeger_storage:
+    backends:
+      local:
+        memory:
+          max_traces: 10000
+  jaeger_query:
+    enable_tracing: false
+    storage:
+      traces: local
+    http:
+      endpoint: 127.0.0.1:4319
+    grpc:
+      endpoint: 127.0.0.1:0
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:4318
+processors:
+  batch:
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: local
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+  telemetry:
+    logs:
+      level: warn
+    metrics:
+      level: none

@@ -1131,18 +1131,6 @@ backend = "github:bazelbuild/bazel"
 specifiers = ["5.3.2"]
 
 [tools."github:bazelbuild/bazel".options]
-asset_pattern = "bazel-5.3.2-linux-x86_64"
-
-[tools."github:bazelbuild/bazel"."platforms.linux-x64"]
-checksum = "sha256:973e213b1e9207ccdd3ea4730c0f92cbef769ec112ac2b84980583220d8db845"
-url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64"
-url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580360"
-
-[[tools."github:bazelbuild/bazel"]]
-version = "5.3.2"
-backend = "github:bazelbuild/bazel"
-
-[tools."github:bazelbuild/bazel".options]
 asset_pattern = "bazel-5.3.2-windows-x86_64.exe"
 
 [tools."github:bazelbuild/bazel"."platforms.windows-x64"]
@@ -1150,22 +1138,48 @@ checksum = "sha256:af080ef9a8b6f27c2b2055a9e0a5155ef7138cf46b967103b91d47c675c2b
 url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-windows-x86_64.exe"
 url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580397"
 
+[[tools."github:bazelbuild/bazel"]]
+version = "5.3.2"
+backend = "github:bazelbuild/bazel"
+
+[tools."github:bazelbuild/bazel".options]
+asset_pattern = "bazel-5.3.2-linux-x86_64"
+
+[tools."github:bazelbuild/bazel"."platforms.linux-x64"]
+checksum = "sha256:973e213b1e9207ccdd3ea4730c0f92cbef769ec112ac2b84980583220d8db845"
+url = "https://github.com/bazelbuild/bazel/releases/download/5.3.2/bazel-5.3.2-linux-x86_64"
+url_api = "https://api.github.com/repos/bazelbuild/bazel/releases/assets/81580360"
+
+[[tools."github:jaegertracing/jaeger"]]
+version = "2.22.0"
+backend = "github:jaegertracing/jaeger"
+specifiers = ["2.22.0"]
+
+[tools."github:jaegertracing/jaeger".options]
+asset_pattern = "jaeger-2.22.0-windows-amd64.zip"
+
+[tools."github:jaegertracing/jaeger"."platforms.windows-x64"]
+checksum = "sha256:0fe3343c49e44e3c1e86846767286a3d7d16c8f89fff6e285e7e5a8bd34442c8"
+url = "https://github.com/jaegertracing/jaeger/releases/download/v2.22.0/jaeger-2.22.0-windows-amd64.zip"
+url_api = "https://api.github.com/repos/jaegertracing/jaeger/releases/assets/615779750"
+
+[[tools."github:jaegertracing/jaeger"]]
+version = "2.22.0"
+backend = "github:jaegertracing/jaeger"
+specifiers = ["2.22.0"]
+
+[tools."github:jaegertracing/jaeger".options]
+asset_pattern = "jaeger-2.22.0-linux-amd64.tar.gz"
+
+[tools."github:jaegertracing/jaeger"."platforms.linux-x64"]
+checksum = "sha256:cb0c0be9a4b8fba424bbbc6217b0feb0adeea3bca5b73a83db1af31bb7d34389"
+url = "https://github.com/jaegertracing/jaeger/releases/download/v2.22.0/jaeger-2.22.0-linux-amd64.tar.gz"
+url_api = "https://api.github.com/repos/jaegertracing/jaeger/releases/assets/615781009"
+
 [[tools."github:sqlc-dev/sqlc"]]
 version = "1.31.1"
 backend = "github:sqlc-dev/sqlc"
 specifiers = ["1.31.1"]
-
-[tools."github:sqlc-dev/sqlc".options]
-asset_pattern = "sqlc_1.31.1_linux_amd64.tar.gz"
-
-[tools."github:sqlc-dev/sqlc"."platforms.linux-x64"]
-checksum = "sha256:497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354"
-url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402611992"
-
-[[tools."github:sqlc-dev/sqlc"]]
-version = "1.31.1"
-backend = "github:sqlc-dev/sqlc"
 
 [tools."github:sqlc-dev/sqlc".options]
 asset_pattern = "sqlc_1.31.1_windows_amd64.zip"
@@ -1175,23 +1189,22 @@ checksum = "sha256:352711fa7dcb05dcdfefca0ad71b2c9a74fd090f8d7fc609419de4cbc7254
 url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_windows_amd64.zip"
 url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402612157"
 
+[[tools."github:sqlc-dev/sqlc"]]
+version = "1.31.1"
+backend = "github:sqlc-dev/sqlc"
+
+[tools."github:sqlc-dev/sqlc".options]
+asset_pattern = "sqlc_1.31.1_linux_amd64.tar.gz"
+
+[tools."github:sqlc-dev/sqlc"."platforms.linux-x64"]
+checksum = "sha256:497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354"
+url = "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/sqlc-dev/sqlc/releases/assets/402611992"
+
 [[tools."github:yt-dlp/yt-dlp"]]
 version = "2026.08.19"
 backend = "github:yt-dlp/yt-dlp"
 specifiers = ["latest"]
-
-[tools."github:yt-dlp/yt-dlp".options]
-asset_pattern = "yt-dlp_linux"
-
-[tools."github:yt-dlp/yt-dlp"."platforms.linux-x64"]
-checksum = "sha256:58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
-url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux"
-url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488856"
-provenance = "github-attestations"
-
-[[tools."github:yt-dlp/yt-dlp"]]
-version = "2026.08.19"
-backend = "github:yt-dlp/yt-dlp"
 
 [tools."github:yt-dlp/yt-dlp".options]
 asset_pattern = "yt-dlp.exe"
@@ -1200,6 +1213,19 @@ asset_pattern = "yt-dlp.exe"
 checksum = "sha256:66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
 url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe"
 url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488854"
+provenance = "github-attestations"
+
+[[tools."github:yt-dlp/yt-dlp"]]
+version = "2026.08.19"
+backend = "github:yt-dlp/yt-dlp"
+
+[tools."github:yt-dlp/yt-dlp".options]
+asset_pattern = "yt-dlp_linux"
+
+[tools."github:yt-dlp/yt-dlp"."platforms.linux-x64"]
+checksum = "sha256:58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a"
+url = "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp_linux"
+url_api = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/assets/521488856"
 provenance = "github-attestations"
 
 [[tools.go]]

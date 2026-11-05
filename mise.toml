@@ -14,6 +14,19 @@ version = "1.31.1"
 platforms.linux-x64 = { asset_pattern = "sqlc_1.31.1_linux_amd64.tar.gz" }
 platforms.windows-x64 = { asset_pattern = "sqlc_1.31.1_windows_amd64.zip" }
 
+[tools."github:jaegertracing/jaeger"]
+version = "2.22.0"
+platforms.linux-x64 = { asset_pattern = "jaeger-2.22.0-linux-amd64.tar.gz" }
+platforms.windows-x64 = { asset_pattern = "jaeger-2.22.0-windows-amd64.zip" }
+
+[tasks.traces]
+description = "Run local in-memory Jaeger; Ctrl+C stops and deletes trace data"
+run = "jaeger --config dev/jaeger.yaml"
+
+[tasks.traces-check]
+description = "Verify synthetic OTLP spans through local Jaeger"
+run = "go run ./cmd/dev traces-check"
+
 [tools."github:bazelbuild/bazel"]
 version = "5.3.2"
 platforms.linux-x64 = { asset_pattern = "bazel-5.3.2-linux-x86_64", format = "raw", rename_exe = "bazel" }
