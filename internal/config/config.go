@@ -1,6 +1,7 @@
 package config
 
 import (
+	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/logging"
 	"asterinmusic/internal/source"
 	"errors"
@@ -19,6 +20,7 @@ import (
 
 // Config contains resolved secrets; never log it.
 type Config struct {
+	Authorization                                         authorization.Config
 	Logging                                               logging.Options
 	HistoryLimit                                          int
 	YouTubeDataEnabled                                    bool
@@ -81,9 +83,19 @@ type Bot struct {
 	} `koanf:"activity"`
 }
 type Server struct {
-	ID         string   `koanf:"id"`
-	Bots       []string `koanf:"bots"`
-	CommandBot string   `koanf:"command_bot"`
+	Authorization Authorization `koanf:"authorization"`
+	ID            string        `koanf:"id"`
+	Bots          []string      `koanf:"bots"`
+	CommandBot    string        `koanf:"command_bot"`
+}
+type Authorization struct {
+	Preset    string                `koanf:"preset"`
+	DJRoleIDs []string              `koanf:"dj_role_ids"`
+	Policies  []AuthorizationPolicy `koanf:"policies"`
+}
+type AuthorizationPolicy struct {
+	ID     string `koanf:"id"`
+	Policy string `koanf:"policy"`
 }
 type Options struct{ ConfigFile, EnvFile string }
 
@@ -226,6 +238,16 @@ func (d Document) resolve(base string) (Config, error) {
 			return fail("invalid server id (use a quoted string)")
 		}
 		c.GuildID = id
+		c.Authorization = authorization.Config{Preset: s.Authorization.Preset, DJRoleIDs: s.Authorization.DJRoleIDs}
+		if c.Authorization.Preset == "" {
+			c.Authorization.Preset = "collaborative"
+		}
+		for _, p := range s.Authorization.Policies {
+			c.Authorization.Policies = append(c.Authorization.Policies, authorization.Policy{ID: p.ID, Text: p.Policy})
+		}
+		if _, err := authorization.NewCedar(c.Authorization); err != nil {
+			return Config{}, err
+		}
 		if len(s.Bots) != 1 || s.CommandBot == "" || s.Bots[0] != s.CommandBot {
 			return fail("server requires one bot and matching command_bot")
 		}

@@ -2,10 +2,89 @@ package authorization
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	cedar "github.com/cedar-policy/cedar-go"
 )
+
+func TestConfigurationLimits(t *testing.T) {
+	text := `permit(principal, action, resource);`
+	policies := make([]Policy, MaxPolicies)
+	for i := range policies {
+		policies[i] = Policy{ID: fmt.Sprintf("rule%d", i), Text: text}
+	}
+	if _, err := NewCedar(Config{Policies: policies}); err != nil {
+		t.Fatal("policy count boundary", err)
+	}
+	if _, err := NewCedar(Config{Policies: append(policies, Policy{"extra", text})}); err == nil {
+		t.Fatal("policy count exceeded")
+	}
+	for _, length := range []int{MaxPolicyBytes, MaxPolicyBytes + 1} {
+		_, err := NewCedar(Config{Policies: []Policy{{"size", text + strings.Repeat(" ", length-len(text))}}})
+		if (err == nil) != (length == MaxPolicyBytes) {
+			t.Fatalf("policy bytes %d: %v", length, err)
+		}
+	}
+	large := make([]Policy, MaxTotalPolicyBytes/MaxPolicyBytes)
+	for i := range large {
+		large[i] = Policy{fmt.Sprintf("large%d", i), text + strings.Repeat(" ", MaxPolicyBytes-len(text))}
+	}
+	if _, err := NewCedar(Config{Policies: large}); err != nil {
+		t.Fatal("total bytes boundary", err)
+	}
+	if _, err := NewCedar(Config{Policies: append(large, Policy{"extra", text})}); err == nil {
+		t.Fatal("total bytes exceeded")
+	}
+	roles := make([]string, MaxRoles)
+	for i := range roles {
+		roles[i] = fmt.Sprint(i + 10)
+	}
+	s, err := NewCedar(Config{DJRoleIDs: roles})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := sample()
+	r.Principal.RoleIDs = roles
+	if d, e := s.Authorize(context.Background(), r); e != nil || !d.Allowed {
+		t.Fatal(d, e)
+	}
+	r.Principal.RoleIDs = append(roles, "999")
+	if d, _ := s.Authorize(context.Background(), r); d.Allowed {
+		t.Fatal("request role limit bypassed")
+	}
+	if _, err := NewCedar(Config{DJRoleIDs: r.Principal.RoleIDs}); err == nil {
+		t.Fatal("config role limit bypassed")
+	}
+}
+
+func BenchmarkService(b *testing.B) {
+	for _, n := range []int{0, MaxPolicies} {
+		b.Run(fmt.Sprint(n), func(b *testing.B) {
+			config := Config{Preset: "dj", DJRoleIDs: []string{"5"}}
+			for i := 0; i < n; i++ {
+				config.Policies = append(config.Policies, Policy{fmt.Sprintf("role%d", i), `permit(principal in Role::"1/5", action, resource) when {context.sameVoice};`})
+			}
+			s, err := NewCedar(config)
+			if err != nil {
+				b.Fatal(err)
+			}
+			r := sample()
+			for i := 0; i < MaxRoles; i++ {
+				r.Principal.RoleIDs = append(r.Principal.RoleIDs, fmt.Sprint(i+1))
+			}
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				d, e := s.Authorize(context.Background(), r)
+				if e != nil || !d.Allowed {
+					b.Fatal(d, e)
+				}
+			}
+		})
+	}
+}
 
 func TestRuntimeErrorFailsClosed(t *testing.T) {
 	service, err := NewCedar(Config{})
