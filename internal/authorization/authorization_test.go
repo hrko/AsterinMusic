@@ -170,6 +170,28 @@ func TestFixedBoundaries(t *testing.T) {
 		}
 	}
 }
+
+func TestUnknownLegacyScopeRequiresDiscordAdministrator(t *testing.T) {
+	s, err := NewCedar(Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := sample()
+	r.Action = QueueView
+	r.Facts.ScopeUnknown = true
+	if d, _ := s.Authorize(context.Background(), r); d.Allowed {
+		t.Fatal("legacy queue disclosed to ordinary user")
+	}
+	r.Principal.Administrator = true
+	if d, e := s.Authorize(context.Background(), r); e != nil || !d.Allowed {
+		t.Fatal(d, e)
+	}
+	r.Principal.Administrator = false
+	r.Principal.Owner = true
+	if d, e := s.Authorize(context.Background(), r); e != nil || !d.Allowed {
+		t.Fatal(d, e)
+	}
+}
 func TestExtraPolicies(t *testing.T) {
 	for _, tc := range []struct {
 		name, text string

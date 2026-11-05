@@ -39,6 +39,7 @@ func (a *App) rejectDeferredAuthorization(response responseRef, err error, compo
 // authorizationTarget is a snapshot, not a capability. Callers must still check
 // session/queue generations immediately before using the decision.
 type authorizationTarget struct {
+	unknown            bool
 	guild, voice       snowflake.ID
 	session, requester string
 }
@@ -61,6 +62,10 @@ func (s *session) lockAuthorized(user snowflake.ID, action authorization.Action)
 	target := authorizationTarget{guild: s.guild, voice: s.channel, session: s.historySessionID}
 	if target.voice == 0 {
 		target.voice = s.accessVoice
+	}
+	if target.voice == 0 {
+		current, pending := s.queue.Snapshot()
+		target.unknown = current != nil || len(pending) > 0 || s.auto.seed != nil
 	}
 	if s.current != nil {
 		target.requester = s.current.Requester.ID
@@ -166,6 +171,7 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	request := authorization.Request{Action: action, Principal: principal,
 		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester},
 		Facts:    authorization.Facts{Complete: true, CanView: target.voice == 0 || permissions.Has(discord.PermissionViewChannel), InVoice: currentVoice != 0, SameVoice: currentVoice != 0 && (target.voice == 0 || currentVoice == target.voice)}}
+	request.Facts.ScopeUnknown = target.unknown
 	decision, err = a.authorizer.Authorize(ctx, request)
 	if err != nil {
 		return errPermissionFacts

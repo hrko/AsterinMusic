@@ -49,6 +49,7 @@ type Queue struct {
 	order       []string
 	current     *Entry
 	statePath   string
+	accessScope string
 	lastSaveErr error
 	writeState  func(string, []byte) error // Optional deterministic storage boundary for tests.
 }

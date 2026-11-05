@@ -42,7 +42,7 @@ type Principal struct {
 	Administrator, Owner bool
 }
 type Resource struct{ GuildID, BotID, SessionID, VoiceID, RequesterID string }
-type Facts struct{ Complete, CanView, SameVoice, InVoice bool }
+type Facts struct{ Complete, CanView, SameVoice, InVoice, ScopeUnknown bool }
 
 type Reason string
 

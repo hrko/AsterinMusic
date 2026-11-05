@@ -128,6 +128,11 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	var entryID string
 	var saveErr error
 	s.queueIOLocked(func() {
+		if scopeErr := s.queue.SetAccessScope(channel.String()); scopeErr != nil {
+			err = errQueueSave
+			saveErr = scopeErr
+			return
+		}
 		n, entryID, err = s.queue.AddAt(who, tracks, playlist, importID, position)
 		saveErr = s.queue.PersistenceError()
 	})

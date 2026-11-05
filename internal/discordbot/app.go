@@ -298,6 +298,17 @@ func (a *App) Serve() error {
 	if restored != nil {
 		s.restoreSettings(restored)
 	}
+	if raw := queue.AccessScope(); raw != "" {
+		id, parseErr := snowflake.Parse(raw)
+		if parseErr != nil || id == 0 {
+			return errors.New("invalid stored queue access scope")
+		}
+		s.accessVoice = id
+	} else if s.accessVoice != 0 {
+		if err := queue.SetAccessScope(s.accessVoice.String()); err != nil {
+			return errors.New("cannot migrate queue access scope")
+		}
+	}
 	runcontrol.ObservePlayback(a.ctx, s.playbackStatus)
 	runcontrol.BeforeStop(a.ctx, func() error {
 		err := s.checkpoint(checkpointPath)

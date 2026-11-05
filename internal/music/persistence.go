@@ -12,11 +12,12 @@ import (
 )
 
 type queueState struct {
-	Version  int                `json:"version"`
-	Sequence uint64             `json:"sequence"`
-	Waiting  map[string][]Entry `json:"waiting"`
-	Order    []string           `json:"order"`
-	Current  *Entry             `json:"current,omitempty"`
+	Version     int                `json:"version"`
+	Sequence    uint64             `json:"sequence"`
+	Waiting     map[string][]Entry `json:"waiting"`
+	Order       []string           `json:"order"`
+	Current     *Entry             `json:"current,omitempty"`
+	AccessScope string             `json:"access_scope,omitempty"`
 }
 
 // OpenQueue restores manual entries only. A previously active entry is retried
@@ -40,6 +41,7 @@ func OpenQueue(limit int, path string) (*Queue, error) {
 		return nil, err
 	}
 	q.sequence, q.waiting, q.order = state.Sequence, state.Waiting, state.Order
+	q.accessScope = state.AccessScope
 	if q.waiting == nil {
 		q.waiting = make(map[string][]Entry)
 	}
@@ -55,6 +57,12 @@ func validateState(s queueState, limit int) error {
 	invalid := errors.New("invalid queue state; keep the file for recovery")
 	if s.Version != 1 {
 		return invalid
+	}
+	if s.AccessScope != "" {
+		id, err := strconv.ParseUint(s.AccessScope, 10, 64)
+		if err != nil || id == 0 || strconv.FormatUint(id, 10) != s.AccessScope {
+			return invalid
+		}
 	}
 	seen := map[string]bool{}
 	check := func(e Entry, user string) bool {
@@ -103,6 +111,18 @@ func (q *Queue) PersistenceError() error {
 	return q.lastSaveErr
 }
 
+// AccessScope belongs to the application; an empty value means legacy/unknown.
+func (q *Queue) AccessScope() string { q.mu.Lock(); defer q.mu.Unlock(); return q.accessScope }
+func (q *Queue) SetAccessScope(scope string) error {
+	q.mutationMu.Lock()
+	defer q.mutationMu.Unlock()
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.accessScope = scope
+	q.persistLocked()
+	return q.lastSaveErr
+}
+
 // SetLogger sets the queue's owner-scoped logger. Queue mutation and logging
 // configuration are serialized; no process-global logger is used.
 func (q *Queue) SetLogger(logger *slog.Logger) {
@@ -115,7 +135,7 @@ func (q *Queue) persistLocked() {
 	if q.statePath == "" {
 		return
 	}
-	b, err := json.Marshal(queueState{1, q.sequence, q.waiting, q.order, q.current})
+	b, err := json.Marshal(queueState{Version: 1, Sequence: q.sequence, Waiting: q.waiting, Order: q.order, Current: q.current, AccessScope: q.accessScope})
 	if err == nil {
 		write := q.writeState
 		if write == nil {

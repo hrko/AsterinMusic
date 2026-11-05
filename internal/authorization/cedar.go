@@ -116,6 +116,9 @@ func validPolicyID(id string) bool {
 
 func (s *cedarService) Authorize(ctx context.Context, r Request) (Decision, error) {
 	result := Decision{Reason: InvalidFacts, Version: s.version}
+	if r.Facts.ScopeUnknown && !r.Principal.Administrator && !r.Principal.Owner {
+		return result, nil
+	}
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
