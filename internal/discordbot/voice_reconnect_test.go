@@ -244,6 +244,15 @@ func testResumeFallback(t *testing.T, code, attempts int) {
 			if !span.Parent().IsValid() {
 				t.Fatal("Resume is not attached to recovery")
 			}
+			foundCode := false
+			for _, attr := range span.Attributes() {
+				if string(attr.Key) == "asterinmusic.close_code" && attr.Value.AsInt64() == int64(code) {
+					foundCode = true
+				}
+			}
+			if !foundCode {
+				t.Fatal("Resume close code missing")
+			}
 			failedResumes++
 		}
 		if span.Name() == "voice.recovery" && span.Status().Code == codes.Unset && spanString(span, "asterinmusic.result") == "ready" {

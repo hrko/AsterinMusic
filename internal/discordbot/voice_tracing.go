@@ -20,6 +20,15 @@ func finishTrace(span trace.Span, err error, opts ...trace.SpanEndOption) {
 	if err != nil {
 		reason := failureClass(err)
 		span.SetAttributes(attribute.String("asterinmusic.reason", reason))
+		// Reuse the log allowlist, copying typed numeric diagnostics only.
+		attrs := failureAttributes(err)
+		for i := 0; i+1 < len(attrs); i += 2 {
+			key, named := attrs[i].(string)
+			value, numeric := attrs[i+1].(int)
+			if named && numeric {
+				span.SetAttributes(attribute.Int("asterinmusic."+key, value))
+			}
+		}
 		if !errors.Is(err, context.Canceled) {
 			span.SetStatus(codes.Error, "")
 			span.SetAttributes(attribute.String("error.type", reason))
