@@ -38,6 +38,7 @@ type queueEditor struct {
 	owners                       []queueEditOwner
 	permissions                  map[string]queueEditPermission
 	notice                       string
+	clearConfirmation            bool
 }
 
 func (v *queueEditor) componentID(action string) string {

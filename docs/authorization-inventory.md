@@ -12,10 +12,10 @@
 | playback.resume | URLなし`/play` | VC参加、接続中ならBotと同じVC |
 | playback.stop | `/stop` | 同上 |
 | playback.skip | `/skip` | 同上 |
-| queue.clear | `/queue action:clear` | 同上 |
+| queue.clear | `/queue clear` | 同上 |
 | queue.remove | キュー編集画面の削除ボタン | 対象VC参加、待機項目の追加者、画面所有者・期限・世代・セッションを再確認 |
 | queue.reorder | キュー編集画面の上・下・先頭・順番モーダル | 上記と同じ。表示時の追加者内順序との一致も変更時に確認 |
-| queue.view | `/queue`、前後ページ・更新ボタン | 設定サーバー。ボタンは本人。VC参加条件なし |
+| queue.view | `/queue show`、前後ページ・更新ボタン | 設定サーバー。ボタンは本人。VC参加条件なし |
 | playback.view | `/nowplaying` | 設定サーバー。VC参加条件なし |
 | volume.view | 引数なし`/volume` | 設定サーバー。VC参加条件なし |
 | volume.set | 数値付き`/volume` | VC参加、接続中ならBotと同じVC |

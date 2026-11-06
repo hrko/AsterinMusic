@@ -61,6 +61,26 @@ func TestRegisteredCommandCoverageAndDiscordLimits(t *testing.T) {
 	}
 }
 
+func TestQueueSubcommandReference(t *testing.T) {
+	c, err := helpui.New(discordbot.Commands(), map[string]string{"queue": "123"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, _ := c.Find("command:queue")
+	format := p.Embed.Fields[0].Value
+	for _, syntax := range []string{"/queue show [page:値]", "/queue edit [user:値]", "/queue clear", "角括弧内は省略できます"} {
+		if !strings.Contains(format, syntax) {
+			t.Fatal(format)
+		}
+	}
+	guide, _ := c.Find("guide:queue")
+	for _, link := range []string{"</queue show:123>", "</queue edit:123>", "</queue clear:123>"} {
+		if !strings.Contains(guide.Embed.Description, link) {
+			t.Fatal(link)
+		}
+	}
+}
+
 // Examples are editorial text: validate their executable parts against the
 // registration so option renames/removals and changed bounds cannot drift.
 func TestExamplesMatchRegistration(t *testing.T) {

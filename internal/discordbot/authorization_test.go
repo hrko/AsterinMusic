@@ -330,7 +330,7 @@ func TestCommandAuthorizationActions(t *testing.T) {
 		{`{"name":"play"}`, authorization.PlaybackResume},
 		{`{"name":"play","options":[{"name":"url","type":3,"value":"url"}]}`, authorization.QueueAdd},
 		{`{"name":"queue"}`, authorization.QueueView},
-		{`{"name":"queue","options":[{"name":"action","type":3,"value":"clear"}]}`, authorization.QueueClear},
+		{`{"name":"queue","options":[{"name":"clear","type":1}]}`, authorization.QueueClear},
 		{`{"name":"volume"}`, authorization.VolumeView},
 		{`{"name":"volume","options":[{"name":"percent","type":4,"value":30}]}`, authorization.VolumeSet},
 		{`{"name":"unknown"}`, ""},

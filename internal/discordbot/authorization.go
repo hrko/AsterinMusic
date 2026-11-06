@@ -262,7 +262,7 @@ func commandAction(d discord.SlashCommandInteractionData) authorization.Action {
 	case "skip":
 		return authorization.PlaybackSkip
 	case "queue":
-		if d.String("action") == "clear" {
+		if d.SubCommandName != nil && *d.SubCommandName == "clear" {
 			return authorization.QueueClear
 		}
 		return authorization.QueueView

@@ -21,7 +21,7 @@ func TestQueryVisibility(t *testing.T) {
 		raw     string
 		private bool
 	}{
-		{`{"name":"nowplaying"}`, true}, {`{"name":"queue"}`, true}, {`{"name":"queue","options":[{"name":"action","type":3,"value":"clear"}]}`, false},
+		{`{"name":"nowplaying"}`, true}, {`{"name":"queue"}`, true}, {`{"name":"queue","options":[{"name":"clear","type":1}]}`, true},
 		{`{"name":"volume"}`, true}, {`{"name":"volume","options":[{"name":"percent","type":4,"value":30}]}`, false},
 		{`{"name":"autoplay","options":[{"name":"status","type":1}]}`, true}, {`{"name":"autoplay","options":[{"name":"on","type":1}]}`, false}, {`{"name":"play"}`, false},
 	} {

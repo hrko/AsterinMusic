@@ -92,7 +92,7 @@ func userError(err error) string {
 func privateQuery(d discord.SlashCommandInteractionData) bool {
 	switch d.CommandName() {
 	case "queue":
-		return d.String("action") != "clear"
+		return true
 	case "nowplaying", "history":
 		return true
 	case "volume":

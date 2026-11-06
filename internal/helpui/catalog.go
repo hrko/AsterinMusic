@@ -91,18 +91,22 @@ func (c *Catalog) Search(query string) []discord.AutocompleteChoice {
 	return out
 }
 
-func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embed, error) {
-	e := discord.Embed{Title: "/" + cmd.Name, Description: cmd.Description, Color: 0x527DA8}
+func referenceSyntax(cmd discord.SlashCommandCreate, ref Reference) (string, []string, bool, bool, error) {
 	syntax := "/" + cmd.Name
 	var args, subs []string
 	optional := false
 	for _, opt := range cmd.Options {
 		if sub, ok := opt.(discord.ApplicationCommandOptionSubCommand); ok {
-			if len(sub.Options) > 0 {
-				return e, fmt.Errorf("nested options need help support")
+			childSyntax, childArgs, childOptional, _, err := referenceSyntax(discord.SlashCommandCreate{Name: cmd.Name + " " + sub.Name, Options: sub.Options}, ref)
+			if err != nil {
+				return "", nil, false, false, err
 			}
-			subs = append(subs, "/"+cmd.Name+" "+sub.Name)
+			subs = append(subs, childSyntax)
+			optional = optional || childOptional
 			args = append(args, "- **"+sub.Name+"**："+sub.Description)
+			for _, arg := range childArgs {
+				args = append(args, "  "+strings.ReplaceAll(arg, "\n", "\n  "))
+			}
 			continue
 		}
 		required := false
@@ -121,8 +125,10 @@ func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embe
 			if o.MaxValue != nil {
 				details += fmt.Sprintf(" · 最大%d", *o.MaxValue)
 			}
+		case discord.ApplicationCommandOptionUser:
+			required = o.Required
 		default:
-			return e, fmt.Errorf("unsupported help option %s", opt.OptionName())
+			return "", nil, false, false, fmt.Errorf("unsupported help option %s", opt.OptionName())
 		}
 		label := "任意"
 		token := opt.OptionName() + ":値"
@@ -141,6 +147,15 @@ func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embe
 	if len(subs) > 0 {
 		syntax = strings.Join(subs, "\n")
 	}
+	return syntax, args, optional, len(subs) > 0, nil
+}
+
+func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embed, error) {
+	e := discord.Embed{Title: "/" + cmd.Name, Description: cmd.Description, Color: 0x527DA8}
+	syntax, args, optional, subcommands, err := referenceSyntax(cmd, ref)
+	if err != nil {
+		return e, err
+	}
 	format := "```\n" + syntax + "\n```"
 	if optional {
 		format += "\n-# 角括弧内は省略できます。"
@@ -148,7 +163,7 @@ func referenceEmbed(cmd discord.SlashCommandCreate, ref Reference) (discord.Embe
 	e.Fields = append(e.Fields, discord.EmbedField{Name: "書式", Value: format})
 	if len(args) > 0 {
 		name := "引数"
-		if len(subs) > 0 {
+		if subcommands {
 			name = "サブコマンド"
 		}
 		e.Fields = append(e.Fields, discord.EmbedField{Name: name, Value: strings.Join(args, "\n")})

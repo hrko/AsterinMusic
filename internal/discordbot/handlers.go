@@ -151,42 +151,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 			a.editEmbed(responseFor(e), embed, nil)
 		}
 	case "queue":
-		if data.String("action") == "clear" {
-			if _, err := s.authorize(user.ID); err != nil {
-				reply(userError(err))
-				return
-			}
-			if err := s.lockAuthorized(user.ID, authorization.QueueClear); err != nil {
-				if !a.rejectDeferredAuthorization(responseFor(e), err, false) {
-					reply(userError(err))
-				}
-				return
-			}
-			if err := s.mutableLocked(); err != nil {
-				s.mu.Unlock()
-				reply(userError(err))
-				return
-			}
-			s.epoch++
-			var saveErr error
-			s.queueIOLocked(func() { s.queue.Clear(); saveErr = s.queue.PersistenceError() })
-			s.prefetchLocked()
-			autoOn := s.auto.enabled
-			s.mu.Unlock()
-			if saveErr != nil {
-				reply("メモリ上の待機キューは消去しましたが、保存に失敗しました。再起動前にログを確認してください。")
-				return
-			}
-			text := "待機キューを消去しました。"
-			if autoOn {
-				text += " 自動再生はONのままです。"
-			}
-			reply(text)
-			return
-		}
-		s.queueViewMu.Lock()
-		a.editQueue(responseFor(e), s, user.ID, max(1, data.Int("page")), "")
-		s.queueViewMu.Unlock()
+		a.queueCommand(e, s)
 	case "nowplaying":
 		if err := s.lockAuthorized(user.ID, authorization.PlaybackView); err != nil {
 			reply(userError(err))

@@ -13,9 +13,10 @@ func Commands() []discord.ApplicationCommandCreate {
 		discord.SlashCommandCreate{Name: "play", Description: "曲・プレイリストを追加、またはキューを再開", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionString{Name: "url", Description: "YouTube / YouTube Music / ニコニコ動画のURL"}}},
 		discord.SlashCommandCreate{Name: "stop", Description: "再生を終了して切断（待機キューは保持）"},
 		discord.SlashCommandCreate{Name: "skip", Description: "次の曲へ進む"},
-		discord.SlashCommandCreate{Name: "queue", Description: "再生予定順を表示・消去", Options: []discord.ApplicationCommandOption{
-			discord.ApplicationCommandOptionString{Name: "action", Description: "表示または待機キューを全消去", Choices: []discord.ApplicationCommandOptionChoiceString{{Name: "表示", Value: "show"}, {Name: "全消去", Value: "clear"}}},
-			discord.ApplicationCommandOptionInt{Name: "page", Description: "表示ページ", MinValue: &one},
+		discord.SlashCommandCreate{Name: "queue", Description: "再生キューを表示・編集・全消去", Options: []discord.ApplicationCommandOption{
+			discord.ApplicationCommandOptionSubCommand{Name: "show", Description: "再生予定順を表示", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionInt{Name: "page", Description: "表示ページ", MinValue: &one}}},
+			discord.ApplicationCommandOptionSubCommand{Name: "edit", Description: "待機曲の編集画面を開く", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionUser{Name: "user", Description: "編集する追加者（省略時は自分を優先）"}}},
+			discord.ApplicationCommandOptionSubCommand{Name: "clear", Description: "確認後に手動の待機曲を全消去"},
 		}},
 		discord.SlashCommandCreate{Name: "nowplaying", Description: "再生中の曲・追加者・音量を表示"},
 		discord.SlashCommandCreate{Name: "volume", Description: "音量を表示・変更（初期30%）", Options: []discord.ApplicationCommandOption{discord.ApplicationCommandOptionInt{Name: "percent", Description: "0でミュート、100で元音量", MinValue: &zero, MaxValue: &hundred}}},

@@ -18,7 +18,7 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-var errQueueEditor = errors.New("この編集画面は利用できません。/queueから開き直してください。")
+var errQueueEditor = errors.New("この編集画面は利用できません。/queue showから開き直してください。")
 
 type queueEditorResultError string
 
@@ -133,7 +133,12 @@ func (a *App) showQueueEditor(response responseRef, v *queueEditor) {
 	e, c := v.render()
 	empty := ""
 	embeds := []discord.Embed{e}
-	_, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &c, AllowedMentions: &discord.AllowedMentions{}})
+	m, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &c, AllowedMentions: &discord.AllowedMentions{}})
+	if err == nil && m != nil && v.message == 0 {
+		a.mu.Lock()
+		v.message = m.ID
+		a.mu.Unlock()
+	}
 	a.logInteractionFailure(response.operation, "queue_editor.update", err)
 }
 
@@ -253,7 +258,7 @@ func (a *App) mutateQueueEditor(v *queueEditor, position int, remove bool) error
 		v.notice = fmt.Sprintf("%sを、%sの待機曲の%d曲目に移動しました。", queueLink(compactQueueTrack(entry.Track)), queueMention(v.requester), position)
 	}
 	if loadErr := a.loadQueueEditor(v, err == nil && !remove); loadErr != nil {
-		return queueEditorResultError(v.notice + "\n編集画面を更新できませんでした。/queueから開き直してください。")
+		return queueEditorResultError(v.notice + "\n編集画面を更新できませんでした。/queue showから開き直してください。")
 	}
 	return nil
 }
@@ -265,6 +270,10 @@ func (a *App) queueEditorComponent(e *events.ComponentInteractionCreate) {
 		return
 	}
 	defer v.mu.Unlock()
+	if v.clearConfirmation {
+		a.queueClearComponent(e, v, action)
+		return
+	}
 	if action == "jump" || action == "move" {
 		if v.choosingOwner || (action == "move" && (v.selectedIndex() < 0 || !v.permissions[v.selected].reorder)) {
 			a.logInteractionFailure(e.ID(), "queue_editor.reject_modal", e.CreateMessage(ephemeral(errQueueEditor.Error())))
@@ -375,6 +384,10 @@ func (a *App) onQueueEditorModal(e *events.ModalSubmitInteractionCreate) {
 		return
 	}
 	defer v.mu.Unlock()
+	if v.clearConfirmation {
+		a.logInteractionFailure(e.ID(), "queue_editor.reject_modal", e.CreateMessage(ephemeral(errQueueEditor.Error())))
+		return
+	}
 	n, parseErr := strconv.Atoi(strings.TrimSpace(e.Data.Text("position")))
 	limit := v.pageCount()
 	if action == "move_submit" {
