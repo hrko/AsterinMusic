@@ -196,6 +196,64 @@ func TestResumeMoveClosesResponseButKeepsPlayback(t *testing.T) {
 	}
 }
 
+func TestResumeConsecutiveSourceFailuresFinishResponseAndRetainRemainder(t *testing.T) {
+	s := resumeSession(t)
+	conn := s.conn
+	s.queue.Add(music.Requester{ID: "1"}, []music.Track{
+		autoTrack("bbbbbbbbbbb"), autoTrack("ccccccccccc"), autoTrack("ddddddddddd"),
+	}, "", "")
+	calls := 0
+	s.playAudio = func(context.Context, voice.Conn, audio.Producer) error {
+		calls++
+		return errors.New("source failed before first audio")
+	}
+	_, request, err := s.requestResume(1, 0)
+	if err != nil || request == nil {
+		t.Fatalf("resume not accepted: %v", err)
+	}
+	s.launchResume(request)
+	awaitResume(t, request, resumeSourceFailed)
+	s.mu.Lock()
+	done := s.done
+	s.mu.Unlock()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("source failure response did not terminate playback")
+	}
+	_, pending := s.queue.Snapshot()
+	if calls != 3 || len(pending) != 1 || pending[0].Track.URL != autoTrack("ddddddddddd").URL {
+		t.Fatalf("failure limit changed queue: calls=%d pending=%v", calls, pending)
+	}
+	if s.conn != conn || !s.stopped || s.running || s.resumeRequest != nil {
+		t.Fatal("source failures changed connection or left preparation pending")
+	}
+	select {
+	case <-request.result:
+		t.Fatal("failure response was completed more than once")
+	default:
+	}
+	// A fresh explicit request must use the retained connection and remaining
+	// track, rather than requiring /stop or inheriting the failure counter.
+	s.playAudio = func(ctx context.Context, _ voice.Conn, _ audio.Producer) error {
+		return s.sendPacket(ctx, func() error { return nil })
+	}
+	_, retry, err := s.requestResume(1, 0)
+	if err != nil || retry == nil {
+		t.Fatalf("retry not accepted: %v", err)
+	}
+	s.launchResume(retry)
+	awaitResume(t, retry, resumeStarted)
+	s.mu.Lock()
+	done = s.done
+	s.mu.Unlock()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("retry playback did not finish")
+	}
+}
+
 func TestResumeStatusWithoutStartingAnotherOwner(t *testing.T) {
 	for _, mode := range []resumeState{resumeEmpty, resumePreparing, resumeRecovering} {
 		t.Run(string(mode), func(t *testing.T) {
