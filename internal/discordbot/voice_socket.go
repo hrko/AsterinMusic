@@ -42,7 +42,7 @@ type voiceSocketRun struct {
 	ctx              context.Context
 	cancel           context.CancelFunc
 	ws               *websocket.Conn
-	writeMu          sync.Mutex
+	writeGate        chan struct{}
 	ready            chan error
 	readyOnce        sync.Once
 	heartbeatStarted bool // protected by voiceSocket.mu
@@ -96,7 +96,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 		g.ssrc, g.seq, g.established = 0, -1, false
 	}
 	rctx, cancel := context.WithCancel(context.Background())
-	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1), resume: resume}
+	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1), resume: resume, writeGate: make(chan struct{}, 1)}
 	r.observation = ctx
 	g.run, g.state, g.status = r, state, voice.StatusConnecting
 	g.workers.Add(1)
@@ -241,6 +241,9 @@ func (g *voiceSocket) sendFailure(r *voiceSocketRun, op voice.Opcode, err error)
 }
 
 func (g *voiceSocket) send(ctx context.Context, r *voiceSocketRun, op voice.Opcode, data voice.GatewayMessageData) error {
+	// The operation budget includes waiting for another writer, not just I/O.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	var payload []byte
 	var err error
 	messageType := websocket.TextMessage
@@ -261,18 +264,21 @@ func (g *voiceSocket) send(ctx context.Context, r *voiceSocketRun, op voice.Opco
 	if err != nil {
 		return err
 	}
-	r.writeMu.Lock()
-	defer r.writeMu.Unlock()
+	select {
+	case r.writeGate <- struct{}{}:
+		defer func() { <-r.writeGate }()
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-r.ctx.Done():
+		return r.ctx.Err()
+	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	if err := r.ctx.Err(); err != nil {
 		return err
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
-		deadline = d
-	}
+	deadline, _ := ctx.Deadline()
 	_ = r.ws.SetWriteDeadline(deadline)
 	return r.ws.WriteMessage(messageType, payload)
 }

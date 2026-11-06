@@ -19,6 +19,48 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func TestVoiceSocketWaitingWriterCanBeCanceled(t *testing.T) {
+	for _, mode := range []string{"caller", "run", "deadline"} {
+		t.Run(mode, func(t *testing.T) {
+			runCtx, stopRun := context.WithCancel(context.Background())
+			defer stopRun()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			if mode == "deadline" {
+				var stop context.CancelFunc
+				ctx, stop = context.WithTimeout(ctx, 20*time.Millisecond)
+				defer stop()
+			}
+			r := &voiceSocketRun{ctx: runCtx, writeGate: make(chan struct{}, 1)}
+			r.writeGate <- struct{}{} // A previous writer owns the wire.
+			done := make(chan error, 1)
+			go func() {
+				done <- (&voiceSocket{}).send(ctx, r, voice.OpcodeHeartbeat, voice.GatewayMessageDataHeartbeat{})
+			}()
+			want := context.Canceled
+			switch mode {
+			case "caller":
+				cancel()
+			case "run":
+				stopRun()
+			case "deadline":
+				want = context.DeadlineExceeded
+			}
+			select {
+			case err := <-done:
+				if !errors.Is(err, want) {
+					t.Fatalf("waiting writer: %v, want %v", err, want)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("canceled writer still waits for previous writer")
+			}
+			if len(r.writeGate) != 1 {
+				t.Fatal("canceled waiter released another writer's ownership")
+			}
+		})
+	}
+}
+
 func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	var connections atomic.Int32
 	ops := make(chan int, 4)
