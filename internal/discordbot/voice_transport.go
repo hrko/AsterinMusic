@@ -33,6 +33,8 @@ type discordVoiceTransport struct {
 	tracer       trace.Tracer
 	traceCause   trace.SpanContext
 	mu           sync.Mutex
+	sendGate     chan struct{}
+	done         <-chan struct{}
 	invalid      atomic.Bool
 	daveReady    atomic.Bool
 	conn         voice.Conn
@@ -57,10 +59,32 @@ func (t *discordVoiceTransport) Invalidate() {
 func (t *discordVoiceTransport) Ready() bool {
 	return !t.invalid.Load() && t.conn.Gateway().Status() == voice.StatusReady && t.daveReady.Load()
 }
-func (t *discordVoiceTransport) Resume(ctx context.Context) error {
-	if t.invalid.Load() {
+
+// Serialize wire operations without holding the transport's state mutex.
+// A canceled waiter must not wait for the previous network operation to return.
+func (t *discordVoiceTransport) acquireSender(ctx context.Context) error {
+	select {
+	case t.sendGate <- struct{}{}:
+		if t.invalid.Load() || ctx.Err() != nil {
+			<-t.sendGate
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			return context.Canceled
+		}
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.done:
 		return context.Canceled
 	}
+}
+
+func (t *discordVoiceTransport) Resume(ctx context.Context) error {
+	if err := t.acquireSender(ctx); err != nil {
+		return err
+	}
+	defer func() { <-t.sendGate }()
 	if err := t.conn.Gateway().(*voiceSocket).Resume(ctx, t.state); err != nil {
 		return err
 	}
@@ -77,27 +101,26 @@ func (t *discordVoiceTransport) Close() {
 		t.conn.Close(context.Background())
 		t.conn.Gateway().(*voiceSocket).shutdown()
 		<-t.eventsDone
-		t.mu.Lock()
-		defer t.mu.Unlock()
+		t.sendGate <- struct{}{} // Track actual sender completion before cleanup.
+		defer func() { <-t.sendGate }()
 		t.cleanup()
 	})
 }
 func (t *discordVoiceTransport) Write(ctx context.Context, p []byte) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.invalid.Load() {
-		return context.Canceled
-	}
-	if err := ctx.Err(); err != nil {
+	if err := t.acquireSender(ctx); err != nil {
 		return err
 	}
+	defer func() { <-t.sendGate }()
 	if !t.dave.Ready() {
 		return errDaveNotReady
 	}
-	if !t.speaking {
+	t.mu.Lock()
+	speaking, cause := t.speaking, t.traceCause
+	t.mu.Unlock()
+	if !speaking {
 		opts := []trace.SpanStartOption{}
-		if t.traceCause.IsValid() {
-			opts = append(opts, trace.WithLinks(trace.Link{SpanContext: t.traceCause}))
+		if cause.IsValid() {
+			opts = append(opts, trace.WithLinks(trace.Link{SpanContext: cause}))
 		}
 		speakCtx, span := tracerOrNoop(t.tracer).Start(ctx, "voice.speaking", opts...)
 		err := t.conn.SetSpeaking(speakCtx, voice.SpeakingFlagMicrophone)
@@ -105,26 +128,48 @@ func (t *discordVoiceTransport) Write(ctx context.Context, p []byte) error {
 		if err != nil {
 			return err
 		}
+		t.mu.Lock()
 		t.speaking = true
+		t.mu.Unlock()
 	}
-	_ = t.conn.UDP().SetWriteDeadline(time.Now().Add(2 * time.Second))
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if t.invalid.Load() {
+		return context.Canceled
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	_ = t.conn.UDP().SetWriteDeadline(deadline)
 	_, err := t.conn.UDP().Write(p)
 	return err
 }
 func (t *discordVoiceTransport) Finish(ctx context.Context) {
+	if err := t.acquireSender(ctx); err != nil {
+		return
+	}
+	defer func() { <-t.sendGate }()
 	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.invalid.Load() || !t.speaking {
+	speaking := t.speaking
+	t.mu.Unlock()
+	if !speaking {
 		return
 	}
 	_ = t.conn.UDP().SetWriteDeadline(time.Now().Add(time.Second))
 	for range 5 {
+		if t.invalid.Load() || ctx.Err() != nil {
+			return
+		}
 		if _, err := t.conn.UDP().Write(voice.SilenceAudioFrame); err != nil {
 			break
 		}
 	}
 	_ = t.conn.SetSpeaking(ctx, voice.SpeakingFlagNone)
+	t.mu.Lock()
 	t.speaking = false
+	t.mu.Unlock()
 }
 
 func (a *App) openVoiceTransport(ctx context.Context, state voice.State, closed func(error, bool), opts []voice.ConnConfigOpt) (voiceTransport, error) {
@@ -135,9 +180,10 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	ctx, cancelHandshake := context.WithTimeout(ctx, voiceRecoveryTimeout)
 	defer cancelHandshake()
 	logger := logging.Component(a.logger, "voice").With("guild_id", state.GuildID.String())
-	t := &discordVoiceTransport{state: state, tracer: a.tracer, traceCause: trace.SpanContextFromContext(ctx)}
+	t := &discordVoiceTransport{state: state, tracer: a.tracer, traceCause: trace.SpanContextFromContext(ctx), sendGate: make(chan struct{}, 1)}
 	eventCtx, cancelEvents := context.WithCancel(context.Background())
 	t.cancelEvents, t.eventsDone = cancelEvents, make(chan struct{})
+	t.done = eventCtx.Done()
 	// This worker survives successful establishment and Resume. In particular,
 	// SessionDescription and subsequent DAVE events share one ordered queue.
 	type transportEvent struct {

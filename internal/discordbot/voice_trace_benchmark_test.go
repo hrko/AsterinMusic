@@ -28,7 +28,7 @@ func traceFrameFixture(tracer trace.Tracer) *voiceConnection {
 	c := newVoiceConnection(1, 2)
 	c.tracer = tracer
 	c.phase = voiceReady
-	c.active = &discordVoiceTransport{tracer: tracer, dave: readyTraceDave{}, conn: frameTraceConn{udp: &protocolTestUDP{}}}
+	c.active = &discordVoiceTransport{tracer: tracer, dave: readyTraceDave{}, conn: frameTraceConn{udp: &protocolTestUDP{}}, sendGate: make(chan struct{}, 1)}
 	return c
 }
 
