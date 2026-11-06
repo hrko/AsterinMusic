@@ -15,7 +15,7 @@ func queueEditSample(variant string) embed {
 	if variant == "queue-edit-owners" {
 		e.Title = "編集する追加者を選択"
 		e.Description = "編集する待機曲の追加者を選んでください。\n\n" +
-			"**Atule** · 待機23曲\n**サンプル参加者A** · 待機8曲\n**サンプル参加者B** · 待機105曲"
+			"- **Atule** · 待機23曲\n- **サンプル参加者A** · 待機8曲\n- **サンプル参加者B** · 待機105曲"
 		e.Fields = []field{{Name: "操作部品の配置案（テキスト・操作不可）", Value: "[ 追加者を選択 ▾ ]\n[ ◀ 前へ ] [ 1 / 1 ] [ 次へ ▶ ]\n[ 編集一覧へ戻る ]"}}
 		return e
 	}
