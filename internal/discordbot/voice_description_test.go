@@ -41,8 +41,10 @@ type countedKeyUDP struct {
 func (u *countedKeyUDP) SetSecretKey(voice.EncryptionMode, []byte) error { u.keys.Add(1); return nil }
 
 func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
-	for _, conflict := range []bool{false, true} {
-		t.Run(map[bool]string{false: "identical", true: "conflicting"}[conflict], func(t *testing.T) {
+	for _, scenario := range []string{"identical", "conflicting", "before_selection"} {
+		t.Run(scenario, func(t *testing.T) {
+			conflict := scenario == "conflicting"
+			early := scenario == "before_selection"
 			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
 				if err != nil {
@@ -59,6 +61,10 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 					}
 					switch m.Op {
 					case 0:
+						if early {
+							_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
+							continue
+						}
 						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 					case 1:
 						// External sender information may precede the initial protocol
@@ -94,7 +100,7 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 			if transport != nil {
 				defer transport.Close()
 			}
-			if conflict {
+			if conflict || early {
 				if err == nil {
 					select {
 					case err = <-closed:
@@ -121,6 +127,12 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 				if err := transport.Write(ctx, []byte{1}); err != nil {
 					t.Fatal(err)
 				}
+			}
+			if early {
+				if u.keys.Load() != 0 || d.acks.Load() != 0 {
+					t.Fatal("premature description installed keys or initialized DAVE")
+				}
+				return
 			}
 			if u.keys.Load() != 1 || d.acks.Load() != 1 {
 				t.Fatalf("reinitialized: keys=%d DAVE=%d", u.keys.Load(), d.acks.Load())

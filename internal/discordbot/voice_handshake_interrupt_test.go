@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,10 +24,28 @@ func (*interruptedDiscoveryUDP) Open(ctx context.Context, _ string, _ int, _ uin
 	return "", 0, ctx.Err()
 }
 
+// Key installation has no context parameter. Model a stuck implementation
+// whose real Close interrupts it, rather than treating cancellation as exit.
+type interruptedKeyUDP struct {
+	protocolTestUDP
+	done chan struct{}
+	once sync.Once
+}
+
+func (u *interruptedKeyUDP) SetSecretKey(voice.EncryptionMode, []byte) error {
+	<-u.done
+	return net.ErrClosed
+}
+
+func (u *interruptedKeyUDP) Close() error {
+	u.once.Do(func() { close(u.done) })
+	return nil
+}
+
 // The first factory runs the real wire/handshake implementation against a
 // stalled local server. A move can establish a new generation independently.
 func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
-	for _, stage := range []string{"websocket_connect", "hello", "ready", "udp_discovery", "session_description", "dave"} {
+	for _, stage := range []string{"websocket_connect", "hello", "ready", "udp_discovery", "session_description", "transport_key", "dave"} {
 		for _, action := range []string{"stop", "move", "external_leave"} {
 			t.Run(stage+"/"+action, func(t *testing.T) {
 				server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +71,7 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 						if m.Op == 0 && stage != "ready" {
 							_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 						}
-						if m.Op == 1 && stage == "dave" {
+						if m.Op == 1 && (stage == "dave" || stage == "transport_key") {
 							_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
 						}
 					}
@@ -70,6 +90,9 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 						voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
 							if stage == "udp_discovery" {
 								return &interruptedDiscoveryUDP{}
+							}
+							if stage == "transport_key" {
+								return &interruptedKeyUDP{done: make(chan struct{})}
 							}
 							return &protocolTestUDP{}
 						}),

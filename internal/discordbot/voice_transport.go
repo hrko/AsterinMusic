@@ -250,6 +250,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		t.dave = dave
 		dave.SetChannelID(godave.ChannelID(*state.ChannelID))
 		var description *voice.GatewayMessageDataSessionDescription // Ordered worker only.
+		protocolSelected := false                                   // Ordered worker only; never accept keys before selection.
 		handle = func(observation context.Context, g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 			if t.invalid.Load() {
 				return
@@ -290,11 +291,17 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					failHandshake("select_protocol", err)
 					return
 				}
+				protocolSelected = true
 				progress(observation, "session_description")
 				return
 			}
 			// We own readiness, so do not use Conn.Open's completion channel.
 			if d, ok := data.(voice.GatewayMessageDataSessionDescription); ok {
+				if !protocolSelected {
+					failHandshake("session_description", errors.New("voice session description before protocol selection"))
+					t.Invalidate()
+					return
+				}
 				if description != nil {
 					if d.Mode == description.Mode && d.DaveProtocolVersion == description.DaveProtocolVersion && bytes.Equal(d.SecretKey, description.SecretKey) {
 						recordVoiceDiagnostic(observation, logger, slog.LevelDebug, "duplicate voice description ignored", "event", "voice.protocol.duplicate", "opcode", int(op))
