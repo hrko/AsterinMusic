@@ -126,6 +126,8 @@ func (s *session) checkpoint(path string) error {
 	}
 	// Freeze queue selection and additions only after the checkpoint succeeds.
 	s.shuttingDown = true
+	s.playbackRevision++
+	s.finishResumeLocked(resumeResult{state: resumeCanceled})
 	if s.connectCancel != nil {
 		s.connectCancel()
 	}

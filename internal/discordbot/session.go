@@ -45,6 +45,8 @@ type session struct {
 	running, stopped, skipping         bool
 	shuttingDown                       bool
 	epoch                              uint64
+	playbackRevision                   uint64
+	resumeRequest                      *resumeRequest
 	trackCancel                        context.CancelFunc
 	done                               chan struct{}
 	closing                            chan struct{}
@@ -131,7 +133,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	}
 	// An addition accepted during an existing start/recovery belongs to that
 	// owner, even if it fails while queue persistence releases the lock.
-	startOwned := s.running || s.connecting || s.closing != nil
+	startOwned := s.running || s.connecting || s.closing != nil || s.resumeRequest != nil
 	var n int
 	var entryID string
 	var saveErr error
@@ -187,6 +189,9 @@ func (s *session) startLocked(channel snowflake.ID) error {
 	if err := s.waitPreviousPlaybackLocked(); err != nil {
 		return err
 	}
+	if s.resumeRequest != nil && s.channel != 0 {
+		channel = s.channel // Accepted playback follows moves during cleanup.
+	}
 	_, pending := s.queue.Snapshot()
 	if len(pending) == 0 && !s.recoveryHeld && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
 		return errQueueEmpty
@@ -204,7 +209,7 @@ func (s *session) startLocked(channel snowflake.ID) error {
 		s.channel = channel
 		done := make(chan struct{})
 		s.closing = done
-		epoch := s.epoch
+		revision := s.playbackRevision
 		create := s.createConn
 		if create == nil {
 			create = func() voice.Conn { return s.app.client.VoiceManager.CreateConn(s.guild) }
@@ -223,7 +228,7 @@ func (s *session) startLocked(channel snowflake.ID) error {
 		err := conn.Open(ctx, channel, false, true)
 		cancel()
 		s.mu.Lock()
-		stale := (s.stopped && !s.recoveryHeld) || s.shuttingDown || (!managed && s.epoch != epoch) || s.app.ctx.Err() != nil
+		stale := s.playbackRevision != revision || s.shuttingDown || s.app.ctx.Err() != nil
 		s.connecting = false
 		s.connectCancel = nil
 		if err != nil || stale {
@@ -277,8 +282,23 @@ func (s *session) loop(done chan struct{}) {
 	defer close(done)
 	s.mu.Lock()
 	restore := s.restore
+	request := s.resumeRequest
 	s.mu.Unlock()
 	defer restore.finish("stopped_before_audio", context.Canceled)
+	defer func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if request != nil && s.resumeRequest == request {
+			result := resumeResult{state: resumeEmpty}
+			if request.sourceFailed {
+				result.state = resumeSourceFailed
+			}
+			if s.app.ctx.Err() != nil || s.shuttingDown {
+				result.state = resumeCanceled
+			}
+			s.finishResumeLocked(result)
+		}
+	}()
 	failures := 0
 	for {
 		entry, automatic, ok := s.nextEntry()
@@ -347,6 +367,9 @@ func (s *session) loop(done chan struct{}) {
 		position := s.position
 		s.playbackLog = nil
 		if !s.skipping && !s.shuttingDown && s.app.ctx.Err() == nil && (s.recoveryHeld || errors.Is(err, errVoiceRecovery) || errors.Is(err, errVoiceRemoved)) {
+			if s.resumeRequest == request {
+				s.finishResumeLocked(resumeResult{state: resumeFailed})
+			}
 			s.suspendVoiceLocked()
 			s.current = nil
 			s.started = false
@@ -378,6 +401,9 @@ func (s *session) loop(done chan struct{}) {
 			return
 		}
 		if err != nil && !skipped {
+			if request != nil {
+				request.sourceFailed = true
+			}
 			failures++
 		} else {
 			failures = 0
@@ -403,6 +429,7 @@ func (s *session) loop(done chan struct{}) {
 			s.auto.failures = 0
 		}
 		if failures >= 3 {
+			s.finishResumeLocked(resumeResult{state: resumeSourceFailed})
 			s.haltPlaybackLocked()
 			s.running = false
 			s.mu.Unlock()
@@ -517,6 +544,8 @@ func (s *session) stopLocked() {
 
 // Stop scheduling and playback without leaving the voice channel.
 func (s *session) haltPlaybackLocked() {
+	s.playbackRevision++
+	s.finishResumeLocked(resumeResult{state: resumeCanceled})
 	s.restore.finish("stopped", context.Canceled)
 	if s.recoveryHeld && !s.shuttingDown {
 		current, _ := s.queue.Snapshot()
@@ -548,6 +577,7 @@ func (s *session) skip() error {
 		return errNotPlaying
 	}
 	s.skipping = true
+	s.finishResumeLocked(resumeResult{state: resumeCanceled})
 	s.trackCancel()
 	return nil
 }

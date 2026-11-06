@@ -45,6 +45,7 @@ func (s *session) sendPacket(ctx context.Context, write func() error) error {
 			}
 		}
 		s.started = true
+		s.finishResumeLocked(resumeResult{state: resumeStarted})
 		s.playbackSequence++
 		queued := s.recordStartedLocked()
 		if p := s.playbackLog; p != nil {

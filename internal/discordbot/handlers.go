@@ -81,14 +81,24 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		}
 		who := music.Requester{ID: user.ID.String(), Name: user.Username}
 		if url == "" {
-			_, err := s.accept(user.ID, who, nil, "", "", e.Channel().ID(), epoch)
+			state, request, err := s.requestResume(user.ID, e.Channel().ID())
 			if a.rejectDeferredAuthorization(responseFor(e), err, false) {
 				return
 			}
 			if err != nil {
 				reply(userError(err))
-			} else {
-				reply("キューを再開しました。")
+				return
+			}
+			reply(state.message())
+			if request == nil {
+				return
+			}
+			s.launchResume(request)
+			select {
+			case result := <-request.result:
+				reply(result.message())
+			case <-a.ctx.Done():
+				reply((resumeResult{state: resumeCanceled}).message())
 			}
 			return
 		}

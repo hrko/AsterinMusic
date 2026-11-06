@@ -36,6 +36,12 @@ func (s *session) moveVoiceLocked(channel snowflake.ID) {
 	if channel == s.channel {
 		return
 	}
+	if channel == 0 {
+		s.playbackRevision++
+		s.finishResumeLocked(resumeResult{state: resumeCanceled})
+	} else if s.resumeRequest != nil {
+		s.resumeRequest.respond(resumeResult{state: resumeMoved})
+	}
 	s.channel = channel
 	if channel != 0 {
 		s.accessVoice = channel
@@ -70,7 +76,8 @@ func (s *session) suspendVoiceLocked() {
 	if s.stopped {
 		return
 	}
-	s.recoveryHeld = true
+	current, _ := s.queue.Snapshot()
+	s.recoveryHeld = s.recoveryHeld || s.current != nil || current != nil || s.resumeAuto != nil
 	if s.current != nil {
 		if s.currentAuto {
 			copy := *s.current

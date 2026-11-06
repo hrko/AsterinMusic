@@ -20,7 +20,7 @@ func (s *session) waitPreviousPlaybackLocked() error {
 	if s.running && !s.stopped {
 		return errConnecting
 	}
-	previous, epoch := s.done, s.epoch
+	previous, revision := s.done, s.playbackRevision
 	ctx, cancel := context.WithTimeout(s.app.ctx, 5*time.Second)
 	s.connecting, s.connectCancel = true, cancel
 	s.mu.Unlock()
@@ -33,7 +33,7 @@ func (s *session) waitPreviousPlaybackLocked() error {
 	cancel()
 	s.mu.Lock()
 	s.connecting, s.connectCancel = false, nil
-	if s.epoch != epoch || s.shuttingDown || s.app.ctx.Err() != nil {
+	if s.playbackRevision != revision || s.shuttingDown || s.app.ctx.Err() != nil {
 		return errQueueChanged
 	}
 	if err != nil {

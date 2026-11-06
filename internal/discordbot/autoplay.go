@@ -260,6 +260,9 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			return e, true, true
 		}
 		if s.auto.attempts >= 2 && !s.auto.fetching {
+			if s.resumeRequest != nil {
+				s.resumeRequest.sourceFailed = true
+			}
 			s.auto.off()
 			s.running = false
 			s.idleSince = time.Now()
