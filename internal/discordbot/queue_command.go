@@ -69,7 +69,7 @@ func (a *App) queueCommand(e *events.ApplicationCommandInteractionCreate, s *ses
 		return
 	}
 	if v.clearConfirmation {
-		m := a.editEmbed(responseFor(e), discord.Embed{Title: "待機キューを全消去しますか？", Description: fmt.Sprintf("手動追加の待機%d曲を消去します。\n再生中の曲と自動再生設定は維持します。", len(v.entries)), Color: colorWarning, Footer: &discord.EmbedFooter{Text: "本人のみ操作可能 · 15分間有効"}}, []discord.LayoutComponent{discord.NewActionRow(discord.NewDangerButton(fmt.Sprintf("待機%d曲を全消去", len(v.entries)), v.componentID("clear_confirm")), discord.NewSecondaryButton("キャンセル", v.componentID("clear_cancel")))})
+		m := a.editEmbed(responseFor(e), discord.Embed{Title: "全員の待機曲を消去しますか？", Description: fmt.Sprintf("他の人が追加した曲も含め、全員の待機%d曲を消去します。\n再生中の曲と自動再生設定は維持します。", len(v.entries)), Color: colorWarning, Footer: &discord.EmbedFooter{Text: "本人のみ操作可能 · 15分間有効"}}, []discord.LayoutComponent{discord.NewActionRow(discord.NewDangerButton(fmt.Sprintf("全員の待機%d曲を消去", len(v.entries)), v.componentID("clear_confirm")), discord.NewSecondaryButton("キャンセル", v.componentID("clear_cancel")))})
 		if m != nil {
 			a.mu.Lock()
 			v.message = m.ID
@@ -131,7 +131,7 @@ func (a *App) queueClearComponent(e *events.ComponentInteractionCreate, v *queue
 		if err := a.getSession(v.guild).clearConfirmedQueue(v); err != nil {
 			text = queueEditProblem(err) + "\n必要なら /queue clear から確認し直してください。"
 		} else {
-			text = "待機キューを全消去しました。再生中の曲と自動再生設定は維持しています。"
+			text = "全員の待機曲を消去しました。再生中の曲と自動再生設定は維持しています。"
 		}
 	}
 	a.mu.Lock()
