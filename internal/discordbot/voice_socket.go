@@ -31,6 +31,8 @@ type voiceSocket struct {
 	closed      voice.CloseHandlerFunc
 	dialer      *websocket.Dialer
 	progress    func(context.Context, string)
+	disposed    bool
+	workers     sync.WaitGroup
 }
 
 type voiceSocketRun struct {
@@ -76,6 +78,10 @@ func (g *voiceSocket) Resume(ctx context.Context, state voice.State) error {
 
 func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) error {
 	g.mu.Lock()
+	if g.disposed {
+		g.mu.Unlock()
+		return context.Canceled
+	}
 	if g.run != nil {
 		g.mu.Unlock()
 		return voice.ErrGatewayAlreadyConnected
@@ -91,7 +97,9 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1), resume: resume}
 	r.observation = ctx
 	g.run, g.state, g.status = r, state, voice.StatusConnecting
+	g.workers.Add(1)
 	g.mu.Unlock()
+	defer g.workers.Done()
 	// Cancellation of either Open or Close must also cancel an in-flight dial.
 	dialCtx, dialCancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(rctx, dialCancel)
@@ -116,9 +124,10 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	}
 	r.ws = ws
 	g.status = voice.StatusWaitingForHello
+	g.workers.Add(1)
 	g.mu.Unlock()
 	g.stage(ctx, "hello")
-	go g.read(r)
+	go func() { defer g.workers.Done(); g.read(r) }()
 	select {
 	case err := <-r.ready:
 		return err
@@ -158,6 +167,14 @@ func (g *voiceSocket) finish(r *voiceSocketRun, err error, notify bool) {
 }
 
 func (g *voiceSocket) Close() { g.CloseWithCode(websocket.CloseNormalClosure, "Shutting down") }
+
+func (g *voiceSocket) shutdown() {
+	g.mu.Lock()
+	g.disposed = true
+	g.mu.Unlock()
+	g.Close()
+	g.workers.Wait()
+}
 func (g *voiceSocket) CloseWithCode(code int, reason string) {
 	g.mu.Lock()
 	r := g.run
@@ -298,8 +315,9 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			r.heartbeatStarted = true
 			state, seq := g.state, g.seq
 			resume := r.resume
+			g.workers.Add(1)
 			g.mu.Unlock()
-			go g.heartbeat(r, interval)
+			go func() { defer g.workers.Done(); g.heartbeat(r, interval) }()
 			if resume {
 				g.stage(r.observation, "resume")
 				err = g.send(r.ctx, r, voice.OpcodeResume, voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token, SeqAck: seq})

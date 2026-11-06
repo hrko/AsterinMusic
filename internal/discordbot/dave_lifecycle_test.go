@@ -59,3 +59,20 @@ func TestDaveConnectionCleanupOnce(t *testing.T) {
 		t.Fatal("shutdown leaked or double-closed a DAVE session")
 	}
 }
+
+func TestDaveCleanupOwnershipTransfer(t *testing.T) {
+	a := &App{}
+	conn := &struct{ voice.Conn }{}
+	closer := &countedCloser{}
+	a.daveClosers.Store(conn, closer)
+	cleanup := a.takeDaveCleanup(conn)
+	a.closeAllDave()
+	a.closeDave(conn)
+	if closer.count != 0 {
+		t.Fatal("application shutdown closed transport-owned DAVE")
+	}
+	cleanup()
+	if closer.count != 1 {
+		t.Fatal("transport lost DAVE cleanup ownership")
+	}
+}

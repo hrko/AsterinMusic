@@ -229,6 +229,8 @@ func TestResumedDaveWaitDoesNotRepeatResume(t *testing.T) {
 			transport := &delayedResumeDave{fakeVoiceTransport: newFakeVoiceTransport(), resumed: make(chan context.Context, 1)}
 			c.mu.Lock()
 			c.active = transport
+			c.resourceLease = c.resources.acquire()
+			c.ownedResources = append(c.ownedResources, c.resourceLease)
 			c.phase = voiceRecovering
 			c.mu.Unlock()
 			done := make(chan struct{})

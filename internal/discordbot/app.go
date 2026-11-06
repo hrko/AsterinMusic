@@ -56,6 +56,7 @@ type App struct {
 	ready               chan struct{}
 	readyOnce           sync.Once
 	daveClosers         sync.Map
+	voiceResources      voiceResources
 }
 
 func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ...trace.TracerProvider) (*App, error) {

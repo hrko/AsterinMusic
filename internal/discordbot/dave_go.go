@@ -23,7 +23,7 @@ func daveOptions(a *App) []bot.ConfigOpt {
 		factory := func() *davesession.Session {
 			return davesession.New(user, callbacks, davesession.WithLogger(logging.Dependency(ownLogger, "dave")))
 		}
-		s := &guardedDave{Session: factory(), logger: ownLogger}
+		s := &guardedDave{Session: factory()}
 		a.daveClosers.Store(callbacks, s)
 		return s
 	}))}
@@ -32,7 +32,6 @@ func daveOptions(a *App) []bot.ConfigOpt {
 // Serialize protocol mutations with the readiness check and Encrypt. Without
 // this gate an epoch reset between the check and Encrypt could emit plaintext.
 type guardedDave struct {
-	logger *slog.Logger
 	*davesession.Session
 	mu sync.Mutex
 
@@ -110,10 +109,8 @@ func (s *guardedDave) Close() error {
 		return nil
 	}
 	s.closed = true
-	stats := s.Stats()
 	err := s.Session.Close()
 	s.mu.Unlock()
-	logging.OrDiscard(s.logger).Debug("DAVE session closed", "event", "dave.session.closed", "backend", daveBackend, "commits", stats.CommitsProcessed, "welcomes", stats.WelcomesJoined, "encrypt_failures", stats.EncryptFailures, "passthrough_frames", stats.PassthroughFrames)
 	return err
 }
 func (s *guardedDave) SetChannelID(id godave.ChannelID) {

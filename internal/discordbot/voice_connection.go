@@ -70,6 +70,9 @@ type voiceConnection struct {
 	timer              *time.Timer
 	sendMu             sync.Mutex
 	active             voiceTransport
+	resources          *voiceResources
+	resourceLease      *voiceResourceLease
+	ownedResources     []*voiceResourceLease
 	state              *gateway.EventVoiceStateUpdate
 	server             *gateway.EventVoiceServerUpdate
 	lastToken          string
@@ -90,12 +93,13 @@ type voiceTransport interface {
 }
 
 func newVoiceConnection(guild, user snowflake.ID) *voiceConnection {
-	return &voiceConnection{guild: guild, user: user, phase: voiceIdle, now: time.Now, changed: make(chan struct{})}
+	return &voiceConnection{guild: guild, user: user, phase: voiceIdle, now: time.Now, changed: make(chan struct{}), resources: &voiceResources{}}
 }
 
 func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 	return bot.WithVoiceManagerConfigOpts(voice.WithConnCreateFunc(func(guild, user snowflake.ID, update voice.StateUpdateFunc, remove func(), opts ...voice.ConnConfigOpt) voice.Conn {
 		c := newVoiceConnection(guild, user)
+		c.resources = &a.voiceResources
 		c.tracer = a.tracer
 		c.logger = logging.Component(a.logger, "voice").With("guild_id", guild.String())
 		c.update, c.remove = update, remove
@@ -193,7 +197,12 @@ func (c *voiceConnection) discardLocked() {
 	if t := c.active; t != nil {
 		t.Invalidate()
 		c.active = nil
-		go t.Close()
+		// Every installed transport owns a slot until its actual Close returns.
+		c.resourceLease.retire(t)
+	}
+	if c.resourceLease != nil {
+		c.resourceLease.watch()
+		c.resourceLease = nil
 	}
 }
 func (c *voiceConnection) beginLocked(reset bool, phase voicePhase) {
@@ -255,9 +264,32 @@ func (c *voiceConnection) launchLocked() {
 	c.statePending = false
 	c.discardLocked()
 	generation := c.generation
+	lease := c.resources.acquire()
+	if lease == nil {
+		c.failureStage, c.failureReason = "cleanup_backlog", "resource_limit"
+		c.signalLocked(voiceFailed)
+		c.cancelRecoveryLocked()
+		return
+	}
+	kept := c.ownedResources[:0]
+	for _, old := range c.ownedResources {
+		select {
+		case <-old.done:
+		default:
+			kept = append(kept, old)
+		}
+	}
+	c.ownedResources = append(kept, lease)
+	c.resourceLease = lease
 	ctx, cancel := context.WithDeadline(context.Background(), c.deadline)
 	ctx = c.newTraceAttemptLocked(ctx)
 	ctx = c.diagnosticContext(ctx)
+	ctx = context.WithValue(ctx, voiceResourceKey{}, lease)
+	lease.note = func(result string, elapsed time.Duration) {
+		c.mu.Lock()
+		c.captureDiagnosticLocked(ctx, slog.LevelDebug, "voice resource cleanup", "event", "voice.cleanup."+result, "generation", generation, "duration_ms", elapsed.Milliseconds())
+		c.mu.Unlock()
+	}
 	observed := c.traceAttempt
 	c.cancel = cancel
 	c.signalLocked(voiceConnecting)
@@ -269,9 +301,7 @@ func (c *voiceConnection) launchLocked() {
 		c.expireLocked()
 		if generation != c.generation || c.phase != voiceConnecting {
 			c.mu.Unlock()
-			if t != nil {
-				t.Close()
-			}
+			lease.retire(t)
 			return
 		}
 		if err != nil {
@@ -287,18 +317,14 @@ func (c *voiceConnection) launchLocked() {
 				c.discardLocked()
 				c.signalLocked(voiceWaiting)
 				c.mu.Unlock()
-				if t != nil {
-					t.Close()
-				}
+				lease.retire(t)
 				return
 			}
 			c.discardLocked()
 			c.signalLocked(voiceFailed)
 			c.mu.Unlock()
 			logging.OrDiscard(c.logger).DebugContext(ctx, "voice establishment attempt failed", "event", "voice.establish.failed", "stage", stage, "reason", failureClass(err), "generation", generation)
-			if t != nil {
-				t.Close()
-			}
+			lease.retire(t)
 			return
 		}
 		c.active = t
@@ -630,6 +656,8 @@ func (c *voiceConnection) Failed() bool {
 	return c.phase == voiceFailed
 }
 func (c *voiceConnection) Close(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, voiceCleanupWarningAfter)
+	defer cancel()
 	defer c.flushDiagnostics()
 	c.mu.Lock()
 	if c.phase == voiceClosed {
@@ -644,6 +672,7 @@ func (c *voiceConnection) Close(ctx context.Context) {
 	}
 	c.channel = 0
 	c.signalLocked(voiceClosed)
+	resources := append([]*voiceResourceLease(nil), c.ownedResources...)
 	c.mu.Unlock()
 	c.sendMu.Lock()
 	defer c.sendMu.Unlock()
@@ -653,4 +682,14 @@ func (c *voiceConnection) Close(ctx context.Context) {
 		}
 	}
 	c.remove()
+	for _, lease := range resources {
+		select {
+		case <-lease.done:
+		case <-ctx.Done():
+			c.mu.Lock()
+			c.recordDiagnosticLocked(slog.LevelWarn, "voice cleanup still pending", "event", "voice.cleanup.pending", "reason", "deadline")
+			c.mu.Unlock()
+			return
+		}
+	}
 }

@@ -71,6 +71,7 @@ func (t *discordVoiceTransport) Close() {
 	t.closed.Do(func() {
 		// Interrupt network I/O before waiting for the sender/event worker.
 		t.conn.Close(context.Background())
+		t.conn.Gateway().(*voiceSocket).shutdown()
 		<-t.eventsDone
 		t.mu.Lock()
 		defer t.mu.Unlock()
@@ -167,7 +168,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			attrs = append(attrs, snapshot.([]any)...)
 		}
 		recordVoiceDiagnostic(ctx, logger, slog.LevelDebug, "voice handshake failed", attrs...)
-		t.Close()
+		disposeVoiceTransport(ctx, t)
 		return err
 	}
 	options := []voice.ConnConfigOpt{voice.WithUDPConnCreateFunc(func(dave godave.Session, _ voice.SsrcLookupFunc, _ ...voice.UDPConnConfigOpt) voice.UDPConn {
@@ -268,7 +269,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	}))
 	// Reuse disgo's UDP and event types, but own discovery/protocol errors.
 	t.conn = voice.NewConn(state.GuildID, state.UserID, func(context.Context, snowflake.ID, *snowflake.ID, bool, bool) error { return nil }, func() {}, options...)
-	t.cleanup = func() { a.closeDave(t.conn) }
+	t.cleanup = a.takeDaveCleanup(t.conn)
 	go func() {
 		defer close(t.eventsDone)
 		for {
