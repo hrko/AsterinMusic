@@ -21,11 +21,17 @@ import (
 type countedDescriptionDave struct {
 	godave.Session
 	acks      atomic.Int32
+	external  atomic.Int32
+	early     atomic.Bool
 	processed chan struct{}
 }
 
-func (d *countedDescriptionDave) OnSelectProtocolAck(uint16)     { d.acks.Add(1) }
-func (d *countedDescriptionDave) OnDavePrepareEpoch(int, uint16) { close(d.processed) }
+func (d *countedDescriptionDave) OnSelectProtocolAck(uint16) {
+	d.early.Store(d.external.Load() == 1)
+	d.acks.Add(1)
+}
+func (d *countedDescriptionDave) OnDaveMLSExternalSenderPackage([]byte) { d.external.Add(1) }
+func (d *countedDescriptionDave) OnDavePrepareEpoch(int, uint16)        { close(d.processed) }
 
 type countedKeyUDP struct {
 	protocolTestUDP
@@ -55,6 +61,9 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 					case 0:
 						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 					case 1:
+						// External sender information may precede the initial protocol
+						// acknowledgement. Verify routing order, not MLS cryptography.
+						_ = ws.WriteMessage(websocket.BinaryMessage, []byte{0, 1, 25, 42})
 						key := make([]int, 32)
 						_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": key, "dave_protocol_version": 0}})
 						if conflict {
@@ -115,6 +124,9 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 			}
 			if u.keys.Load() != 1 || d.acks.Load() != 1 {
 				t.Fatalf("reinitialized: keys=%d DAVE=%d", u.keys.Load(), d.acks.Load())
+			}
+			if !d.early.Load() {
+				t.Fatal("external sender notification did not reach DAVE before protocol acknowledgement")
 			}
 		})
 	}
