@@ -126,9 +126,13 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			ctx, span := a.tracer.Start(ctx, "voice.connect")
 			attempt := &voiceTraceAttempt{ctx: ctx, span: span, tracer: a.tracer}
 			ctx = context.WithValue(ctx, voiceTraceKey{}, attempt)
+			controller := newVoiceConnection(1, 2)
+			controller.logger = logging.Component(logger, "voice")
+			ctx = controller.diagnosticContext(ctx)
 			channel := snowflake.ID(3)
 			_, err := a.openVoiceTransportWithDialer(ctx, voice.State{GuildID: 1, UserID: 2, ChannelID: &channel, SessionID: "synthetic-secret", Token: "synthetic-secret", Endpoint: strings.TrimPrefix(srv.URL, "https://")}, func(error, bool) {}, opts, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}) // local fixture only
 			attempt.end(err)
+			controller.flushDiagnostics()
 			if !strings.Contains(logs.String(), `"event":"voice.handshake.failed"`) || strings.Contains(logs.String(), "synthetic-secret") {
 				t.Fatal("missing safe voice-component failure diagnostic")
 			}

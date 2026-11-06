@@ -4,11 +4,79 @@ import (
 	"asterinmusic/internal/logging"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestDiagnosticEventAttributes(t *testing.T) {
+	for _, tc := range []struct {
+		attrs []any
+		want  string
+	}{
+		{nil, "voice.diagnostics.unclassified"},
+		{[]any{"event"}, "voice.diagnostics.unclassified"},
+		{[]any{"event", 12}, "voice.diagnostics.unclassified"},
+		{[]any{"stage", "dave", "event", "voice.handshake.failed"}, "voice.handshake.failed"},
+		{[]any{slog.String("event", "voice.dave.event")}, "voice.dave.event"},
+	} {
+		if got := diagnosticEvent(tc.attrs); got != tc.want {
+			t.Fatalf("event=%q want %q", got, tc.want)
+		}
+	}
+}
+
+func TestDiagnosticOverflowBoundsUnknownEventCategories(t *testing.T) {
+	c := newVoiceConnection(1, 2)
+	const count = 1000
+	for i := range count {
+		c.recordDiagnosticLocked(slog.LevelDebug, "fixture", "stage", "dave", "event", fmt.Sprintf("fixture.%d", i))
+	}
+	if len(c.diagnostics) != voiceDiagnosticCapacity || len(c.diagnosticOverflow) > voiceDiagnosticOverflowCapacity+1 {
+		t.Fatal("diagnostics exceeded bounded capacity")
+	}
+	total := len(c.diagnostics)
+	for _, record := range c.diagnosticOverflow {
+		total += record.count
+	}
+	if total != count {
+		t.Fatalf("lost overflow count: %d", total)
+	}
+}
+
+func TestTransportDiagnosticCaptureDoesNotWaitForWriter(t *testing.T) {
+	w := blockingLogWriter{make(chan struct{}), make(chan struct{})}
+	l, _ := logging.New(w, logging.Options{Level: "debug"})
+	c := newVoiceConnection(1, 2)
+	c.logger = l
+	c.recordDiagnosticLocked(slog.LevelInfo, "fixture", "event", "fixture")
+	flushed := make(chan struct{})
+	go func() { c.flushDiagnostics(); close(flushed) }()
+	defer func() { close(w.release); <-flushed }()
+	select {
+	case <-w.entered:
+	case <-time.After(time.Second):
+		t.Fatal("writer did not block")
+	}
+	ctx := c.diagnosticContext(context.Background())
+	attrs := []any{"event", "voice.dave.event"}
+	done := make(chan struct{})
+	go func() { recordVoiceDiagnostic(ctx, l, slog.LevelDebug, "DAVE", attrs...); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("protocol diagnostic waited for log writer")
+	}
+	attrs[1] = "changed"
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.diagnostics) != 1 || diagnosticEvent(c.diagnostics[0].attrs) != "voice.dave.event" || c.diagnostics[0].ctx != ctx {
+		t.Fatal("diagnostic snapshot or originating context lost")
+	}
+}
 
 func TestRecoveryTimeoutPreservesHandshakeStage(t *testing.T) {
 	c := testVoiceController(t)

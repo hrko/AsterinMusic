@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/logging"
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -165,7 +166,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		if snapshot := daveDiagnostic.Load(); snapshot != nil {
 			attrs = append(attrs, snapshot.([]any)...)
 		}
-		logger.DebugContext(ctx, "voice handshake failed", attrs...)
+		recordVoiceDiagnostic(ctx, logger, slog.LevelDebug, "voice handshake failed", attrs...)
 		t.Close()
 		return err
 	}
@@ -188,7 +189,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 						daveDiagnostic.Store(snapshot)
 						attrs = append(attrs, snapshot...)
 					}
-					logger.DebugContext(ctx, "voice DAVE event processed", attrs...)
+					recordVoiceDiagnostic(ctx, logger, slog.LevelDebug, "voice DAVE event processed", attrs...)
 				}()
 			}
 			if d, ok := data.(voice.GatewayMessageDataReady); ok {

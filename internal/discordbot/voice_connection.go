@@ -244,6 +244,7 @@ func (c *voiceConnection) launchLocked() {
 	generation := c.generation
 	ctx, cancel := context.WithDeadline(context.Background(), c.deadline)
 	ctx = c.newTraceAttemptLocked(ctx)
+	ctx = c.diagnosticContext(ctx)
 	observed := c.traceAttempt
 	c.cancel = cancel
 	c.signalLocked(voiceConnecting)
