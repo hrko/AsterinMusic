@@ -87,7 +87,7 @@ func TestQueueEditorOwnersAndLifetime(t *testing.T) {
 	v.choosingOwner = true
 	v.ownerPage = 3
 	e, c := v.render()
-	if strings.Count(e.Description, "- <@") != 6 || !strings.Contains(e.Description, "<@26>") {
+	if strings.Count(e.Description, "- **<@") != 6 || !strings.Contains(e.Description, "<@26>") {
 		t.Fatal("owners truncated")
 	}
 	b, _ := json.Marshal(c)

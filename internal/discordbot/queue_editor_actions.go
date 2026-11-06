@@ -19,6 +19,10 @@ import (
 
 var errQueueEditor = errors.New("この編集画面は利用できません。/queueから開き直してください。")
 
+type queueEditorResultError string
+
+func (e queueEditorResultError) Error() string { return string(e) }
+
 func (s *session) editorScopeLocked() (snowflake.ID, uint64) {
 	if s.conn != nil {
 		s.syncVoiceLocked()
@@ -183,7 +187,13 @@ func (a *App) queueEditorAction(custom string, user snowflake.ID, guild *snowfla
 }
 
 func queueEditProblem(err error) string {
+	var result queueEditorResultError
+	if errors.As(err, &result) {
+		return result.Error()
+	}
 	switch {
+	case errors.Is(err, errQueueEditor):
+		return errQueueEditor.Error()
 	case errors.Is(err, music.ErrEntryNotWaiting):
 		return "この曲は待機キューにありません。一覧を更新しました。"
 	case errors.Is(err, music.ErrQueueChanged), errors.Is(err, errQueueChanged):
@@ -205,7 +215,7 @@ func (a *App) mutateQueueEditor(v *queueEditor, position int, remove bool) error
 	for i, e := range v.entries {
 		ids[i] = e.ID
 	}
-	err := a.getSession(v.guild).editQueueAs(v.owner, v.requester, v.selected, position, ids, remove)
+	err := a.getSession(v.guild).editQueueScopedAs(v.owner, v.requester, v.selected, position, ids, remove, &queueEditScope{voice: v.voice, epoch: v.sessionEpoch, expires: v.expires})
 	if err != nil {
 		v.notice = queueEditProblem(err)
 	} else if remove {
@@ -215,7 +225,7 @@ func (a *App) mutateQueueEditor(v *queueEditor, position int, remove bool) error
 		v.notice = fmt.Sprintf("%sを、%sの待機曲の%d曲目に移動しました。", queueLink(compactQueueTrack(entry.Track)), queueMention(v.requester), position)
 	}
 	if loadErr := a.loadQueueEditor(v, err == nil && !remove); loadErr != nil {
-		return loadErr
+		return queueEditorResultError(v.notice + "\n編集画面を更新できませんでした。/queueから開き直してください。")
 	}
 	return nil
 }
@@ -316,6 +326,7 @@ func (a *App) queueEditorComponent(e *events.ComponentInteractionCreate) {
 	}
 	if err != nil {
 		a.historyReply(responseFor(e), queueEditProblem(err))
+		v.revision++ // Internal selection/page may have changed; never reuse old buttons.
 		return
 	}
 	a.showQueueEditor(responseFor(e), v)
@@ -358,6 +369,7 @@ func (a *App) onQueueEditorModal(e *events.ModalSubmitInteractionCreate) {
 	}
 	if err != nil {
 		a.historyReply(responseFor(e), queueEditProblem(err))
+		v.revision++
 		return
 	}
 	a.showQueueEditor(responseFor(e), v)

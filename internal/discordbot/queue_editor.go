@@ -55,7 +55,7 @@ func (a *App) rememberQueueEditor(v *queueEditor) bool {
 		a.queueEditors = make(map[string]*queueEditor)
 	}
 	for id, old := range a.queueEditors {
-		if !time.Now().Before(old.expires) {
+		if !time.Now().Before(old.expires) || (v.message != 0 && old.message == v.message && old.guild == v.guild && old.owner == v.owner) {
 			delete(a.queueEditors, id)
 		}
 	}
@@ -179,7 +179,7 @@ func (v *queueEditor) renderOwners() (discord.Embed, []discord.LayoutComponent) 
 	var options []discord.StringSelectMenuOption
 	for i := (v.ownerPage - 1) * 10; i < min(v.ownerPage*10, len(v.owners)); i++ {
 		o := v.owners[i]
-		body += fmt.Sprintf("- %s · 待機%d曲\n", queueMention(o.requester.ID), o.count)
+		body += fmt.Sprintf("- **%s** · 待機%d曲\n", queueMention(o.requester.ID), o.count)
 		name := o.requester.Name
 		if name == "" {
 			name = "ユーザー"

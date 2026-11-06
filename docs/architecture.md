@@ -40,6 +40,8 @@ Discordメッセージの共通生成は `internal/discordbot/messages.go` が�
 
 ## 再生セッションと接続
 
+キュー編集は`queue_editor.go`が画面と選択状態、`queue_editor_actions.go`がDiscordイベントと表示用の権限取得、`queue_edit_mutations.go`が変更直前の認可・セッション確認を担当する。表示は1回のDiscordメンバー取得から項目ごとの許可を評価し、実変更は改めて所属情報を取得する。画面mutexは操作を直列化し、古い世代を拒否する。キュー本体の`music/edit.go`は項目IDと追加者内の期待順序を照合し、既存の保存境界で変更を永続化する。Discord送信中はセッション・キューのロックを保持しない。
+
 session.muは現在曲・接続先・自動再生・操作世代を保護する。runningは再生ループの稼働、startedは最初の音声送信完了を表す。stoppedは利用者操作や切断による停止、shuttingDownは管理保存の確定後を表し、異なる状態なので単一のフラグに統合しない。
 
 接続開始はconnectingと対象VCを記録してからsession.muを解放する。Open完了後は停止・管理終了を再確認し、古い成功は破棄する。接続中のVC移動は接続管理の新世代へ引き継ぐ。接続中と切断後処理中は新しい開始要求を拒否する。受付時の権限確認に加え、取得後にもVC・epoch・変更受付状態を確認する。

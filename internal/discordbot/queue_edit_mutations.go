@@ -4,6 +4,7 @@ import (
 	"asterinmusic/internal/authorization"
 	"asterinmusic/internal/music"
 	"github.com/disgoorg/snowflake/v2"
+	"time"
 )
 
 // queueEditTargetLocked binds a pending item to its current VC and owner.
@@ -28,6 +29,16 @@ func (s *session) queueEditTargetLocked(owner, id string) (authorizationTarget, 
 }
 
 func (s *session) editQueueAs(user snowflake.ID, owner, id string, position int, expected []string, remove bool) error {
+	return s.editQueueScopedAs(user, owner, id, position, expected, remove, nil)
+}
+
+type queueEditScope struct {
+	voice   snowflake.ID
+	epoch   uint64
+	expires time.Time
+}
+
+func (s *session) editQueueScopedAs(user snowflake.ID, owner, id string, position int, expected []string, remove bool, scope *queueEditScope) error {
 	action := authorization.QueueReorder
 	if remove {
 		action = authorization.QueueRemove
@@ -36,6 +47,9 @@ func (s *session) editQueueAs(user snowflake.ID, owner, id string, position int,
 	s.waitQueueLocked()
 	target, err := s.queueEditTargetLocked(owner, id)
 	epoch := s.epoch
+	if scope != nil && (target.voice != scope.voice || epoch != scope.epoch || !time.Now().Before(scope.expires)) {
+		err = errQueueEditor
+	}
 	s.mu.Unlock()
 	if err != nil {
 		return err
@@ -56,6 +70,9 @@ func (s *session) editQueueAs(user snowflake.ID, owner, id string, position int,
 		return errQueueChanged
 	}
 	state, ok := s.app.client.Caches.VoiceState(s.guild, user)
+	if scope != nil && !time.Now().Before(scope.expires) {
+		return errQueueEditor
+	}
 	if !ok || state.ChannelID == nil || *state.ChannelID != target.voice {
 		return errPermission
 	}
