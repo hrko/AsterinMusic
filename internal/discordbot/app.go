@@ -113,6 +113,7 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ..
 		bot.WithEventListenerFunc(func(e *events.Resumed) { a.presenceRevision.Add(1) }),
 		bot.WithEventListenerFunc(a.onCommand), bot.WithEventListenerFunc(a.onComponent),
 		bot.WithEventListenerFunc(a.onHistoryModal),
+		bot.WithEventListenerFunc(a.onQueueEditorModal),
 		bot.WithEventListenerFunc(a.onHelpAutocomplete),
 		bot.WithEventListenerFunc(a.onVoiceState),
 	}

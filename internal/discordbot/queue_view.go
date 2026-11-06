@@ -258,6 +258,9 @@ func (s *session) queueView(owner snowflake.ID, page int, previous string) (disc
 	embed.Footer = &discord.EmbedFooter{Text: footer}
 	id := func(p int) string { return fmt.Sprintf("queue:1:%s:%s:%d", owner, mode, p) }
 	buttons := []discord.LayoutComponent{discord.NewActionRow(discord.NewSecondaryButton("◀ 前へ", id(page-1)).WithDisabled(page == 1), discord.NewSecondaryButton("次へ ▶", id(page+1)).WithDisabled(page == pages), discord.NewSecondaryButton("↻ 更新", id(page)))}
+	if len(pending) > 0 {
+		buttons = append(buttons, discord.NewActionRow(discord.NewSecondaryButton("キューを編集", "qedit-open:"+owner.String())))
+	}
 	return embed, buttons
 }
 

@@ -124,6 +124,26 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	}
 	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 	defer cancel()
+	request, err := a.authorizationRequest(ctx, user, action, target)
+	if err != nil {
+		return err
+	}
+	decision, err = a.authorizer.Authorize(ctx, request)
+	if err != nil {
+		return errPermissionFacts
+	}
+	if !decision.Allowed {
+		return errPermission
+	}
+	return nil
+}
+
+// Load Discord facts once for a display batch. Each entry is still evaluated
+// independently; mutations always fetch fresh facts through authorizeTarget.
+func (a *App) authorizationRequest(ctx context.Context, user snowflake.ID, action authorization.Action, target authorizationTarget) (authorization.Request, error) {
+	if a.authorizer == nil || target.guild != a.config.GuildID {
+		return authorization.Request{}, errPermissionFacts
+	}
 	load := a.authorizationMember
 	if load == nil {
 		load = func(ctx context.Context, guild, user snowflake.ID) (*discord.Member, error) {
@@ -132,18 +152,18 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	}
 	member, err := load(ctx, target.guild, user)
 	if err != nil || member == nil || member.User.ID != user {
-		return errPermissionFacts
+		return authorization.Request{}, errPermissionFacts
 	}
 	member.GuildID = target.guild
 	guild, ok := a.client.Caches.Guild(target.guild)
 	if !ok {
-		return errPermissionFacts
+		return authorization.Request{}, errPermissionFacts
 	}
 	roles := make(map[snowflake.ID]discord.Permissions, len(member.RoleIDs)+1)
 	for _, id := range append([]snowflake.ID{target.guild}, member.RoleIDs...) {
 		role, found := a.client.Caches.Role(target.guild, id)
 		if !found {
-			return errPermissionFacts
+			return authorization.Request{}, errPermissionFacts
 		}
 		roles[id] = role.Permissions
 	}
@@ -151,13 +171,13 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	if target.voice != 0 {
 		channel, found := a.client.Caches.Channel(target.voice)
 		if !found || channel.GuildID() != target.guild {
-			return errPermissionFacts
+			return authorization.Request{}, errPermissionFacts
 		}
 		overwrites = channel.PermissionOverwrites()
 	}
 	permissions, admin, ok := authorizationPermissions(*member, guild.OwnerID, roles, overwrites)
 	if !ok {
-		return errPermissionFacts
+		return authorization.Request{}, errPermissionFacts
 	}
 	currentVoice := snowflake.ID(0)
 	if state, found := a.client.Caches.VoiceState(target.guild, user); found && state.ChannelID != nil {
@@ -178,14 +198,7 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 	if action == authorization.HistoryView || action == authorization.HistoryReadd || action == authorization.HistoryReaddNext {
 		request.Facts.CanView = request.Facts.CanView && permissions.Has(discord.PermissionConnect)
 	}
-	decision, err = a.authorizer.Authorize(ctx, request)
-	if err != nil {
-		return errPermissionFacts
-	}
-	if !decision.Allowed {
-		return errPermission
-	}
-	return nil
+	return request, nil
 }
 
 // Discord overwrites apply in stages: everyone, aggregate roles, then member.

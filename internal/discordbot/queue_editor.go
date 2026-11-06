@@ -30,6 +30,7 @@ type queueEditor struct {
 	owner, guild, voice, message snowflake.ID
 	expires                      time.Time
 	revision                     uint64
+	sessionEpoch                 uint64
 	requester, selected          string
 	page, ownerPage              int
 	choosingOwner                bool

@@ -261,6 +261,14 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 
 func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	defer a.observeOperation(e.ID(), "component")()
+	if strings.HasPrefix(e.Data.CustomID(), "qedit-open:") {
+		a.openQueueEditor(e)
+		return
+	}
+	if strings.HasPrefix(e.Data.CustomID(), "qedit:") {
+		a.queueEditorComponent(e)
+		return
+	}
 	if strings.HasPrefix(e.Data.CustomID(), "help:") {
 		a.helpComponent(e)
 		return
