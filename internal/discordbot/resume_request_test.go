@@ -254,6 +254,59 @@ func TestResumeConsecutiveSourceFailuresFinishResponseAndRetainRemainder(t *test
 	}
 }
 
+func TestResumeQueueClearPreservesOnlyHeldCurrentTrack(t *testing.T) {
+	for _, held := range []bool{false, true} {
+		t.Run(map[bool]string{false: "waiting_only", true: "held_current"}[held], func(t *testing.T) {
+			s := resumeSession(t)
+			if held {
+				s.queue.Start()
+				s.recoveryHeld = true
+				s.queue.Add(music.Requester{ID: "1"}, []music.Track{autoTrack("bbbbbbbbbbb")}, "", "")
+			}
+			conn, revision := s.conn, s.playbackRevision
+			calls := 0
+			s.playAudio = func(ctx context.Context, _ voice.Conn, _ audio.Producer) error {
+				calls++
+				if s.current.Track.URL != autoTrack("aaaaaaaaaaa").URL {
+					t.Error("cleared pending track was played")
+				}
+				return s.sendPacket(ctx, func() error { return nil })
+			}
+			_, request, err := s.requestResume(1, 0)
+			if err != nil || request == nil {
+				t.Fatalf("resume acceptance: %v", err)
+			}
+			_, pending := s.queue.Snapshot()
+			view := &queueEditor{owner: 1, guild: 2, voice: 3, sessionEpoch: s.epoch, expires: time.Now().Add(time.Minute), entries: pending}
+			if err := s.clearConfirmedQueue(view); err != nil {
+				t.Fatal(err)
+			}
+			if s.playbackRevision != revision || s.conn != conn {
+				t.Fatal("clearing waiting queue acted as stop")
+			}
+			s.launchResume(request)
+			want := resumeEmpty
+			if held {
+				want = resumeStarted
+			}
+			awaitResume(t, request, want)
+			s.mu.Lock()
+			done := s.done
+			s.mu.Unlock()
+			if done != nil {
+				select {
+				case <-done:
+				case <-time.After(time.Second):
+					t.Fatal("resume did not finish")
+				}
+			}
+			if (held && calls != 1) || (!held && calls != 0) {
+				t.Fatalf("played %d tracks, held=%v", calls, held)
+			}
+		})
+	}
+}
+
 func TestResumeStatusWithoutStartingAnotherOwner(t *testing.T) {
 	for _, mode := range []resumeState{resumeEmpty, resumePreparing, resumeRecovering} {
 		t.Run(string(mode), func(t *testing.T) {
