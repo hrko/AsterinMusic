@@ -32,6 +32,167 @@ type blockedProtocolUDP struct {
 	release chan struct{}
 }
 
+type orderedProtocolDave struct {
+	godave.Session
+	entered, release, handled chan struct{}
+	initialized               atomic.Bool
+	overtaken                 atomic.Bool
+}
+
+func (d *orderedProtocolDave) OnSelectProtocolAck(uint16) {
+	close(d.entered)
+	<-d.release
+	d.initialized.Store(true)
+}
+func (d *orderedProtocolDave) OnDavePrepareEpoch(int, uint16) {
+	d.overtaken.Store(!d.initialized.Load())
+	close(d.handled)
+}
+
+func TestVoiceDaveEventsCannotOvertakeSessionDescription(t *testing.T) {
+	d := &orderedProtocolDave{entered: make(chan struct{}), release: make(chan struct{}), handled: make(chan struct{})}
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer ws.Close()
+		_ = ws.WriteJSON(map[string]any{"op": 8, "d": map[string]int{"heartbeat_interval": 60000}})
+		for {
+			var message struct {
+				Op int `json:"op"`
+			}
+			if ws.ReadJSON(&message) != nil {
+				return
+			}
+			switch message.Op {
+			case 0:
+				_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
+			case 1:
+				_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
+				_ = ws.WriteJSON(map[string]any{"op": int(voice.OpcodeDavePrepareEpoch), "d": map[string]any{"epoch": 2, "protocol_version": 1}})
+			}
+		}
+	}))
+	defer server.Close()
+	defer func() {
+		select {
+		case <-d.release:
+		default:
+			close(d.release)
+		}
+	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	a := &App{}
+	channel := snowflake.ID(3)
+	type result struct {
+		transport voiceTransport
+		err       error
+	}
+	completed := make(chan result, 1)
+	go func() {
+		transport, err := a.openVoiceTransportWithDialer(ctx, voice.State{ChannelID: &channel, Endpoint: strings.TrimPrefix(server.URL, "https://")}, func(error, bool) {}, []voice.ConnConfigOpt{
+			voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
+				return &protocolTestUDP{}
+			}),
+			voice.WithConnDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, cb godave.Callbacks) godave.Session {
+				d.Session = godave.NewNoopSession(logger, user, cb)
+				return d
+			}),
+		}, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+		completed <- result{transport, err}
+	}()
+	select {
+	case <-d.entered:
+	case <-ctx.Done():
+		t.Fatal("initialization not entered")
+	}
+	select {
+	case <-d.handled:
+		t.Fatal("DAVE event overtook initialization")
+	default:
+	}
+	close(d.release)
+	select {
+	case <-d.handled:
+	case <-ctx.Done():
+		t.Fatal("DAVE event never processed")
+	}
+	if d.overtaken.Load() {
+		t.Fatal("DAVE event observed uninitialized state")
+	}
+	got := <-completed
+	if got.err != nil {
+		t.Fatal(got.err)
+	}
+	got.transport.Close()
+}
+
+func TestVoiceTransportEventOverflowFailsAndTracksBlockedWorker(t *testing.T) {
+	u := &blockedProtocolUDP{entered: make(chan struct{}), release: make(chan struct{})}
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer ws.Close()
+		_ = ws.WriteJSON(map[string]any{"op": 8, "d": map[string]int{"heartbeat_interval": 60000}})
+		var identify map[string]any
+		if ws.ReadJSON(&identify) != nil {
+			return
+		}
+		_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
+		select {
+		case <-u.entered:
+		case <-time.After(time.Second):
+			return
+		}
+		for range voiceEventCapacity + 8 {
+			if ws.WriteJSON(map[string]any{"op": 6, "d": map[string]int{"t": 0}}) != nil {
+				return
+			}
+		}
+		for {
+			if _, _, err := ws.ReadMessage(); err != nil {
+				return
+			}
+		}
+	}))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	var resources voiceResources
+	lease := resources.acquire()
+	ctx = context.WithValue(ctx, voiceResourceKey{}, lease)
+	defer func() {
+		close(u.release)
+		select {
+		case <-lease.done:
+		case <-time.After(time.Second):
+			t.Error("overflowed transport worker leaked")
+		}
+	}()
+	channel := snowflake.ID(3)
+	a := &App{}
+	transport, err := a.openVoiceTransportWithDialer(ctx, voice.State{ChannelID: &channel, Endpoint: strings.TrimPrefix(server.URL, "https://")}, func(error, bool) {}, []voice.ConnConfigOpt{
+		voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn { return u }),
+	}, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+	if transport != nil {
+		lease.retire(transport)
+		t.Fatal("queue overflow accepted connection")
+	}
+	var failure *voiceStageError
+	if !errors.As(err, &failure) || failure.stage != "event_queue" {
+		t.Fatalf("overflow did not terminate at event queue: %v", err)
+	}
+	select {
+	case <-lease.done:
+		t.Fatal("blocked worker counted as cleaned up")
+	default:
+	}
+}
+
 func (u *blockedProtocolUDP) Open(context.Context, string, int, uint32) (string, int, error) {
 	close(u.entered)
 	<-u.release
