@@ -35,6 +35,9 @@ type voiceRecoveryFlow struct {
 }
 
 func resumeAllowed(err error) bool {
+	if errors.Is(err, errDaveTransportUnsafe) {
+		return false
+	}
 	var ws *websocket.CloseError
 	if errors.As(err, &ws) {
 		return ws.Code == 4015 || ws.Code == 1006 || ws.Code == 1001
@@ -45,6 +48,9 @@ func resumeAllowed(err error) bool {
 // Only transport loss or an expired session may initiate a new membership
 // request. Protocol errors, kicks and rate limits must not trigger re-entry.
 func reconnectAllowed(err error) bool {
+	if errors.Is(err, errDaveTransportUnsafe) {
+		return false
+	}
 	var ws *websocket.CloseError
 	if errors.As(err, &ws) {
 		return resumeAllowed(err) || ws.Code == 4006 || ws.Code == 4009

@@ -103,6 +103,7 @@ func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 	return n, err
 }
 func (s *guardedDave) Close() error {
+	s.Invalidate()
 	s.mu.Lock()
 	if s.closed {
 		s.mu.Unlock()
@@ -113,6 +114,10 @@ func (s *guardedDave) Close() error {
 	s.mu.Unlock()
 	return err
 }
+
+// Session.Close only cancels its internal context (sync.Once), without taking
+// protocol locks. Interrupt retries before waiting for the guarded callback.
+func (s *guardedDave) Invalidate() { _ = s.Session.Close() }
 func (s *guardedDave) SetChannelID(id godave.ChannelID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

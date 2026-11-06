@@ -4,13 +4,63 @@ package discordbot
 
 import (
 	"bytes"
+	"context"
 
 	"errors"
+	"github.com/disgoorg/disgo/voice"
 	davesession "github.com/thomas-vilte/dave-go/session"
 	"testing"
+	"time"
 )
 
 type daveCallbacks struct{}
+
+type failedKeyPackageCallbacks struct {
+	daveCallbacks
+	socket *voiceSocket
+	calls  int
+}
+
+func (c *failedKeyPackageCallbacks) SendMLSKeyPackage(p []byte) error {
+	c.calls++
+	return c.socket.Send(context.Background(), voice.OpcodeDaveMLSKeyPackage, voice.GatewayMessageDataDaveMLSKeyPackage(p))
+}
+
+func TestDaveSendFailureStopsDependencyWithoutRetry(t *testing.T) {
+	valid := true
+	g := &voiceSocket{valid: func() bool { return valid }}
+	callbacks := &failedKeyPackageCallbacks{socket: g}
+	s := &guardedDave{Session: davesession.New("1234", callbacks)}
+	defer s.Close()
+	g.daveFailed = func(error) { valid = false; s.Invalidate() }
+	s.OnSelectProtocolAck(1)
+	if callbacks.calls != 1 || valid {
+		t.Fatal("DAVE callback did not retire session exactly once")
+	}
+	if s.Session.Stats().TransportRetryDuration != 0 {
+		t.Fatal("dependency retried independently of controller")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.Session.WaitShutdown(ctx); err != nil {
+		t.Fatal("dependency cancellation not signaled", err)
+	}
+}
+
+func TestDaveInvalidateDoesNotWaitForProtocolGuard(t *testing.T) {
+	s := &guardedDave{Session: davesession.New("1234", daveCallbacks{})}
+	defer s.Close()
+	s.mu.Lock()
+	done := make(chan struct{})
+	go func() { s.Invalidate(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		s.mu.Unlock()
+		t.Fatal("dependency cancellation waited for protocol guard")
+	}
+	s.mu.Unlock()
+}
 
 func (daveCallbacks) SendMLSKeyPackage([]byte) error        { return nil }
 func (daveCallbacks) SendMLSCommitWelcome([]byte) error     { return nil }

@@ -474,6 +474,9 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 		code = ws.Code
 	}
 	c.failureStage = "transport"
+	if errors.Is(err, errDaveTransportUnsafe) {
+		c.failureStage = "dave_send"
+	}
 	c.failureReason = failureClass(err)
 	c.failureCode = code
 	c.startTraceLocked(context.Background(), "transport_closed")

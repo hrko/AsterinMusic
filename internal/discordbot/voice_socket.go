@@ -33,6 +33,8 @@ type voiceSocket struct {
 	progress    func(context.Context, string)
 	disposed    bool
 	workers     sync.WaitGroup
+	valid       func() bool
+	daveFailed  func(error)
 }
 
 type voiceSocketRun struct {
@@ -188,19 +190,54 @@ func (g *voiceSocket) CloseWithCode(code int, reason string) {
 }
 
 func (g *voiceSocket) Send(ctx context.Context, op voice.Opcode, data voice.GatewayMessageData) error {
+	if g.valid != nil && !g.valid() {
+		return context.Canceled
+	}
 	g.mu.Lock()
 	r, ready := g.run, g.status == voice.StatusReady
 	g.mu.Unlock()
 	if r == nil || !ready {
-		return voice.ErrGatewayNotConnected
+		return g.sendFailure(r, op, voice.ErrGatewayNotConnected)
 	}
 	err := g.send(ctx, r, op, data)
+	if err != nil && isDaveSend(op) {
+		return g.sendFailure(r, op, err)
+	}
 	// DAVE callbacks do not return their errors to the handshake caller.
 	// A failed wire send must also reach the connection controller.
 	if err != nil && ctx.Err() == nil && r.ctx.Err() == nil {
 		g.finish(r, err, true)
 	}
 	return err
+}
+
+var errDaveTransportUnsafe = errors.New("DAVE send failed; session must be replaced")
+
+type daveSendError struct{ cause error }
+
+func (e *daveSendError) Error() string        { return errDaveTransportUnsafe.Error() }
+func (e *daveSendError) Unwrap() error        { return e.cause }
+func (e *daveSendError) Is(target error) bool { return target == errDaveTransportUnsafe }
+
+func isDaveSend(op voice.Opcode) bool {
+	return op == voice.OpcodeDaveMLSKeyPackage || op == voice.OpcodeDaveMLSCommitWelcome || op == voice.OpcodeDaveTransitionReady || op == voice.OpcodeDaveMLSInvalidCommitWelcome
+}
+
+func (g *voiceSocket) sendFailure(r *voiceSocketRun, op voice.Opcode, err error) error {
+	if !isDaveSend(op) || g.daveFailed == nil {
+		return err
+	}
+	if g.valid != nil && !g.valid() {
+		return context.Canceled
+	}
+	// Retaining this MLS state after a failed callback is not supported. In
+	// particular, do not let dependency backoff race the connection supervisor.
+	failure := &daveSendError{cause: err}
+	if r != nil {
+		g.finish(r, failure, false)
+	}
+	g.daveFailed(failure)
+	return failure
 }
 
 func (g *voiceSocket) send(ctx context.Context, r *voiceSocketRun, op voice.Opcode, data voice.GatewayMessageData) error {

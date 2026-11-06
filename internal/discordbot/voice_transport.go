@@ -47,6 +47,9 @@ type discordVoiceTransport struct {
 
 func (t *discordVoiceTransport) Invalidate() {
 	t.invalid.Store(true)
+	if dave, ok := t.dave.(interface{ Invalidate() }); ok {
+		dave.Invalidate()
+	}
 	if t.cancelEvents != nil {
 		t.cancelEvents()
 	}
@@ -278,6 +281,20 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			}
 		}, dialer)
 		socket.progress = progress
+		socket.valid = func() bool { return !t.invalid.Load() }
+		var daveFailureOnce sync.Once
+		socket.daveFailed = func(err error) {
+			daveFailureOnce.Do(func() {
+				if t.invalid.Load() {
+					return
+				}
+				t.Invalidate()
+				failHandshake("dave_send", err)
+				if established.Load() {
+					closed(err, false)
+				}
+			})
+		}
 		return socket
 	}))
 	// Reuse disgo's UDP and event types, but own discovery/protocol errors.

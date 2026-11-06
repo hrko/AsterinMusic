@@ -25,6 +25,9 @@ func failureClass(err error) string {
 	if errors.As(err, &stage) {
 		err = stage.err
 	}
+	if errors.Is(err, errDaveTransportUnsafe) {
+		return "dave_send_failed"
+	}
 	if errors.Is(err, context.Canceled) {
 		return "canceled"
 	}
