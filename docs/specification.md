@@ -63,7 +63,7 @@ Botは設定した1サーバーで動作する。追加・再開・停止・ス�
 
 キュー表示の詳細は[キューの表示と操作](queue-display.md)を参照。手動の待機曲がなければ、自動再生ON時は取得済み候補の一覧へ切り替える。再生中の曲は一覧とは別に表示する。表示操作は選曲・候補取得・候補の消費を行わない。
 
-手動待機曲があるときは「キューを編集」から追加者別の編集一覧を開ける。対象VCへの参加と曲単位の権限を確認し、上・下・先頭・指定位置への移動と単曲削除を行う。移動は同じ追加者の待機曲内だけに適用し、他の追加者との巡回順を維持する。再生中・準備中の曲、自動再生候補は編集対象外。編集画面と結果は本人限定で、公開通知を送らない。詳細と検証状況は[キュー編集要件](queue-edit-plan.md)を参照。
+`/queue edit [user]`または手動待機曲があるときの「キューを編集」から、追加者別の編集一覧を開ける。対象VCへの参加と曲単位の権限を確認し、上・下・先頭・指定位置への移動と単曲削除を行う。移動は同じ追加者の待機曲内だけに適用し、他の追加者との巡回順を維持する。再生中・準備中の曲、自動再生候補は編集対象外。編集画面と結果は本人限定で、公開通知を送らない。詳細と検証状況は[キュー編集要件](queue-edit-plan.md)を参照。
 
 `/playnext`は自分の待機曲の先頭へ単曲を追加する。再生中の曲は中断せず、他の追加者との交代順も変更しない。自分に待機曲がない場合は通常の追加と同じ規則で巡回に参加する。X、Yの順に連続して先頭追加すると、自分の曲列は`Y → X → 既存曲`となる。
 
@@ -213,7 +213,8 @@ OpenTelemetryトレースは任意で、既定は無効。音声接続・VC移�
 | 仕様 | 主な実装 |
 | --- | --- |
 | コマンド・操作権限 | `internal/discordbot/commands.go`、`handlers.go`、`session.go` |
-| 公平キュー・保存 | `internal/music/queue.go`、`persistence.go` |
+| 公平キュー・編集・保存 | `internal/music/queue.go`、`edit.go`、`persistence.go` |
+| キュー表示・編集画面・全消去確認 | `internal/discordbot/queue_view.go`、`queue_editor.go`、`queue_editor_actions.go`、`queue_edit_mutations.go`、`queue_command.go` |
 | URL正規化・サイト取得 | `internal/source/url.go`、`ytdlp.go`、`buffer.go` |
 | ボタン・Mix | `internal/discordbot/offers.go`、`mix.go`、`internal/source/mix.go` |
 | 自動再生 | `internal/discordbot/autoplay.go` |
