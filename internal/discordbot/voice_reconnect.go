@@ -285,7 +285,19 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			}
 			ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
 			ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.resume", trace.WithAttributes(attribute.Int("asterinmusic.attempt", attempt)))
+			progress := &voiceTraceAttempt{ctx: ctx, span: observed, tracer: tracerOrNoop(c.tracer), stagePrefix: "voice.resume.", name: "resume_start"}
+			ctx = context.WithValue(ctx, voiceTraceKey{}, progress)
 			ctx = c.diagnosticContext(ctx)
+			c.mu.Lock()
+			if !c.recoveryValidLocked(f) || c.active != t {
+				c.mu.Unlock()
+				cancel()
+				progress.end(context.Canceled)
+				return
+			}
+			c.traceAttempt = progress
+			generation := c.generation
+			c.mu.Unlock()
 			err := resumable.Resume(ctx)
 			if errors.Is(err, context.DeadlineExceeded) {
 				scope := "attempt"
@@ -294,9 +306,14 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 				}
 				observed.SetAttributes(attribute.String("asterinmusic.deadline_scope", scope))
 			}
-			finishTrace(observed, err)
+			progress.end(err)
 			attemptContextErr := ctx.Err()
 			cancel()
+			c.mu.Lock()
+			if c.traceAttempt == progress {
+				c.traceAttempt = nil
+			}
+			c.mu.Unlock()
 			if err == nil {
 				// Resumed is final for the socket handshake. DAVE uses the
 				// remaining recovery budget, never another Resume request.
@@ -312,7 +329,9 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 				if errors.As(err, &closed) {
 					code = closed.Code
 				}
-				c.recordDiagnosticLocked(slog.LevelDebug, "voice resume failed", "event", "voice.resume.failed", "recovery_id", f.id, "generation", c.generation, "attempt", attempt, "reason", failureClass(err), "close_code", code, "attempt_context_done", attemptContextErr != nil, "recovery_context_done", f.ctx.Err() != nil, "attempt_timed_out", errors.Is(attemptContextErr, context.DeadlineExceeded), "recovery_timed_out", errors.Is(f.ctx.Err(), context.DeadlineExceeded))
+				attrs := []any{"event", "voice.resume.failed", "recovery_id", f.id, "generation", generation, "attempt", attempt, "reason", failureClass(err), "close_code", code, "attempt_context_done", attemptContextErr != nil, "recovery_context_done", f.ctx.Err() != nil, "attempt_timed_out", errors.Is(attemptContextErr, context.DeadlineExceeded), "recovery_timed_out", errors.Is(f.ctx.Err(), context.DeadlineExceeded)}
+				attrs = append(attrs, progress.diagnostic()...)
+				c.captureDiagnosticLocked(ctx, slog.LevelDebug, "voice resume failed", attrs...)
 			}
 			if !c.recoveryValidLocked(f) {
 				c.mu.Unlock()

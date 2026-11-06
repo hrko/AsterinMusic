@@ -217,6 +217,9 @@ type delayedResumeDave struct {
 func (t *delayedResumeDave) Ready() bool { return t.ready.Load() }
 func (t *delayedResumeDave) Resume(ctx context.Context) error {
 	t.calls.Add(1)
+	traceVoiceStage(ctx, "hello")
+	traceVoiceStage(ctx, "resume")
+	traceVoiceReceived(ctx, int(voice.OpcodeResumed))
 	t.resumed <- ctx
 	return nil
 }
@@ -246,6 +249,18 @@ func TestResumedDaveWaitDoesNotRepeatResume(t *testing.T) {
 			case <-time.After(time.Second):
 				t.Fatal("Resume attempt context retained")
 			}
+			progress, ok := attempt.Value(voiceTraceKey{}).(*voiceTraceAttempt)
+			if !ok {
+				t.Fatal("Resume has no independent progress record")
+			}
+			traceVoiceStage(attempt, "late")
+			traceVoiceReceived(attempt, 99)
+			progress.mu.Lock()
+			frozen := progress.ended && progress.name == "resume" && progress.lastCompleted == "hello" && progress.lastOpcode == int(voice.OpcodeResumed)
+			progress.mu.Unlock()
+			if !frozen {
+				t.Fatal("completed Resume progress was lost or changed by late events")
+			}
 			if fail {
 				c.mu.Lock()
 				generation := c.generation
@@ -261,6 +276,12 @@ func TestResumedDaveWaitDoesNotRepeatResume(t *testing.T) {
 			}
 			if transport.calls.Load() != 1 {
 				t.Fatal("second Resume sent after Resumed")
+			}
+			c.mu.Lock()
+			retained := c.traceAttempt != nil
+			c.mu.Unlock()
+			if retained {
+				t.Fatal("completed Resume retained as current attempt")
 			}
 			if fail != c.Failed() {
 				t.Fatalf("failed=%v want %v", c.Failed(), fail)

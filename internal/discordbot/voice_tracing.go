@@ -121,6 +121,7 @@ type voiceTraceAttempt struct {
 	ctx            context.Context
 	span           trace.Span
 	tracer         trace.Tracer
+	stagePrefix    string
 	stage          trace.Span
 	name           string
 	ended          bool
@@ -192,7 +193,11 @@ func (a *voiceTraceAttempt) progress(name string) {
 	}
 	a.name = name
 	a.stageStarted = time.Now()
-	_, a.stage = a.tracer.Start(a.ctx, "voice."+name)
+	prefix := a.stagePrefix
+	if prefix == "" {
+		prefix = "voice."
+	}
+	_, a.stage = a.tracer.Start(a.ctx, prefix+name)
 }
 func (a *voiceTraceAttempt) current() string { a.mu.Lock(); defer a.mu.Unlock(); return a.name }
 func (a *voiceTraceAttempt) end(err error) {
