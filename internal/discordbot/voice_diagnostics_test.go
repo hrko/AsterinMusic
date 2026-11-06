@@ -4,7 +4,9 @@ import (
 	"asterinmusic/internal/logging"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/disgoorg/disgo/voice"
 	"github.com/gorilla/websocket"
 	"log/slog"
 	"strings"
@@ -126,6 +128,66 @@ func TestRecoveryTimeoutPreservesHandshakeStage(t *testing.T) {
 	if c.failureStage != "dave" {
 		t.Fatalf("handshake misclassified as %s", c.failureStage)
 	}
+}
+
+func TestHandshakeFailureSummaryWithoutTracingOrDebug(t *testing.T) {
+	var out logBuffer
+	logger, err := logging.New(&out, logging.Options{Format: "json", Level: "info"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := testVoiceController(t)
+	c.logger = logger
+	c.factory = func(ctx context.Context, _ voice.State, _ func(error, bool)) (voiceTransport, error) {
+		a := ctx.Value(voiceTraceKey{}).(*voiceTraceAttempt)
+		deadline, _ := ctx.Deadline()
+		d := &voiceHandshakeDeadline{record: a, overall: deadline, fail: func(string, error) {}}
+		defer d.stop()
+		d.advance("session_description")
+		d.advance("transport_key")
+		return nil, &voiceStageError{"transport_key", errors.New("PRIVATE_KEY")}
+	}
+	c.HandleVoiceStateUpdate(stateEvent(3))
+	c.HandleVoiceServerUpdate(serverEvent("PRIVATE_TOKEN"))
+	until := time.Now().Add(time.Second)
+	for {
+		c.mu.Lock()
+		failed := c.phase == voiceFailed
+		c.mu.Unlock()
+		if failed {
+			break
+		}
+		if time.Now().After(until) {
+			t.Fatal("factory failure was not applied")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	c.flushDiagnostics()
+	text := out.String()
+	if strings.Contains(text, "PRIVATE_") {
+		t.Fatal("secret in failure summary")
+	}
+	for _, line := range strings.Split(strings.TrimSpace(text), "\n") {
+		var record map[string]any
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			t.Fatal(err)
+		}
+		if record["event"] != "voice.recovery.failed" {
+			continue
+		}
+		for _, key := range []string{"connection_flow_id", "trigger", "recovery_id", "attempt_id", "attempt_generation", "generation", "stage_duration_ms", "stage_deadline", "recovery_deadline", "reason"} {
+			if value, ok := record[key]; !ok || value == "" {
+				t.Errorf("missing %s: %v", key, record)
+			}
+		}
+		for key, want := range map[string]any{"level": "ERROR", "stage": "transport_key", "handshake_stage": "transport_key", "last_completed_stage": "session_description", "deadline_scope": "stage", "membership_received": true, "server_received": true, "action": "hold_playback"} {
+			if record[key] != want {
+				t.Errorf("%s=%v want=%v", key, record[key], want)
+			}
+		}
+		return
+	}
+	t.Fatalf("no failure summary at INFO: %s", text)
 }
 
 func TestTerminalVoiceFailureRetainsSafeCause(t *testing.T) {

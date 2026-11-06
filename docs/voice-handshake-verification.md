@@ -17,7 +17,7 @@
 | 手動再開と要求結果 | `resume_request_test.go`は最初の音声送信まで成功を返さず、連打・停止・移動・空キュー・音源失敗・接続失敗を区別する。連続音源失敗は3曲で結果を確定し、残りの1曲と接続を保持したまま再開できることを追加検査 | 受付前の移動、キュー消去の範囲、各期限境界を既存テストと最終照合 |
 | Discord応答更新失敗 | `resume_response_test.go`は実コマンドハンドラーの受付・結果更新にHTTP 403を返し、それでも最初の音声送信と再生が続くことを検査する | 実Discordへの障害注入は行っていない |
 | 所属と追加受付 | `voice_membership_test.go`、接続中の追加受付テスト、`voice_connection_test.go`に確認済み所属と目標の分離、世代・二重開始の検査がある | 各段階での受付という計画の範囲と照合する |
-| 計測と秘密情報 | `voice_diagnostics_test.go`、`voice_logging_test.go`、`voice_trace_fault_test.go`に遅い出力・バッファ溢れ・鍵等を含まない診断の検査がある | Jaegerなしの最終失敗要約に必要な識別子・期限・判断が揃うことを最終照合する |
+| 計測と秘密情報 | `voice_diagnostics_test.go`、`voice_logging_test.go`、`voice_trace_fault_test.go`に遅い出力・バッファ溢れ・鍵等を含まない診断の検査がある。`TestHandshakeFailureSummaryWithoutTracingOrDebug`はトレース無効・INFO設定でfactory失敗を発生させ、ERROR要約の識別子・期限・段階・通知受信・次の判断をJSONとして検査する | factory境界で進行記録を作る検査と実WSの段階検査を組み合わせている。リモート側の内部原因は判定対象外 |
 | ビルド・race | `38a57d9`までの`mise run check`とWSLの`mise run race-test`が成功。Windows/Linux、通常・本番タグを含む | 追加変更に応じた関連検査 |
 | 実Discord | 管理再起動後の単一プロセス・ready・ローカル音声送信開始は確認済み | 最新版の可聴性、VC往復、停止後のURLなし`/play`は利用者確認待ち。過去版の成功や送信ログで代替しない |
 

@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -41,6 +42,7 @@ func finishTrace(span trace.Span, err error, opts ...trace.SpanEndOption) {
 // voiceTrace belongs to a bounded recovery, including notification-only VC
 // moves which do not have a supervisor. All fields are protected by c.mu.
 type voiceTrace struct {
+	id, trigger   string
 	ctx           context.Context
 	span          trace.Span
 	notifications trace.Span
@@ -56,7 +58,8 @@ func (c *voiceConnection) startTraceLocked(cause context.Context, trigger string
 		opts = append(opts, trace.WithLinks(trace.Link{SpanContext: sc}))
 	}
 	ctx, span := tracerOrNoop(c.tracer).Start(context.Background(), "voice.recovery", opts...)
-	c.observation = &voiceTrace{ctx: ctx, span: span}
+	c.observation = &voiceTrace{ctx: ctx, span: span, id: rand.Text(), trigger: trigger}
+	c.lastAttemptDiagnostic = nil
 }
 
 // Notification collection is distinct from waiting for a ready transport.
@@ -117,6 +120,8 @@ func (c *voiceConnection) endTraceLocked(phase voicePhase) {
 
 // Each attempt owns progress independently of the current controller generation.
 type voiceTraceAttempt struct {
+	id             string
+	generation     uint64
 	mu             sync.Mutex
 	ctx            context.Context
 	span           trace.Span
@@ -161,6 +166,9 @@ func (a *voiceTraceAttempt) diagnostic() []any {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	attrs := []any{"handshake_stage", a.name, "event_handler_active", a.handling}
+	if a.id != "" {
+		attrs = append(attrs, "attempt_id", a.id, "attempt_generation", a.generation)
+	}
 	if !a.stageDeadline.IsZero() {
 		attrs = append(attrs, "stage_deadline", a.stageDeadline, "deadline_scope", a.deadlineScope)
 	}
@@ -243,7 +251,8 @@ func (c *voiceConnection) newTraceAttemptLocked(ctx context.Context) context.Con
 	}
 	ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(c.traceContextLocked()))
 	ctx, span := t.Start(ctx, "voice.connect", trace.WithAttributes(attribute.Int64("asterinmusic.generation", int64(c.generation)), attribute.Int("asterinmusic.attempt", attempt), attribute.String("asterinmusic.deadline_scope", "recovery")))
-	a := &voiceTraceAttempt{ctx: ctx, span: span, tracer: t, name: "establish"}
+	a := &voiceTraceAttempt{ctx: ctx, span: span, tracer: t, name: "establish", id: rand.Text(), generation: c.generation}
+	c.lastAttemptDiagnostic = nil
 	c.traceAttempt = a
 	return context.WithValue(ctx, voiceTraceKey{}, a)
 }

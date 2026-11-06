@@ -38,50 +38,51 @@ const (
 // All decisions are serialized by mu; network work runs outside it. A lease is
 // invalidated before its asynchronous teardown, so late callbacks cannot revive it.
 type voiceConnection struct {
-	tracer             trace.Tracer
-	observation        *voiceTrace
-	traceAttempt       *voiceTraceAttempt
-	recovery           *voiceRecoveryFlow
-	recoverySerial     uint64
-	rejoins            int
-	rejoinTimes        []time.Time
-	canRejoin          func(context.Context, snowflake.ID) bool
-	mute, deaf         bool
-	failureStage       string
-	failureReason      string
-	failureCode        int
-	diagnosticMu       sync.Mutex
-	diagnostics        []voiceDiagnostic
-	diagnosticOverflow map[string]voiceDiagnostic
-	logger             *slog.Logger
-	mu                 sync.Mutex
-	guild, user        snowflake.ID
-	channel            snowflake.ID
-	confirmedChannel   snowflake.ID
-	membershipKnown    bool
-	lookupMembership   func() (snowflake.ID, bool)
-	phase              voicePhase
-	generation         uint64
-	deadline           time.Time
-	recoveryStart      time.Time
-	now                func() time.Time
-	changed            chan struct{}
-	cancel             context.CancelFunc
-	timer              *time.Timer
-	sendMu             sync.Mutex
-	active             voiceTransport
-	resources          *voiceResources
-	resourceLease      *voiceResourceLease
-	ownedResources     []*voiceResourceLease
-	state              *gateway.EventVoiceStateUpdate
-	server             *gateway.EventVoiceServerUpdate
-	lastToken          string
-	statePending       bool
-	removed            bool
-	resuming           bool
-	update             voice.StateUpdateFunc
-	remove             func()
-	factory            func(context.Context, voice.State, func(error, bool)) (voiceTransport, error)
+	tracer                trace.Tracer
+	observation           *voiceTrace
+	traceAttempt          *voiceTraceAttempt
+	lastAttemptDiagnostic []any
+	recovery              *voiceRecoveryFlow
+	recoverySerial        uint64
+	rejoins               int
+	rejoinTimes           []time.Time
+	canRejoin             func(context.Context, snowflake.ID) bool
+	mute, deaf            bool
+	failureStage          string
+	failureReason         string
+	failureCode           int
+	diagnosticMu          sync.Mutex
+	diagnostics           []voiceDiagnostic
+	diagnosticOverflow    map[string]voiceDiagnostic
+	logger                *slog.Logger
+	mu                    sync.Mutex
+	guild, user           snowflake.ID
+	channel               snowflake.ID
+	confirmedChannel      snowflake.ID
+	membershipKnown       bool
+	lookupMembership      func() (snowflake.ID, bool)
+	phase                 voicePhase
+	generation            uint64
+	deadline              time.Time
+	recoveryStart         time.Time
+	now                   func() time.Time
+	changed               chan struct{}
+	cancel                context.CancelFunc
+	timer                 *time.Timer
+	sendMu                sync.Mutex
+	active                voiceTransport
+	resources             *voiceResources
+	resourceLease         *voiceResourceLease
+	ownedResources        []*voiceResourceLease
+	state                 *gateway.EventVoiceStateUpdate
+	server                *gateway.EventVoiceServerUpdate
+	lastToken             string
+	statePending          bool
+	removed               bool
+	resuming              bool
+	update                voice.StateUpdateFunc
+	remove                func()
+	factory               func(context.Context, voice.State, func(error, bool)) (voiceTransport, error)
 }
 
 type voiceTransport interface {
@@ -148,6 +149,15 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 				c.recordDiagnosticLocked(slog.LevelInfo, "voice membership removed", "event", "voice.membership.removed", "generation", c.generation, "action", "hold_playback", "queue_retained", true)
 			} else {
 				attrs := []any{"event", "voice.recovery.failed", "channel_id", c.channel.String(), "generation", c.generation, "action", "hold_playback", "queue_retained", true}
+				if c.observation != nil {
+					attrs = append(attrs, "connection_flow_id", c.observation.id, "trigger", c.observation.trigger)
+				}
+				attrs = append(attrs, "recovery_id", c.recoverySerial, "membership_received", c.state != nil,
+					"server_received", c.server != nil || (c.recovery != nil && c.recovery.handshakeStarted))
+				if !c.deadline.IsZero() {
+					attrs = append(attrs, "recovery_deadline", c.deadline, "deadline_scope", "recovery")
+				}
+				attrs = append(attrs, c.lastAttemptDiagnostic...)
 				if c.failureStage != "" {
 					attrs = append(attrs, "stage", c.failureStage)
 				}
@@ -163,6 +173,7 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 	}
 	c.phase = phase
 	if phase == voiceReady {
+		c.lastAttemptDiagnostic = nil
 		c.failureStage = ""
 		c.failureReason = ""
 		c.failureCode = 0
@@ -179,13 +190,17 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 }
 func (c *voiceConnection) discardLocked() {
 	if c.traceAttempt != nil {
-		attrs := append([]any{"event", "voice.handshake.retired", "generation", c.generation}, c.traceAttempt.diagnostic()...)
-		c.recordDiagnosticLocked(slog.LevelDebug, "voice handshake retired", attrs...)
 		err := error(context.Canceled)
 		if !c.deadline.IsZero() && !c.now().Before(c.deadline) {
 			err = context.DeadlineExceeded
 		}
 		c.traceAttempt.end(err)
+		c.lastAttemptDiagnostic = c.traceAttempt.diagnostic()
+		if c.traceAttempt.stagePrefix != "voice.resume." {
+			c.lastAttemptDiagnostic = append(c.lastAttemptDiagnostic, "membership_received", true, "server_received", true)
+		}
+		attrs := append([]any{"event", "voice.handshake.retired", "generation", c.generation}, c.lastAttemptDiagnostic...)
+		c.recordDiagnosticLocked(slog.LevelDebug, "voice handshake retired", attrs...)
 		c.traceAttempt = nil
 	}
 	c.resuming = false

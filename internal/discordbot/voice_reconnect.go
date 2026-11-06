@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"context"
+	cryptorand "crypto/rand"
 	"errors"
 	"log/slog"
 	"math/rand/v2"
@@ -285,7 +286,12 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			}
 			ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
 			ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.resume", trace.WithAttributes(attribute.Int("asterinmusic.attempt", attempt)))
-			progress := &voiceTraceAttempt{ctx: ctx, span: observed, tracer: tracerOrNoop(c.tracer), stagePrefix: "voice.resume.", name: "resume_start"}
+			progress := &voiceTraceAttempt{ctx: ctx, span: observed, tracer: tracerOrNoop(c.tracer), stagePrefix: "voice.resume.", name: "resume_start", id: cryptorand.Text()}
+			progress.stageDeadline, _ = ctx.Deadline()
+			progress.deadlineScope = "attempt"
+			if recoveryDeadline, ok := f.ctx.Deadline(); ok && progress.stageDeadline.Equal(recoveryDeadline) {
+				progress.deadlineScope = "recovery"
+			}
 			ctx = context.WithValue(ctx, voiceTraceKey{}, progress)
 			ctx = c.diagnosticContext(ctx)
 			c.mu.Lock()
@@ -296,7 +302,9 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 				return
 			}
 			c.traceAttempt = progress
+			c.lastAttemptDiagnostic = nil
 			generation := c.generation
+			progress.generation = generation
 			c.mu.Unlock()
 			err := resumable.Resume(ctx)
 			if errors.Is(err, context.DeadlineExceeded) {
@@ -311,6 +319,7 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			cancel()
 			c.mu.Lock()
 			if c.traceAttempt == progress {
+				c.lastAttemptDiagnostic = progress.diagnostic()
 				c.traceAttempt = nil
 			}
 			c.mu.Unlock()
