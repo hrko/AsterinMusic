@@ -286,9 +286,16 @@ func (c *voiceConnection) launchLocked() {
 	ctx = c.diagnosticContext(ctx)
 	ctx = context.WithValue(ctx, voiceResourceKey{}, lease)
 	lease.note = func(result string, elapsed time.Duration) {
+		level := slog.LevelDebug
+		if result == "pending" {
+			level = slog.LevelWarn
+		}
 		c.mu.Lock()
-		c.captureDiagnosticLocked(ctx, slog.LevelDebug, "voice resource cleanup", "event", "voice.cleanup."+result, "generation", generation, "duration_ms", elapsed.Milliseconds())
+		c.captureDiagnosticLocked(ctx, level, "voice resource cleanup", "event", "voice.cleanup."+result, "generation", generation, "duration_ms", elapsed.Milliseconds())
 		c.mu.Unlock()
+		// This controller may already be detached from the session tick.
+		// App loggers enqueue into the shared bounded output worker.
+		c.flushDiagnostics()
 	}
 	observed := c.traceAttempt
 	c.cancel = cancel

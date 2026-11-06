@@ -8,9 +8,47 @@ import (
 	"github.com/gorilla/websocket"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+type stalledVoiceOutput struct {
+	entered, release chan struct{}
+	once             sync.Once
+}
+
+func (w *stalledVoiceOutput) Write(p []byte) (int, error) {
+	w.once.Do(func() { close(w.entered) })
+	<-w.release
+	return len(p), nil
+}
+
+func TestVoiceCloseDoesNotWaitForAsyncLogWriter(t *testing.T) {
+	w := &stalledVoiceOutput{entered: make(chan struct{}), release: make(chan struct{})}
+	base, _ := logging.New(w, logging.Options{Level: "debug"})
+	logger, output := logging.Async(base)
+	defer func() {
+		close(w.release)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		if err := output.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
+	logger.Info("stall fixture", "event", "fixture")
+	<-w.entered
+	c := testVoiceController(t)
+	c.logger = logger
+	c.recordDiagnosticLocked(slog.LevelError, "connection failed", "event", "voice.failed")
+	closed := make(chan struct{})
+	go func() { c.Close(context.Background()); close(closed) }()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("connection close waited for stalled log output")
+	}
+}
 
 func TestDiagnosticEventAttributes(t *testing.T) {
 	for _, tc := range []struct {

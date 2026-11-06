@@ -57,6 +57,7 @@ type App struct {
 	readyOnce           sync.Once
 	daveClosers         sync.Map
 	voiceResources      voiceResources
+	logOutput           *logging.AsyncOutput
 }
 
 func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ...trace.TracerProvider) (*App, error) {
@@ -64,7 +65,6 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ..
 	if authorizationErr != nil {
 		return nil, authorizationErr
 	}
-	logging.Component(logger, "app").InfoContext(ctx, "application starting", append([]any{"event", "app.starting"}, logging.BuildAttributes()...)...)
 	executable := c.YTDLP
 	if executable == "yt-dlp" {
 		var err error
@@ -79,7 +79,17 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ..
 	if _, err := exec.LookPath(c.FFmpeg); err != nil {
 		return nil, errors.New("ffmpeg executable unavailable")
 	}
-	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{})}
+	logger, logOutput := logging.Async(logger)
+	initialized := false
+	defer func() {
+		if !initialized {
+			flush, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = logOutput.Close(flush)
+		}
+	}()
+	logging.Component(logger, "app").InfoContext(ctx, "application starting", append([]any{"event", "app.starting"}, logging.BuildAttributes()...)...)
+	a := &App{ctx: ctx, config: c, source: source.New(executable), sessions: make(map[snowflake.ID]*session), offers: newOffers(), ready: make(chan struct{}), logOutput: logOutput}
 	var provider trace.TracerProvider = noop.NewTracerProvider()
 	if len(providers) > 0 && providers[0] != nil {
 		provider = providers[0]
@@ -141,6 +151,7 @@ func New(ctx context.Context, c config.Config, logger *slog.Logger, providers ..
 	if a.source.YouTubeData != nil {
 		a.source.YouTubeData.Logger = logging.Component(a.logger, "source").With("guild_id", c.GuildID.String())
 	}
+	initialized = true
 	return a, nil
 }
 
@@ -149,6 +160,13 @@ func eventOptions() []bot.EventManagerConfigOpt {
 }
 
 func (a *App) Close() {
+	defer func() {
+		if a.logOutput != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+			_ = a.logOutput.Close(ctx)
+		}
+	}()
 	logger := logging.OrDiscard(a.logger)
 	logger.Info("application stopping", "event", "app.stopping")
 	started := time.Now()
