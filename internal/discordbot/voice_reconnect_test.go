@@ -152,6 +152,78 @@ type rejectedResume struct {
 	calls atomic.Int32
 }
 
+type delayedResumeDave struct {
+	*fakeVoiceTransport
+	ready   atomic.Bool
+	calls   atomic.Int32
+	resumed chan context.Context
+}
+
+func (t *delayedResumeDave) Ready() bool { return t.ready.Load() }
+func (t *delayedResumeDave) Resume(ctx context.Context) error {
+	t.calls.Add(1)
+	t.resumed <- ctx
+	return nil
+}
+
+func TestResumedDaveWaitDoesNotRepeatResume(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		t.Run(map[bool]string{false: "ready", true: "failed"}[fail], func(t *testing.T) {
+			c := testVoiceController(t)
+			f := recoveryFixture(t, c)
+			transport := &delayedResumeDave{fakeVoiceTransport: newFakeVoiceTransport(), resumed: make(chan context.Context, 1)}
+			c.mu.Lock()
+			c.active = transport
+			c.phase = voiceRecovering
+			c.mu.Unlock()
+			done := make(chan struct{})
+			go func() { c.runRecovery(f, true, false); close(done) }()
+			var attempt context.Context
+			select {
+			case attempt = <-transport.resumed:
+			case <-time.After(time.Second):
+				t.Fatal("Resume not called")
+			}
+			select {
+			case <-attempt.Done():
+			case <-time.After(time.Second):
+				t.Fatal("Resume attempt context retained")
+			}
+			if fail {
+				c.mu.Lock()
+				generation := c.generation
+				c.mu.Unlock()
+				c.transportClosed(generation, &websocket.CloseError{Code: 4006}, true)
+			} else {
+				transport.ready.Store(true)
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("DAVE wait stuck")
+			}
+			if transport.calls.Load() != 1 {
+				t.Fatal("second Resume sent after Resumed")
+			}
+			if fail != c.Failed() {
+				t.Fatalf("failed=%v want %v", c.Failed(), fail)
+			}
+		})
+	}
+}
+
+func TestSuccessfulHandshakeDoesNotRemainCurrentDuringRecovery(t *testing.T) {
+	c := testVoiceController(t)
+	c.HandleVoiceStateUpdate(stateEvent(3))
+	c.HandleVoiceServerUpdate(serverEvent("test"))
+	waitVoice(t, c)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.traceAttempt != nil {
+		t.Fatal("completed handshake retained as current attempt")
+	}
+}
+
 func (t *rejectedResume) Resume(context.Context) error {
 	t.calls.Add(1)
 	return &websocket.CloseError{Code: t.code}

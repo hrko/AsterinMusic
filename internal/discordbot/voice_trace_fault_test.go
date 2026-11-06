@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -98,7 +99,12 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 				}
 			}))
 			defer srv.Close()
-			a := &App{tracer: provider.Tracer("test")}
+			var logs logBuffer
+			logger, logErr := logging.New(&logs, logging.Options{Level: "info", Format: "json", Components: map[string]string{"voice": "debug"}})
+			if logErr != nil {
+				t.Fatal(logErr)
+			}
+			a := &App{tracer: provider.Tracer("test"), logger: logger}
 			opts := []voice.ConnConfigOpt{
 				voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
 					if fault == "udp_discovery" {
@@ -123,6 +129,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			channel := snowflake.ID(3)
 			_, err := a.openVoiceTransportWithDialer(ctx, voice.State{GuildID: 1, UserID: 2, ChannelID: &channel, SessionID: "synthetic-secret", Token: "synthetic-secret", Endpoint: strings.TrimPrefix(srv.URL, "https://")}, func(error, bool) {}, opts, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}) // local fixture only
 			attempt.end(err)
+			if !strings.Contains(logs.String(), `"event":"voice.handshake.failed"`) || strings.Contains(logs.String(), "synthetic-secret") {
+				t.Fatal("missing safe voice-component failure diagnostic")
+			}
 			if err == nil {
 				t.Fatal("fault did not fail")
 			}

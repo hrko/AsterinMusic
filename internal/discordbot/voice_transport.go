@@ -63,13 +63,6 @@ func (t *discordVoiceTransport) Resume(ctx context.Context) error {
 	t.speaking = false // Re-announce speaking before sending on the resumed socket.
 	t.traceCause = trace.SpanContextFromContext(ctx)
 	t.mu.Unlock()
-	for !t.Ready() {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(10 * time.Millisecond):
-		}
-	}
 	return nil
 }
 func (t *discordVoiceTransport) Close() {
@@ -133,6 +126,7 @@ func (a *App) openVoiceTransport(ctx context.Context, state voice.State, closed 
 }
 
 func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.State, closed func(error, bool), opts []voice.ConnConfigOpt, dialer *websocket.Dialer) (voiceTransport, error) {
+	logger := logging.Component(a.logger, "voice").With("guild_id", state.GuildID.String())
 	t := &discordVoiceTransport{state: state, tracer: a.tracer, traceCause: trace.SpanContextFromContext(ctx)}
 	eventCtx, cancelEvents := context.WithCancel(context.Background())
 	t.cancelEvents, t.eventsDone = cancelEvents, make(chan struct{})
@@ -171,7 +165,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		if snapshot := daveDiagnostic.Load(); snapshot != nil {
 			attrs = append(attrs, snapshot.([]any)...)
 		}
-		logging.OrDiscard(a.logger).DebugContext(ctx, "voice handshake failed", attrs...)
+		logger.DebugContext(ctx, "voice handshake failed", attrs...)
 		t.Close()
 		return err
 	}
@@ -194,7 +188,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 						daveDiagnostic.Store(snapshot)
 						attrs = append(attrs, snapshot...)
 					}
-					logging.OrDiscard(a.logger).DebugContext(ctx, "voice DAVE event processed", attrs...)
+					logger.DebugContext(ctx, "voice DAVE event processed", attrs...)
 				}()
 			}
 			if d, ok := data.(voice.GatewayMessageDataReady); ok {

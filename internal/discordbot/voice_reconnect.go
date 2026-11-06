@@ -249,6 +249,7 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			c.mu.Lock()
 			t := c.active
 			c.resuming = true
+			f.attemptErr = nil
 			c.mu.Unlock()
 			resumable, ok := t.(interface{ Resume(context.Context) error })
 			if !ok {
@@ -267,6 +268,14 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			finishTrace(observed, err)
 			attemptContextErr := ctx.Err()
 			cancel()
+			if err == nil {
+				// Resumed is final for the socket handshake. DAVE uses the
+				// remaining recovery budget, never another Resume request.
+				if waitErr := c.waitResumedDave(f, t); waitErr != nil {
+					c.recoveryFailure(f, waitErr)
+					return
+				}
+			}
 			c.mu.Lock()
 			if err != nil {
 				code := 0
@@ -280,7 +289,13 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 				c.mu.Unlock()
 				return
 			}
-			if err == nil && t.Ready() {
+			if err == nil && f.attemptErr != nil {
+				terminal := f.attemptErr
+				c.mu.Unlock()
+				c.recoveryFailure(f, terminal)
+				return
+			}
+			if err == nil {
 				c.resuming = false
 				c.deadline = time.Time{}
 				if c.timer != nil {
@@ -356,6 +371,37 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 		}
 	}
 	c.rejoinRecovery(f)
+}
+
+func (c *voiceConnection) waitResumedDave(f *voiceRecoveryFlow, t voiceTransport) error {
+	if !c.recoveryStage(f, "resume_dave", 1) {
+		return context.Canceled
+	}
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		c.mu.Lock()
+		valid, same, err, changed := c.recoveryValidLocked(f), c.active == t, f.attemptErr, c.changed
+		c.mu.Unlock()
+		if f.ctx.Err() != nil {
+			return f.ctx.Err()
+		}
+		if !valid || !same {
+			return context.Canceled
+		}
+		if err != nil {
+			return err
+		}
+		if t.Ready() {
+			return nil
+		}
+		select {
+		case <-f.ctx.Done():
+			return f.ctx.Err()
+		case <-changed:
+		case <-ticker.C:
+		}
+	}
 }
 
 func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {

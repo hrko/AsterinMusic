@@ -216,6 +216,8 @@ func (c *voiceConnection) expireLocked() {
 			} else if c.server == nil {
 				c.failureStage = "server_notification"
 			}
+		} else if c.recovery != nil {
+			c.failureStage = c.recovery.stage
 		}
 		c.failureReason = "timeout"
 		c.discardLocked()
@@ -283,6 +285,9 @@ func (c *voiceConnection) launchLocked() {
 			return
 		}
 		c.active = t
+		if c.traceAttempt == observed {
+			c.traceAttempt = nil
+		}
 		c.deadline = time.Time{}
 		if c.timer != nil {
 			c.timer.Stop()
@@ -425,6 +430,9 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 	if c.recovery != nil && c.resuming {
 		// The Resume call receives its own socket error. Its supervisor owns
 		// retries; a second callback must not start another recovery flow.
+		c.recovery.attemptErr = err
+		close(c.changed)
+		c.changed = make(chan struct{})
 		return
 	}
 	if resumeAllowed(err) && c.active != nil {
