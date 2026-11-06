@@ -8,12 +8,12 @@
 
 | 計画の検証対象 | 現在の証拠 | 残る確認範囲 |
 | --- | --- | --- |
-| 段階別失敗 | `voice_trace_fault_test.go`はローカルWSの応答保留・切断、UDP探索失敗、暗号方式不一致、鍵設定失敗、DAVE準備保留を注入し、段階記録を検査する。`voice_handshake_deadline_test.go`は期限・旧タイマー・成功との排他を検査する | Identify・SelectProtocolの送信中断を各制御操作と組み合わせた直接検査 |
+| 段階別失敗 | `voice_trace_fault_test.go`はローカルWSの応答保留・切断、UDP探索失敗、暗号方式不一致、鍵設定失敗、DAVE準備保留を注入し、段階記録を検査する。`voice_handshake_deadline_test.go`は期限・旧タイマー・成功との排他を検査する。Identify・SelectProtocolの送信中断は下記27組で検査する | 個別I/O期限と全体期限の対応を最終照合する |
 | 1006→4006→再入室→失敗→明示再開 | `voice_recovery_chain_test.go`は実接続管理に切断とResume拒否を与え、通知待ち・退出確認・再入室を経て8段階のfactory失敗を注入し、新しい明示試行を検査する | 段階失敗はfactory境界での注入。実WS・UDPの段階検査と組み合わせた証拠であり、全行程を実ソケットだけで再現したものではない |
 | Resume | `voice_reconnect_test.go`と`voice_socket_test.go`に、成立後のDAVE待ち、再試行予算、4006拒否、Heartbeat、Resume前後のソケット処理の検査がある | 最終照合でSpeaking再通知・UDP継続の証拠と対応付ける |
-| 停止・移動・外部退出 | `voice_handshake_interrupt_test.go`はWS接続・Hello・Ready・UDP探索・SessionDescription・鍵設定・DAVEの7段階で3操作を実行し、旧資源の解放、旧世代の拒否、移動先の送信を検査する | Identify・SelectProtocolの送信中の組合せは未追加 |
+| 停止・移動・外部退出 | `voice_handshake_interrupt_test.go`はWS接続・Hello・Identify・Ready・UDP探索・SelectProtocol・SessionDescription・鍵設定・DAVEの9段階で3操作を実行し、旧資源の解放、旧世代の拒否、移動先の送信を検査する。送信2段階は実TLS接続を包んだnet.Connで対象WSフレームのWriteを保留し、Closeで解除する。書き込み開始の同期点を待ってから操作する | カーネル内の送信停滞を再現する検査ではなく、ソケット境界での制御可能な障害注入 |
 | 通知順序・重複 | `voice_description_test.go`は同値鍵応答の再初期化防止、異なる鍵応答とプロトコル選択前の応答の拒否、DAVE外部送信者通知の先行を検査する | 外部送信者テストはルーティングの検査であり、MLS暗号処理の証明ではない |
-| 実I/O・資源解放 | `voice_udp_test.go`の実UDP中断、`voice_resources_test.go`の実終了までの枠保持、`voice_transport_test.go`のイベント溢れと停止したワーカーの追跡。DAVE監視の実終了は[専用記録](dave-shutdown-verification.md)に分離 | 全段階の送信中断を含む最終照合 |
+| 実I/O・資源解放 | `voice_udp_test.go`の実UDP中断、`voice_resources_test.go`の実終了までの枠保持、`voice_transport_test.go`のイベント溢れと停止したワーカーの追跡。上記27組ではfactory・ソケット・ワーカーの終了まで資源枠が完了しないことを検査する。DAVE監視の実終了は[専用記録](dave-shutdown-verification.md)に分離 | 実Discordでの可聴性は別途確認する |
 | 手動再開と要求結果 | `resume_request_test.go`は最初の音声送信まで成功を返さず、連打・停止・移動・空キュー・音源失敗・接続失敗を区別する。連続音源失敗は3曲で結果を確定し、残りの1曲と接続を保持したまま再開できることを追加検査 | 受付前の移動、キュー消去の範囲、各期限境界を既存テストと最終照合 |
 | Discord応答更新失敗 | `resume_response_test.go`は実コマンドハンドラーの受付・結果更新にHTTP 403を返し、それでも最初の音声送信と再生が続くことを検査する | 実Discordへの障害注入は行っていない |
 | 所属と追加受付 | `voice_membership_test.go`、接続中の追加受付テスト、`voice_connection_test.go`に確認済み所属と目標の分離、世代・二重開始の検査がある | 各段階での受付という計画の範囲と照合する |

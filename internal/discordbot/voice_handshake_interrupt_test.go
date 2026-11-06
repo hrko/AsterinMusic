@@ -3,6 +3,8 @@ package discordbot
 import (
 	"context"
 	"crypto/tls"
+	"encoding/binary"
+	"encoding/json"
 	"log/slog"
 	"net"
 	"net/http"
@@ -42,10 +44,50 @@ func (u *interruptedKeyUDP) Close() error {
 	return nil
 }
 
+// The TLS connection is real; only the selected application write is held.
+// Closing it must release the blocked Write, as closing an OS socket would.
+type interruptedVoiceWrite struct {
+	net.Conn
+	op              int
+	entered, done   chan struct{}
+	once, enterOnce sync.Once
+}
+
+func (c *interruptedVoiceWrite) Write(p []byte) (int, error) {
+	// Decode the small, single-frame client message emitted by gorilla. Skip
+	// the HTTP upgrade and control frames; heartbeat timing is irrelevant.
+	if len(p) >= 6 && p[0] == 0x81 && p[1]&0x80 != 0 {
+		n, offset := int(p[1]&0x7f), 2
+		if n == 126 && len(p) >= 8 {
+			n, offset = int(binary.BigEndian.Uint16(p[2:4])), 4
+		}
+		if n < 65536 && n != 127 && len(p) == offset+4+n {
+			body := make([]byte, n)
+			for i := range body {
+				body[i] = p[offset+4+i] ^ p[offset+i%4]
+			}
+			var message struct {
+				Op int `json:"op"`
+			}
+			if json.Unmarshal(body, &message) == nil && message.Op == c.op {
+				c.enterOnce.Do(func() { close(c.entered) })
+				<-c.done
+				return 0, net.ErrClosed
+			}
+		}
+	}
+	return c.Conn.Write(p)
+}
+
+func (c *interruptedVoiceWrite) Close() error {
+	c.once.Do(func() { close(c.done) })
+	return c.Conn.Close()
+}
+
 // The first factory runs the real wire/handshake implementation against a
 // stalled local server. A move can establish a new generation independently.
 func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
-	for _, stage := range []string{"websocket_connect", "hello", "ready", "udp_discovery", "session_description", "transport_key", "dave"} {
+	for _, stage := range []string{"websocket_connect", "hello", "identify", "ready", "udp_discovery", "select_protocol", "session_description", "transport_key", "dave"} {
 		for _, action := range []string{"stop", "move", "external_leave"} {
 			t.Run(stage+"/"+action, func(t *testing.T) {
 				server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +123,7 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 				// Teardown must cancel the client before httptest waits for handlers.
 				defer c.Close(context.Background())
 				a := &App{}
+				writeEntered := make(chan struct{})
 				c.factory = func(ctx context.Context, state voice.State, closed func(error, bool)) (voiceTransport, error) {
 					if *state.ChannelID == 4 {
 						return newFakeVoiceTransport(), nil
@@ -102,7 +145,21 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 							return d
 						}),
 					}
-					return a.openVoiceTransportWithDialer(ctx, state, closed, opts, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+					dialer := &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+					if stage == "identify" || stage == "select_protocol" {
+						op := 0
+						if stage == "select_protocol" {
+							op = 1
+						}
+						dialer.NetDialTLSContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+							conn, err := (&tls.Dialer{Config: &tls.Config{InsecureSkipVerify: true}}).DialContext(ctx, network, address)
+							if err != nil {
+								return nil, err
+							}
+							return &interruptedVoiceWrite{Conn: conn, op: op, entered: writeEntered, done: make(chan struct{})}, nil
+						}
+					}
+					return a.openVoiceTransportWithDialer(ctx, state, closed, opts, dialer)
 				}
 				c.HandleVoiceStateUpdate(stateEvent(3))
 				c.HandleVoiceServerUpdate(serverEvent("fixture"))
@@ -118,6 +175,13 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 						t.Fatal("handshake did not reach " + stage)
 					}
 					time.Sleep(time.Millisecond)
+				}
+				if stage == "identify" || stage == "select_protocol" {
+					select {
+					case <-writeEntered:
+					case <-time.After(time.Second):
+						t.Fatal("selected wire write was not reached")
+					}
 				}
 				c.mu.Lock()
 				lease, generation := c.resourceLease, c.generation
