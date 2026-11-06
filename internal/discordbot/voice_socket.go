@@ -322,12 +322,15 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 				g.stage(r.observation, "resume")
 				err = g.send(r.ctx, r, voice.OpcodeResume, voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token, SeqAck: seq})
 			} else {
-				g.stage(r.observation, "identify_ready")
+				g.stage(r.observation, "identify")
 				err = g.send(r.ctx, r, voice.OpcodeIdentify, voice.GatewayMessageDataIdentify{GuildID: state.GuildID, UserID: state.UserID, SessionID: state.SessionID, Token: state.Token, MaxDaveProtocolVersion: g.dave.MaxSupportedProtocolVersion()})
 			}
 			if err != nil {
 				g.finish(r, err, true)
 				return
+			}
+			if !resume {
+				g.stage(r.observation, "ready")
 			}
 		case voice.OpcodeReady, voice.OpcodeResumed:
 			g.mu.Lock()

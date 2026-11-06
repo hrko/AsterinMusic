@@ -128,6 +128,8 @@ func (a *App) openVoiceTransport(ctx context.Context, state voice.State, closed 
 }
 
 func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.State, closed func(error, bool), opts []voice.ConnConfigOpt, dialer *websocket.Dialer) (voiceTransport, error) {
+	ctx, cancelHandshake := context.WithTimeout(ctx, voiceRecoveryTimeout)
+	defer cancelHandshake()
 	logger := logging.Component(a.logger, "voice").With("guild_id", state.GuildID.String())
 	t := &discordVoiceTransport{state: state, tracer: a.tracer, traceCause: trace.SpanContextFromContext(ctx)}
 	eventCtx, cancelEvents := context.WithCancel(context.Background())
@@ -146,12 +148,20 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	failed := make(chan error, 1)
 	var established atomic.Bool
 	var failOnce sync.Once
-	var stage atomic.Value
 	var daveDiagnostic atomic.Value
-	stage.Store("gateway")
-	progress := func(observation context.Context, name string) { stage.Store(name); traceVoiceStage(observation, name) }
 	failHandshake := func(stage string, err error) {
 		failOnce.Do(func() { failed <- &voiceStageError{stage, err} })
+	}
+	overall, _ := ctx.Deadline()
+	deadlines := &voiceHandshakeDeadline{overall: overall, fail: func(name string, err error) {
+		failHandshake(name, err)
+		cancelHandshake()
+	}}
+	defer deadlines.stop()
+	progress := func(observation context.Context, name string) {
+		if established.Load() || deadlines.advance(name) {
+			traceVoiceStage(observation, name)
+		}
 	}
 	failure := func(err error) error {
 		select {
@@ -161,9 +171,9 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		}
 		var detail *voiceStageError
 		if !errors.As(err, &detail) {
-			err = &voiceStageError{stage.Load().(string), err}
+			err = &voiceStageError{deadlines.current(), err}
 		}
-		attrs := []any{"event", "voice.handshake.failed", "stage", stage.Load().(string), "reason", failureClass(err)}
+		attrs := []any{"event", "voice.handshake.failed", "stage", deadlines.current(), "reason", failureClass(err)}
 		if snapshot := daveDiagnostic.Load(); snapshot != nil {
 			attrs = append(attrs, snapshot.([]any)...)
 		}
@@ -260,7 +270,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			}
 		}, func(_ voice.Gateway, err error, reconnect bool) {
 			if !t.invalid.Load() {
-				failHandshake(stage.Load().(string), err)
+				failHandshake(deadlines.current(), err)
 				if established.Load() {
 					closed(err, reconnect)
 				}
@@ -308,6 +318,9 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			return nil, failure(err)
 		case <-time.After(10 * time.Millisecond):
 		}
+	}
+	if !deadlines.finish() {
+		return nil, failure(context.DeadlineExceeded)
 	}
 	established.Store(true)
 	select {

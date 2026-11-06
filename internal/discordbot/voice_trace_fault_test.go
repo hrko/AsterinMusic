@@ -45,7 +45,7 @@ func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, i
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, fault := range []string{"gateway", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed"} {
+	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
 			checked := make(chan struct{})
@@ -71,6 +71,13 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					return
 				}
 				defer ws.Close()
+				if fault == "hello" {
+					for {
+						if _, _, err := ws.ReadMessage(); err != nil {
+							return
+						}
+					}
+				}
 				_ = ws.WriteJSON(map[string]any{"op": 8, "d": map[string]any{"heartbeat_interval": 60000}})
 				for {
 					var message struct {
@@ -81,6 +88,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					}
 					switch message.Op {
 					case 0:
+						if fault == "ready" {
+							continue
+						}
 						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 					case 1:
 						if stage == "dave" {
