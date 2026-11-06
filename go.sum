@@ -73,8 +73,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/thesyncim/gopus v0.2.3-0.20261023192543-88e87250952e h1:4/xZhc7BeZpRRAdbmQaorERAJCS+LdXaGGpss5pAL2k=
 github.com/thesyncim/gopus v0.2.3-0.20261023192543-88e87250952e/go.mod h1:uENpqeR6V8WrMhH5vLJARzFgpMgXJBl5M0cg54LgoA0=
-github.com/thomas-vilte/dave-go v0.5.1 h1:sc0roOie5Ayn+3eKOUjry9kbBPDvFQCF8t+gy/EOrW4=
-github.com/thomas-vilte/dave-go v0.5.1/go.mod h1:h0UvVsCDECUe6W6dlSHEQTbx3TT13pGmHGngG0GXg1o=
+github.com/thomas-vilte/dave-go v0.5.2-0.20261010151814-a2b0c8c1b872 h1:O/UO3zeUoe9+wcupzAi//RBRxmYa+c5T5BbANZHQAhU=
+github.com/thomas-vilte/dave-go v0.5.2-0.20261010151814-a2b0c8c1b872/go.mod h1:h0UvVsCDECUe6W6dlSHEQTbx3TT13pGmHGngG0GXg1o=
 github.com/thomas-vilte/mls-go v1.6.0 h1:HGxrRe0kRfEAXu7MtTemNzqGmC/758rfGkarhYGPOYg=
 github.com/thomas-vilte/mls-go v1.6.0/go.mod h1:Cxl407ecAW94wwYLOycpQUp0UyfBk6dNmvs1hkw2yLg=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=

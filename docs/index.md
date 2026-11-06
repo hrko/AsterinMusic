@@ -52,6 +52,7 @@
 | [gopus移行とキュー保持](gopus-migration.md) | エンコーダー移行、永続化の検証 |
 | [開発用起動管理の導入](development-lifecycle.md) | 二重起動問題への対応と検証 |
 | [Pure Go DAVE移行](dave-go-migration.md) | 暗号化実装の移行、相互運用、実接続確認 |
+| [DAVE終了待ちの検証](dave-shutdown-verification.md) | 監視処理の実終了、上流修正の固定、資源解放の契約 |
 | [タイトル補正プラグイン検証](title-plugin-probe.md) | yt-dlp拡張による日本語タイトル取得の隔離実験 |
 
 ## 確認範囲の読み方

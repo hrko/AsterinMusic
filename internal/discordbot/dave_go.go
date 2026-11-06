@@ -5,6 +5,7 @@ package discordbot
 import (
 	"asterinmusic/internal/logging"
 	"bytes"
+	"context"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/godave"
@@ -15,7 +16,7 @@ import (
 )
 
 const daveEnabled = true
-const daveBackend = "dave-go v0.5.1"
+const daveBackend = "dave-go a2b0c8c1b872"
 
 func daveOptions(a *App) []bot.ConfigOpt {
 	return []bot.ConfigOpt{bot.WithVoiceManagerConfigOpts(voice.WithDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, callbacks godave.Callbacks) godave.Session {
@@ -105,14 +106,13 @@ func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 func (s *guardedDave) Close() error {
 	s.Invalidate()
 	s.mu.Lock()
-	if s.closed {
-		s.mu.Unlock()
-		return nil
-	}
 	s.closed = true
-	err := s.Session.Close()
 	s.mu.Unlock()
-	return err
+	// Cancellation is not completion. Keep the transport resource lease until
+	// upstream watchdogs have exited; never wait while holding the protocol
+	// guard or from a DAVE send callback. The controller bounds pending leases
+	// and reports slow cleanup without releasing their slots prematurely.
+	return s.Session.WaitShutdown(context.Background())
 }
 
 // Session.Close only cancels its internal context (sync.Once), without taking

@@ -16,7 +16,7 @@ require (
 	github.com/knadh/koanf/providers/file v1.2.1
 	github.com/knadh/koanf/v2 v2.4.1
 	github.com/thesyncim/gopus v0.2.3-0.20261023192543-88e87250952e
-	github.com/thomas-vilte/dave-go v0.5.1
+	github.com/thomas-vilte/dave-go v0.5.2-0.20261010151814-a2b0c8c1b872
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
