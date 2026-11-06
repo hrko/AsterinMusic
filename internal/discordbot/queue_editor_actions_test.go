@@ -2,6 +2,8 @@ package discordbot
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,6 +15,66 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/snowflake/v2"
 )
+
+func TestQueueEditorRechecksRoleAndFailedFacts(t *testing.T) {
+	for _, failed := range []bool{false, true} {
+		t.Run(fmt.Sprint(failed), func(t *testing.T) {
+			a, s, v := queueEditorApp(t)
+			s.queue.Add(music.Requester{ID: "3"}, []music.Track{{URL: "other"}}, "", "")
+			var err error
+			a.authorizer, err = authorization.NewCedar(authorization.Config{Preset: authorization.PresetDJOnly, DJRoleIDs: []string{"5"}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			a.client.Caches.AddRole(discord.Role{ID: 5, GuildID: 1})
+			a.authorizationMember = func(context.Context, snowflake.ID, snowflake.ID) (*discord.Member, error) {
+				return &discord.Member{User: discord.User{ID: 2}, RoleIDs: []snowflake.ID{5}}, nil
+			}
+			if err = a.loadQueueEditor(v, false); err != nil {
+				t.Fatal(err)
+			}
+			v.selected = v.entries[0].ID
+			a.authorizationMember = func(context.Context, snowflake.ID, snowflake.ID) (*discord.Member, error) {
+				if failed {
+					return nil, errors.New("private upstream failure")
+				}
+				return &discord.Member{User: discord.User{ID: 2}}, nil
+			}
+			_ = a.mutateQueueEditor(v, 0, true)
+			if len(s.queue.RequesterEntries("3")) != 1 {
+				t.Fatal("stale display permission was used")
+			}
+		})
+	}
+}
+
+func TestQueueEditorBusyReopenAndConsumedSelection(t *testing.T) {
+	a, s, v := queueEditorApp(t)
+	s.queue.Add(music.Requester{ID: "2"}, []music.Track{{URL: "one"}, {URL: "two"}}, "", "")
+	if err := a.loadQueueEditor(v, false); err != nil {
+		t.Fatal(err)
+	}
+	a.rememberQueueEditor(v)
+	v.mu.Lock()
+	_, _, err := a.queueEditorAction(v.componentID("remove"), 2, &v.guild, 5)
+	v.mu.Unlock()
+	if err == nil {
+		t.Fatal("busy view accepted another action")
+	}
+	v.selected = v.entries[0].ID
+	s.queue.Start()
+	if err = a.mutateQueueEditor(v, 0, true); err != nil {
+		t.Fatal(err)
+	}
+	if v.selected != "" || v.notice != "この曲は待機キューにありません。一覧を更新しました。" {
+		t.Fatal(v.notice)
+	}
+	newView := &queueEditor{id: "replacement", owner: v.owner, guild: v.guild, message: v.message, expires: v.expires}
+	a.rememberQueueEditor(newView)
+	if _, _, err = a.queueEditorAction(v.componentID("refresh"), 2, &v.guild, 5); err == nil {
+		t.Fatal("old message generation survived reopening")
+	}
+}
 
 func queueEditorApp(t *testing.T) (*App, *session, *queueEditor) {
 	voice := snowflake.ID(4)

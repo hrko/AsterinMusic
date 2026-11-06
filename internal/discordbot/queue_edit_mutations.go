@@ -47,7 +47,7 @@ func (s *session) editQueueScopedAs(user snowflake.ID, owner, id string, positio
 	s.waitQueueLocked()
 	target, err := s.queueEditTargetLocked(owner, id)
 	epoch := s.epoch
-	if scope != nil && (target.voice != scope.voice || epoch != scope.epoch || !time.Now().Before(scope.expires)) {
+	if err == nil && scope != nil && (target.voice != scope.voice || epoch != scope.epoch || !time.Now().Before(scope.expires)) {
 		err = errQueueEditor
 	}
 	s.mu.Unlock()
