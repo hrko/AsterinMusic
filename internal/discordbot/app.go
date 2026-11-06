@@ -42,6 +42,7 @@ type App struct {
 	helpEpoch           string
 	logger              *slog.Logger
 	historyViews        map[string]*historyView
+	queueEditors        map[string]*queueEditor
 	historyStore        *history.Store
 	historyWriter       *history.Writer
 	presenceRevision    atomic.Uint64
