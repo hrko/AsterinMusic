@@ -6,6 +6,7 @@ import (
 	"asterinmusic/internal/music"
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -333,6 +334,79 @@ func TestResumeRejectsMovementDuringAuthorization(t *testing.T) {
 				t.Fatal("rejected request changed queue")
 			}
 		})
+	}
+}
+
+func TestResumeAcrossRecoveryDeadlineGetsFreshBudget(t *testing.T) {
+	s := resumeSession(t)
+	c := s.conn.(*voiceConnection)
+	var clock atomic.Int64
+	clock.Store(time.Now().UnixNano())
+	c.now = func() time.Time { return time.Unix(0, clock.Load()) }
+	c.phase = voiceRecovering
+	c.deadline = c.now().Add(time.Second)
+	oldDeadline := c.deadline
+	c.confirmedChannel, c.membershipKnown = 3, true
+	c.canRejoin = func(context.Context, snowflake.ID) bool { return true }
+	c.remove = func() {}
+	c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
+		return newFakeVoiceTransport(), nil
+	}
+	t.Cleanup(func() { c.Close(context.Background()) })
+	var requests atomic.Int32
+	c.update = func(_ context.Context, _ snowflake.ID, channel *snowflake.ID, _, _ bool) error {
+		c.mu.Lock()
+		closed := c.phase == voiceClosed
+		fresh := c.deadline.Equal(c.now().Add(voiceRecoveryTimeout)) && c.deadline.After(oldDeadline)
+		c.mu.Unlock()
+		if closed {
+			return nil
+		} // Test cleanup is not part of the explicit retry.
+		requests.Add(1)
+		if !fresh {
+			t.Error("explicit retry reused the expired recovery budget")
+		}
+		e := stateEvent(3)
+		e.GuildID, e.UserID = 2, 8
+		e.ChannelID = channel
+		c.HandleVoiceStateUpdate(e)
+		if channel != nil {
+			server := serverEvent("fresh")
+			server.GuildID = 2
+			c.HandleVoiceServerUpdate(server)
+		}
+		return nil
+	}
+	clock.Store(oldDeadline.Add(-time.Nanosecond).UnixNano())
+	for range 2 {
+		result, request, err := s.requestResume(1, 0)
+		if err != nil || result.state != resumeRecovering || request != nil || requests.Load() != 0 {
+			t.Fatalf("pre-deadline command started a competing recovery: %v %v", result, err)
+		}
+	}
+	c.mu.Lock()
+	clock.Store(oldDeadline.UnixNano())
+	c.expireLocked()
+	c.mu.Unlock()
+	s.playAudio = func(ctx context.Context, _ voice.Conn, _ audio.Producer) error {
+		return s.sendPacket(ctx, func() error { return c.WriteAudio(ctx, []byte{1}) })
+	}
+	result, request, err := s.requestResume(1, 0)
+	if err != nil || result.state != resumeAccepted || request == nil {
+		t.Fatalf("post-deadline resume: %v %v", result, err)
+	}
+	s.launchResume(request)
+	awaitResume(t, request, resumeStarted)
+	s.mu.Lock()
+	done := s.done
+	s.mu.Unlock()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("explicit retry did not finish playback")
+	}
+	if requests.Load() != 2 {
+		t.Fatalf("leave/join requests=%d", requests.Load())
 	}
 }
 
