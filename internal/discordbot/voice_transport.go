@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"asterinmusic/internal/logging"
 	"context"
 	"errors"
 	"sync"
@@ -146,11 +147,33 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	events := make(chan transportEvent, voiceEventCapacity)
 	var handle voice.EventHandlerFunc
 	described := make(chan error, 1)
+	failed := make(chan error, 1)
+	var established atomic.Bool
+	var failOnce sync.Once
+	var stage atomic.Value
+	var daveDiagnostic atomic.Value
+	stage.Store("gateway")
+	progress := func(observation context.Context, name string) { stage.Store(name); traceVoiceStage(observation, name) }
 	failHandshake := func(stage string, err error) {
+		failOnce.Do(func() { failed <- &voiceStageError{stage, err} })
+	}
+	failure := func(err error) error {
 		select {
-		case described <- &voiceStageError{stage, err}:
+		case original := <-failed:
+			err = original
 		default:
 		}
+		var detail *voiceStageError
+		if !errors.As(err, &detail) {
+			err = &voiceStageError{stage.Load().(string), err}
+		}
+		attrs := []any{"event", "voice.handshake.failed", "stage", stage.Load().(string), "reason", failureClass(err)}
+		if snapshot := daveDiagnostic.Load(); snapshot != nil {
+			attrs = append(attrs, snapshot.([]any)...)
+		}
+		logging.OrDiscard(a.logger).DebugContext(ctx, "voice handshake failed", attrs...)
+		t.Close()
+		return err
 	}
 	options := []voice.ConnConfigOpt{voice.WithUDPConnCreateFunc(func(dave godave.Session, _ voice.SsrcLookupFunc, _ ...voice.UDPConnConfigOpt) voice.UDPConn {
 		return &voiceUDP{dave: dave}
@@ -163,8 +186,19 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			if t.invalid.Load() {
 				return
 			}
+			if op == voice.OpcodeSessionDescription || int(op) >= 21 {
+				defer func() {
+					attrs := []any{"event", "voice.dave.event", "opcode", int(op), "sequence", seq}
+					if diagnostic, ok := dave.(interface{ VoiceDiagnostic() []any }); ok {
+						snapshot := diagnostic.VoiceDiagnostic()
+						daveDiagnostic.Store(snapshot)
+						attrs = append(attrs, snapshot...)
+					}
+					logging.OrDiscard(a.logger).DebugContext(ctx, "voice DAVE event processed", attrs...)
+				}()
+			}
 			if d, ok := data.(voice.GatewayMessageDataReady); ok {
-				traceVoiceStage(ctx, "udp_discovery")
+				progress(ctx, "udp_discovery")
 				discoveryCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				stop := context.AfterFunc(eventCtx, cancel)
 				address, port, err := t.conn.UDP().Open(discoveryCtx, d.IP, d.Port, d.SSRC)
@@ -174,7 +208,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					failHandshake("udp_discovery", err)
 					return
 				}
-				traceVoiceStage(ctx, "select_protocol")
+				progress(ctx, "select_protocol")
 				mode, err := voice.ChooseEncryptionMode(d.Modes)
 				if err == nil {
 					err = g.Send(ctx, voice.OpcodeSelectProtocol, voice.GatewayMessageDataSelectProtocol{
@@ -186,26 +220,32 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					failHandshake("select_protocol", err)
 					return
 				}
-				traceVoiceStage(ctx, "session_description")
+				progress(ctx, "session_description")
 				return
 			}
-			handleVoiceDaveEvent(dave, op, data)
 			// We own readiness, so do not use Conn.Open's completion channel.
 			if d, ok := data.(voice.GatewayMessageDataSessionDescription); ok {
-				traceVoiceStage(ctx, "transport_key")
+				progress(ctx, "transport_key")
 				err := t.conn.UDP().SetSecretKey(d.Mode, d.SecretKey)
+				if err != nil {
+					failHandshake("transport_key", err)
+					if established.Load() {
+						closed(err, false)
+					}
+					return
+				}
+				progress(ctx, "dave")
+				handleVoiceDaveEvent(dave, op, data)
 				select {
-				case described <- err:
+				case described <- nil:
 				default:
 				}
-				if err != nil {
-					go closed(err, false)
-				}
 			} else {
+				handleVoiceDaveEvent(dave, op, data)
 				event(g, op, seq, data)
 			}
 		}
-		return newVoiceSocket(dave, func(g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
+		socket := newVoiceSocket(dave, func(g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 			if t.invalid.Load() {
 				return
 			}
@@ -215,18 +255,21 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			default:
 				err := errors.New("voice event queue overflow")
 				t.Invalidate()
-				select {
-				case described <- err:
-				default:
+				failHandshake("event_queue", err)
+				if established.Load() {
+					closed(err, false)
 				}
-				closed(err, false)
 			}
 		}, func(_ voice.Gateway, err error, reconnect bool) {
 			if !t.invalid.Load() {
-				failHandshake("gateway", err)
-				closed(err, reconnect)
+				failHandshake(stage.Load().(string), err)
+				if established.Load() {
+					closed(err, reconnect)
+				}
 			}
 		}, dialer)
+		socket.progress = progress
+		return socket
 	}))
 	// Reuse disgo's UDP and event types, but own discovery/protocol errors.
 	t.conn = voice.NewConn(state.GuildID, state.UserID, func(context.Context, snowflake.ID, *snowflake.ID, bool, bool) error { return nil }, func() {}, options...)
@@ -245,33 +288,37 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			}
 		}
 	}()
-	traceVoiceStage(ctx, "gateway")
+	progress(ctx, "gateway")
 	if err := t.conn.Gateway().Open(ctx, state); err != nil {
-		t.Close()
-		return nil, &voiceStageError{"gateway", err}
+		return nil, failure(err)
 	}
 	select {
 	case <-ctx.Done():
-		t.Close()
-		return nil, &voiceStageError{"transport_key", ctx.Err()}
+		return nil, failure(ctx.Err())
+	case err := <-failed:
+		return nil, failure(err)
 	case err := <-described:
 		if err != nil {
-			t.Close()
-			var stageErr *voiceStageError
-			if errors.As(err, &stageErr) {
-				return nil, err
-			}
-			return nil, &voiceStageError{"transport_key", err}
+			return nil, failure(err)
 		}
 	}
-	traceVoiceStage(ctx, "dave")
 	for !t.dave.Ready() {
 		select {
 		case <-ctx.Done():
-			t.Close()
-			return nil, &voiceStageError{"dave", ctx.Err()}
+			return nil, failure(ctx.Err())
+		case err := <-failed:
+			return nil, failure(err)
 		case <-time.After(10 * time.Millisecond):
 		}
+	}
+	established.Store(true)
+	select {
+	case err := <-failed:
+		return nil, failure(err)
+	default:
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, failure(err)
 	}
 	return t, nil
 }

@@ -30,6 +30,7 @@ type voiceSocket struct {
 	event       voice.EventHandlerFunc
 	closed      voice.CloseHandlerFunc
 	dialer      *websocket.Dialer
+	progress    func(context.Context, string)
 }
 
 type voiceSocketRun struct {
@@ -56,6 +57,14 @@ func newVoiceSocket(dave godave.Session, event voice.EventHandlerFunc, closed vo
 func (g *voiceSocket) SSRC() uint32           { g.mu.Lock(); defer g.mu.Unlock(); return g.ssrc }
 func (g *voiceSocket) Status() voice.Status   { g.mu.Lock(); defer g.mu.Unlock(); return g.status }
 func (g *voiceSocket) Latency() time.Duration { g.mu.Lock(); defer g.mu.Unlock(); return g.latency }
+
+func (g *voiceSocket) stage(ctx context.Context, name string) {
+	if g.progress != nil {
+		g.progress(ctx, name)
+	} else {
+		traceVoiceStage(ctx, name)
+	}
+}
 
 func (g *voiceSocket) Open(ctx context.Context, state voice.State) error {
 	return g.open(ctx, state, false)
@@ -86,7 +95,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	// Cancellation of either Open or Close must also cancel an in-flight dial.
 	dialCtx, dialCancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(rctx, dialCancel)
-	traceVoiceStage(ctx, "websocket_connect")
+	g.stage(ctx, "websocket_connect")
 	ws, response, err := g.dialer.DialContext(dialCtx, fmt.Sprintf("wss://%s?v=%d", state.Endpoint, voice.GatewayVersion), nil)
 	stop()
 	dialCancel()
@@ -108,7 +117,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	r.ws = ws
 	g.status = voice.StatusWaitingForHello
 	g.mu.Unlock()
-	traceVoiceStage(ctx, "hello")
+	g.stage(ctx, "hello")
 	go g.read(r)
 	select {
 	case err := <-r.ready:
@@ -168,7 +177,13 @@ func (g *voiceSocket) Send(ctx context.Context, op voice.Opcode, data voice.Gate
 	if r == nil || !ready {
 		return voice.ErrGatewayNotConnected
 	}
-	return g.send(ctx, r, op, data)
+	err := g.send(ctx, r, op, data)
+	// DAVE callbacks do not return their errors to the handshake caller.
+	// A failed wire send must also reach the connection controller.
+	if err != nil && ctx.Err() == nil && r.ctx.Err() == nil {
+		g.finish(r, err, true)
+	}
+	return err
 }
 
 func (g *voiceSocket) send(ctx context.Context, r *voiceSocketRun, op voice.Opcode, data voice.GatewayMessageData) error {
@@ -286,10 +301,10 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			g.mu.Unlock()
 			go g.heartbeat(r, interval)
 			if resume {
-				traceVoiceStage(r.observation, "resume")
+				g.stage(r.observation, "resume")
 				err = g.send(r.ctx, r, voice.OpcodeResume, voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token, SeqAck: seq})
 			} else {
-				traceVoiceStage(r.observation, "identify_ready")
+				g.stage(r.observation, "identify_ready")
 				err = g.send(r.ctx, r, voice.OpcodeIdentify, voice.GatewayMessageDataIdentify{GuildID: state.GuildID, UserID: state.UserID, SessionID: state.SessionID, Token: state.Token, MaxDaveProtocolVersion: g.dave.MaxSupportedProtocolVersion()})
 			}
 			if err != nil {

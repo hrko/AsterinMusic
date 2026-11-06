@@ -42,3 +42,24 @@ func TestDaveHandshakeNeverSendsPlaintext(t *testing.T) {
 		t.Fatalf("negotiated v0: %v", err)
 	}
 }
+
+func TestClosedDaveRejectsLateEventsAndAudio(t *testing.T) {
+	s := &guardedDave{Session: davesession.New("1234", daveCallbacks{})}
+	s.OnSelectProtocolAck(0)
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s.SetChannelID(42)
+	s.OnSelectProtocolAck(1)
+	s.OnDavePrepareTransition(1, 0)
+	s.OnDaveExecuteTransition(1)
+	if s.Ready() {
+		t.Fatal("closed DAVE became ready")
+	}
+	if _, err := s.Encrypt(7, []byte{1}, make([]byte, 100)); !errors.Is(err, errDaveNotReady) {
+		t.Fatal(err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal("close not idempotent", err)
+	}
+}

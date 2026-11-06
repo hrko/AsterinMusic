@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,9 +22,18 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
-type pendingDaveSession struct{ godave.Session }
+type pendingDaveSession struct {
+	godave.Session
+	checked chan struct{}
+	once    sync.Once
+}
 
-func (*pendingDaveSession) Ready() bool { return false }
+func (s *pendingDaveSession) Ready() bool {
+	if s.checked != nil {
+		s.once.Do(func() { close(s.checked) })
+	}
+	return false
+}
 
 type failedDiscoveryUDP struct{ protocolTestUDP }
 
@@ -34,9 +44,13 @@ func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, i
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, fault := range []string{"gateway", "udp_protocol_transport_key", "udp_discovery", "dave"} {
+	for _, fault := range []string{"gateway", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
+			checked := make(chan struct{})
+			if fault == "dave_closed" {
+				stage = "dave"
+			}
 			if fault == "gateway" {
 				stage = "websocket_connect"
 			}
@@ -70,6 +84,15 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					case 1:
 						if stage == "dave" {
 							_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
+							if fault == "dave_closed" {
+								select {
+								case <-checked:
+								case <-time.After(time.Second):
+									return
+								}
+								_ = ws.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(4006, "synthetic-secret"), time.Now().Add(time.Second))
+								return
+							}
 						}
 					}
 				}
@@ -86,7 +109,7 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 				voice.WithConnDaveSessionCreateFunc(func(logger *slog.Logger, user godave.UserID, cb godave.Callbacks) godave.Session {
 					var session godave.Session = godave.NewNoopSession(logger, user, cb)
 					if stage == "dave" {
-						session = &pendingDaveSession{session}
+						session = &pendingDaveSession{Session: session, checked: checked}
 					}
 					a.daveClosers.Store(cb, session)
 					return session
@@ -102,6 +125,12 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			attempt.end(err)
 			if err == nil {
 				t.Fatal("fault did not fail")
+			}
+			if fault == "dave_closed" {
+				var remote *websocket.CloseError
+				if !errors.As(err, &remote) || remote.Code != 4006 {
+					t.Fatalf("DAVE wait lost terminal cause: %v", err)
+				}
 			}
 			if fault == "udp_discovery" {
 				var stageErr *voiceStageError

@@ -10,6 +10,7 @@ import (
 	"github.com/disgoorg/godave"
 	davesession "github.com/thomas-vilte/dave-go/session"
 	"log/slog"
+	"net"
 	"sync"
 )
 
@@ -38,10 +39,22 @@ type guardedDave struct {
 	closed bool
 }
 
+// Only negotiated state and counters; never expose MLS payloads or keys.
+func (s *guardedDave) VoiceDiagnostic() []any {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	state, stats := s.State(), s.Stats()
+	return []any{"dave_protocol", state.ProtocolVersion, "dave_epoch_ready", state.Ready,
+		"dave_epoch", state.EpochID, "dave_commits", stats.CommitsProcessed,
+		"dave_commits_failed", stats.CommitsFailed, "dave_welcomes", stats.WelcomesJoined,
+		"dave_welcomes_failed", stats.WelcomesFailed, "dave_recoveries", stats.RecoveryAttempts,
+		"dave_proposals_rejected", stats.ProposalsRejected}
+}
+
 func (s *guardedDave) Ready() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return !s.Session.ShouldHoldFrames()
+	return !s.closed && !s.Session.ShouldHoldFrames()
 }
 func (s *guardedDave) MaxSupportedProtocolVersion() int {
 	s.mu.Lock()
@@ -51,6 +64,9 @@ func (s *guardedDave) MaxSupportedProtocolVersion() int {
 func (s *guardedDave) AssignSsrcToCodec(id uint32, codec godave.Codec) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.AssignSsrcToCodec(id, codec)
 }
 func (s *guardedDave) MaxEncryptedFrameSize(n int) int {
@@ -66,13 +82,16 @@ func (s *guardedDave) MaxDecryptedFrameSize(id godave.UserID, n int) int {
 func (s *guardedDave) Decrypt(id godave.UserID, p, out []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return 0, net.ErrClosed
+	}
 	return s.Session.Decrypt(id, p, out)
 }
 
 func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.ShouldHoldFrames() {
+	if s.closed || s.ShouldHoldFrames() {
 		return 0, errDaveNotReady
 	}
 	encrypted := s.State().ProtocolVersion != 0
@@ -86,6 +105,10 @@ func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 }
 func (s *guardedDave) Close() error {
 	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return nil
+	}
 	s.closed = true
 	stats := s.Stats()
 	err := s.Session.Close()
@@ -96,55 +119,88 @@ func (s *guardedDave) Close() error {
 func (s *guardedDave) SetChannelID(id godave.ChannelID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.SetChannelID(id)
 }
 func (s *guardedDave) AddUser(id godave.UserID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.AddUser(id)
 }
 func (s *guardedDave) RemoveUser(id godave.UserID) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.RemoveUser(id)
 }
 func (s *guardedDave) OnSelectProtocolAck(v uint16) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnSelectProtocolAck(v)
 }
 func (s *guardedDave) OnDavePrepareTransition(id, v uint16) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDavePrepareTransition(id, v)
 }
 func (s *guardedDave) OnDaveExecuteTransition(id uint16) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDaveExecuteTransition(id)
 }
 func (s *guardedDave) OnDavePrepareEpoch(epoch int, v uint16) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDavePrepareEpoch(epoch, v)
 }
 func (s *guardedDave) OnDaveMLSExternalSenderPackage(p []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDaveMLSExternalSenderPackage(p)
 }
 func (s *guardedDave) OnDaveMLSProposals(p []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDaveMLSProposals(p)
 }
 func (s *guardedDave) OnDaveMLSPrepareCommitTransition(id uint16, p []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDaveMLSPrepareCommitTransition(id, p)
 }
 func (s *guardedDave) OnDaveMLSWelcome(id uint16, p []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed {
+		return
+	}
 	s.Session.OnDaveMLSWelcome(id, p)
 }
