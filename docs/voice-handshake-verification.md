@@ -18,9 +18,11 @@
 | Discord応答更新失敗 | `resume_response_test.go`は実コマンドハンドラーの受付・結果更新にHTTP 403を返し、それでも最初の音声送信と再生が続くことを検査する | 実Discordへの障害注入は行っていない |
 | 所属と追加受付 | `voice_membership_test.go`、`queue_connection_test.go`、`voice_connection_test.go`に確認済み所属と目標の分離、世代・二重開始の検査がある。上記9段階×3操作の中断fixtureは、操作前に実際の`acceptAt`で通常・優先追加を行い、同じ接続世代と試行が保持され、新たな再生ループを開始しないことも検査する。準備中の上限・別VCからの追加拒否も別テストで確認する | 実サイトの取得処理を含めた各URL種別の再試験はしていない。共通受付以降の契約を対象としている |
 | 計測と秘密情報 | `voice_diagnostics_test.go`、`voice_logging_test.go`、`voice_trace_fault_test.go`に遅い出力・バッファ溢れ・鍵等を含まない診断の検査がある。`TestHandshakeFailureSummaryWithoutTracingOrDebug`はトレース無効・INFO設定でfactory失敗を発生させ、ERROR要約の識別子・期限・段階・通知受信・次の判断をJSONとして検査する | factory境界で進行記録を作る検査と実WSの段階検査を組み合わせている。リモート側の内部原因は判定対象外 |
-| ビルド・race | `38a57d9`までの`mise run check`とWSLの`mise run race-test`が成功。Windows/Linux、通常・本番タグを含む | 追加変更に応じた関連検査 |
+| ビルド・race | 実行コードの最新変更`1e072af`で`mise run check`とWSLの`mise run race-test`が成功。Windows/Linux、通常・本番タグを含む。以後の変更はテストと文書で、追加テストも通常・本番タグ・race検査を通過 | 実機確認は下記の通り未完了 |
 | 実Discord | 管理再起動後の単一プロセス・ready・ローカル音声送信開始は確認済み | 最新版の可聴性、VC往復、停止後のURLなし`/play`は利用者確認待ち。過去版の成功や送信ログで代替しない |
 
 ## 完了判定
+
+実行コードは`1e072af`を曲境界で反映済み。管理タスクで単一プロセス・`ready=true`・音声送信開始を確認した。`d5edfbe`までの後続コミットはテストと検証文書のみで、稼働版との実行コードの差分はない。実機の可聴性・VC往復・停止後の再開の結果はまだ受領していない。
 
 「残る確認範囲」の未確認事項を解消し、実機確認を含む計画の完了条件を満たしてから完了とする。段階テストの不足を、同じ処理を通るという推測だけで完了扱いにしない。保持曲・キュー順・音量・自動再生・履歴・管理保存は既存の回帰テストも維持する。

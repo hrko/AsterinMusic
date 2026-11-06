@@ -1,6 +1,8 @@
 # 開発・運用手順
 
-音声接続の障害では`voice.recovery.failed`と、同じ接続世代の`voice.handshake.retired`を照合する。後者はDEBUGログに接続段階、最後の音声Gateway opcode、そのイベントからの経過時間、イベントハンドラーの実行中フラグを残す。ペイロードや鍵は記録しない。Jaegerが停止していてもこの情報はJSONログに残る。UDP探索・プロトコル選択・鍵応答は現状一つの段階であり、この記録だけでその内部のどこが停止したかを断定しない。
+音声接続の障害では、まずERRORログの`voice.recovery.failed`を確認する。接続試行まで進んだ場合は、`connection_flow_id`・`attempt_id`・`attempt_generation`で失敗した試行を識別し、`stage`・`last_completed_stage`・`stage_duration_ms`・`deadline_scope`・受信済み通知・`action`を確認する。後始末で`generation`が進むため、失敗した試行の世代には`attempt_generation`を使う。通知待ちなど試行開始前の失敗には試行IDや段階の詳細は付かない。
+
+DEBUGでは`voice.handshake.retired`、`voice.resume.failed`、受信・DAVEイベント、`voice.cleanup.pending`／`voice.cleanup.completed`を合わせて調べる。UDP探索、SelectProtocol送信、SessionDescription待ち、通信鍵設定、DAVE準備は別の段階として記録する。受信opcodeと処理中opcodeも区別する。ペイロードや鍵は記録せず、Jaegerが無効でも失敗要約をJSONログに残す。記録が示すのはBot側で観測した停止箇所であり、Discord内部の原因や利用者端末の可聴性までは断定しない。検証範囲は[音声接続改善の検証状況](voice-handshake-verification.md)を参照する。
 
 音量正規化の隔離検証には`mise run loudness-probe`を使う。対象音源、認証、一時ファイル、結果の読み方は[ソース側ラウドネス検証](source-loudness-probe.md)を参照する。Botの起動・再生処理には影響しない。
 
