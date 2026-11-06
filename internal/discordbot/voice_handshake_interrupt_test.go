@@ -186,6 +186,7 @@ func TestVoiceHandshakeInterruptedAtWireStages(t *testing.T) {
 				c.mu.Lock()
 				lease, generation := c.resourceLease, c.generation
 				c.mu.Unlock()
+				assertQueueAdditionSharesHandshake(t, c)
 				switch action {
 				case "stop":
 					ctx, cancel := context.WithTimeout(context.Background(), time.Second)

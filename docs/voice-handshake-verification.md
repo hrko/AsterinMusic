@@ -14,9 +14,9 @@
 | 停止・移動・外部退出 | `voice_handshake_interrupt_test.go`はWS接続・Hello・Identify・Ready・UDP探索・SelectProtocol・SessionDescription・鍵設定・DAVEの9段階で3操作を実行し、旧資源の解放、旧世代の拒否、移動先の送信を検査する。送信2段階は実TLS接続を包んだnet.Connで対象WSフレームのWriteを保留し、Closeで解除する。書き込み開始の同期点を待ってから操作する | カーネル内の送信停滞を再現する検査ではなく、ソケット境界での制御可能な障害注入 |
 | 通知順序・重複 | `voice_description_test.go`は同値鍵応答の再初期化防止、異なる鍵応答とプロトコル選択前の応答の拒否、DAVE外部送信者通知の先行を検査する | 外部送信者テストはルーティングの検査であり、MLS暗号処理の証明ではない |
 | 実I/O・資源解放 | `voice_udp_test.go`の実UDP中断、`voice_resources_test.go`の実終了までの枠保持、`voice_transport_test.go`のイベント溢れと停止したワーカーの追跡。上記27組ではfactory・ソケット・ワーカーの終了まで資源枠が完了しないことを検査する。DAVE監視の実終了は[専用記録](dave-shutdown-verification.md)に分離 | 実Discordでの可聴性は別途確認する |
-| 手動再開と要求結果 | `resume_request_test.go`は最初の音声送信まで成功を返さず、連打・停止・移動・空キュー・音源失敗・接続失敗を区別する。連続音源失敗は3曲で結果を確定し、残りの1曲と接続を保持したまま再開できることを追加検査。`TestResumeQueueClearPreservesOnlyHeldCurrentTrack`は受付後に実際の確認付きキュー消去を行い、待機曲だけなら対象なし、保持中の現在曲があればその曲だけ再開することを検査する | 受付前の移動と各期限境界を既存テストと最終照合 |
+| 手動再開と要求結果 | `resume_request_test.go`は最初の音声送信まで成功を返さず、連打・停止・移動・空キュー・音源失敗・接続失敗を区別する。連続音源失敗は3曲で結果を確定し、残りの1曲と接続を保持したまま再開できることを追加検査。`TestResumeQueueClearPreservesOnlyHeldCurrentTrack`は受付後に実際の確認付きキュー消去を行い、待機曲だけなら対象なし、保持中の現在曲があればその曲だけ再開することを検査する。`TestResumeRejectsMovementDuringAuthorization`は認可中の利用者移動・Botとの同時移動を注入し、再開要求を作らずキューを保持することを検査する | 各期限境界を既存テストと最終照合 |
 | Discord応答更新失敗 | `resume_response_test.go`は実コマンドハンドラーの受付・結果更新にHTTP 403を返し、それでも最初の音声送信と再生が続くことを検査する | 実Discordへの障害注入は行っていない |
-| 所属と追加受付 | `voice_membership_test.go`、接続中の追加受付テスト、`voice_connection_test.go`に確認済み所属と目標の分離、世代・二重開始の検査がある | 各段階での受付という計画の範囲と照合する |
+| 所属と追加受付 | `voice_membership_test.go`、`queue_connection_test.go`、`voice_connection_test.go`に確認済み所属と目標の分離、世代・二重開始の検査がある。上記9段階×3操作の中断fixtureは、操作前に実際の`acceptAt`で通常・優先追加を行い、同じ接続世代と試行が保持され、新たな再生ループを開始しないことも検査する。準備中の上限・別VCからの追加拒否も別テストで確認する | 実サイトの取得処理を含めた各URL種別の再試験はしていない。共通受付以降の契約を対象としている |
 | 計測と秘密情報 | `voice_diagnostics_test.go`、`voice_logging_test.go`、`voice_trace_fault_test.go`に遅い出力・バッファ溢れ・鍵等を含まない診断の検査がある。`TestHandshakeFailureSummaryWithoutTracingOrDebug`はトレース無効・INFO設定でfactory失敗を発生させ、ERROR要約の識別子・期限・段階・通知受信・次の判断をJSONとして検査する | factory境界で進行記録を作る検査と実WSの段階検査を組み合わせている。リモート側の内部原因は判定対象外 |
 | ビルド・race | `38a57d9`までの`mise run check`とWSLの`mise run race-test`が成功。Windows/Linux、通常・本番タグを含む | 追加変更に応じた関連検査 |
 | 実Discord | 管理再起動後の単一プロセス・ready・ローカル音声送信開始は確認済み | 最新版の可聴性、VC往復、停止後のURLなし`/play`は利用者確認待ち。過去版の成功や送信ログで代替しない |

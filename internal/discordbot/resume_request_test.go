@@ -307,6 +307,35 @@ func TestResumeQueueClearPreservesOnlyHeldCurrentTrack(t *testing.T) {
 	}
 }
 
+func TestResumeRejectsMovementDuringAuthorization(t *testing.T) {
+	for _, moveBot := range []bool{false, true} {
+		t.Run(map[bool]string{false: "caller_moved", true: "both_moved"}[moveBot], func(t *testing.T) {
+			s := resumeSession(t)
+			checked := false
+			s.app.authorizationMember = func(_ context.Context, guild, user snowflake.ID) (*discord.Member, error) {
+				checked = true
+				channel := snowflake.ID(4)
+				s.app.client.Caches.AddVoiceState(discord.VoiceState{GuildID: guild, UserID: user, ChannelID: &channel})
+				if moveBot {
+					c := s.conn.(*voiceConnection)
+					c.mu.Lock()
+					c.channel = channel
+					c.mu.Unlock()
+				}
+				return &discord.Member{GuildID: guild, User: discord.User{ID: user}}, nil
+			}
+			_, request, err := s.requestResume(1, 0)
+			if !checked || err == nil || request != nil || s.resumeRequest != nil || s.running {
+				t.Fatalf("stale authorization accepted: checked=%v request=%v err=%v", checked, request, err)
+			}
+			_, pending := s.queue.Snapshot()
+			if len(pending) != 1 {
+				t.Fatal("rejected request changed queue")
+			}
+		})
+	}
+}
+
 func TestResumeStatusWithoutStartingAnotherOwner(t *testing.T) {
 	for _, mode := range []resumeState{resumeEmpty, resumePreparing, resumeRecovering} {
 		t.Run(string(mode), func(t *testing.T) {

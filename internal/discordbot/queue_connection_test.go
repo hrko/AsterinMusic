@@ -56,3 +56,32 @@ func TestQueueAddWhileVoicePreparationDoesNotOpenAgain(t *testing.T) {
 		})
 	}
 }
+
+// Used while the real handshake is stalled at each wire stage. Session flags
+// describe the existing start owner; the controller's attempt must stay intact.
+func assertQueueAdditionSharesHandshake(t *testing.T, c *voiceConnection) {
+	t.Helper()
+	channel := snowflake.ID(3)
+	a := &App{ctx: t.Context(), config: config.Config{GuildID: 1, QueueLimit: 2}, client: &bot.Client{Caches: cache.New(cache.WithCaches(cache.FlagVoiceStates))}}
+	a.client.Caches.AddVoiceState(discord.VoiceState{GuildID: 1, UserID: 9, ChannelID: &channel})
+	authorizationFixture(t, a)
+	s := newSession(a, 1)
+	s.conn, s.channel, s.connecting = c, channel, true
+	s.createConn = func() voice.Conn { t.Error("addition created another connection"); return nil }
+	c.mu.Lock()
+	generation, attempt := c.generation, c.traceAttempt
+	c.mu.Unlock()
+	for _, front := range []bool{false, true} {
+		n, _, err := s.acceptAt(9, music.Requester{ID: "9"}, []music.Track{autoTrack("aaaaaaaaaaa")}, "", "", 4, s.version(), music.Insertion{Front: front})
+		if err != nil || n != 1 {
+			t.Fatalf("addition during handshake: n=%d err=%v", n, err)
+		}
+	}
+	c.mu.Lock()
+	unchanged := c.generation == generation && c.traceAttempt == attempt && c.phase == voiceConnecting
+	c.mu.Unlock()
+	_, pending := s.queue.Snapshot()
+	if !unchanged || len(pending) != 2 || s.running {
+		t.Fatal("addition replaced handshake or started a parallel playback loop")
+	}
+}
