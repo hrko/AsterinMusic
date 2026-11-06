@@ -48,6 +48,12 @@ func (s *pendingDaveSession) Ready() bool {
 
 type failedDiscoveryUDP struct{ protocolTestUDP }
 
+type failedKeyUDP struct{ protocolTestUDP }
+
+func (*failedKeyUDP) SetSecretKey(voice.EncryptionMode, []byte) error {
+	return errors.New("synthetic-secret: key setup failed")
+}
+
 func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, int, error) {
 	return "", 0, errors.New("synthetic-secret: discovery failed")
 }
@@ -55,7 +61,7 @@ func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, i
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed", "dave_blocked"} {
+	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "transport_key", "dave", "dave_closed", "dave_blocked"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
 			checked := make(chan struct{})
@@ -103,7 +109,7 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 						}
 						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 					case 1:
-						if stage == "dave" {
+						if stage == "dave" || fault == "transport_key" {
 							_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
 							if fault == "dave_closed" {
 								select {
@@ -142,6 +148,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 				voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
 					if fault == "udp_discovery" {
 						return &failedDiscoveryUDP{}
+					}
+					if fault == "transport_key" {
+						return &failedKeyUDP{}
 					}
 					return &protocolTestUDP{}
 				}),
@@ -184,10 +193,10 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					t.Fatalf("DAVE wait lost terminal cause: %v", err)
 				}
 			}
-			if fault == "udp_discovery" {
+			if fault == "udp_discovery" || fault == "transport_key" {
 				var stageErr *voiceStageError
-				if !errors.As(err, &stageErr) || stageErr.stage != "udp_discovery" || errors.Is(err, context.DeadlineExceeded) {
-					t.Fatalf("discovery failure was replaced by timeout/key error: %v", err)
+				if !errors.As(err, &stageErr) || stageErr.stage != stage || errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("%s failure was replaced by another stage or timeout: %v", fault, err)
 				}
 			}
 			if attempt.current() != stage {
