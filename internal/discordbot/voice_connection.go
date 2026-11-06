@@ -57,6 +57,9 @@ type voiceConnection struct {
 	mu                 sync.Mutex
 	guild, user        snowflake.ID
 	channel            snowflake.ID
+	confirmedChannel   snowflake.ID
+	membershipKnown    bool
+	lookupMembership   func() (snowflake.ID, bool)
 	phase              voicePhase
 	generation         uint64
 	deadline           time.Time
@@ -96,6 +99,16 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 		c.tracer = a.tracer
 		c.logger = logging.Component(a.logger, "voice").With("guild_id", guild.String())
 		c.update, c.remove = update, remove
+		c.lookupMembership = func() (snowflake.ID, bool) {
+			state, found := a.client.Caches.VoiceState(guild, user)
+			if !found {
+				return 0, false // Cache absence alone does not prove a leave.
+			}
+			if state.ChannelID == nil {
+				return 0, true
+			}
+			return *state.ChannelID, true
+		}
 		c.canRejoin = func(ctx context.Context, channel snowflake.ID) bool {
 			if ctx.Err() != nil {
 				return false
@@ -319,6 +332,7 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		return
 	}
 	if e.ChannelID == nil {
+		c.membershipKnown, c.confirmedChannel = true, 0
 		if f := c.recovery; f != nil && f.leaving {
 			f.left = true
 			c.state = nil
@@ -343,6 +357,7 @@ func (c *voiceConnection) HandleVoiceStateUpdate(e gateway.EventVoiceStateUpdate
 		// the outstanding leave has been acknowledged.
 		return
 	}
+	c.membershipKnown, c.confirmedChannel = true, id
 	changed := moved || c.state == nil || c.state.SessionID != e.SessionID
 	attrs := []any{"event", "voice.membership.received", "channel_id", id.String(), "generation", c.generation, "phase", string(c.phase), "moved", moved, "session_changed", c.state == nil || c.state.SessionID != e.SessionID, "server_pending", c.server != nil}
 	diagnostic = func(ctx context.Context) {
@@ -443,7 +458,7 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 		if _, ok := c.active.(interface{ Resume(context.Context) error }); ok {
 			c.resuming = true
 			c.signalLocked(voiceRecovering)
-			c.startRecoveryLocked(context.Background(), true, false, false)
+			c.startRecoveryLocked(context.Background(), true, false, false, false)
 			return
 		}
 	}
@@ -462,7 +477,7 @@ func (c *voiceConnection) transportClosed(generation uint64, err error, reconnec
 		c.signalLocked(voiceFailed)
 		return
 	}
-	c.startRecoveryLocked(context.Background(), false, true, false)
+	c.startRecoveryLocked(context.Background(), false, true, false, false)
 }
 
 func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, deaf bool) error {
@@ -471,6 +486,7 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 		c.mu.Unlock()
 		return context.Canceled
 	}
+	resetMembership := c.phase == voiceFailed
 	c.removed = false
 	c.cancelRecoveryLocked()
 	c.channel = channel
@@ -486,7 +502,7 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 	c.endTraceLocked(voiceClosed)
 	c.startTraceLocked(ctx, "explicit_join")
 	c.beginLocked(true, voiceWaiting)
-	c.startRecoveryLocked(ctx, false, true, true)
+	c.startRecoveryLocked(ctx, false, true, true, resetMembership)
 	c.mu.Unlock()
 	return c.waitReady(ctx)
 }

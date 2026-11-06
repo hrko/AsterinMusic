@@ -31,6 +31,7 @@ type voiceRecoveryFlow struct {
 	explicit   bool
 	// Retain the receipt of both notifications after launch consumes server.
 	handshakeStarted bool
+	resetMembership  bool
 }
 
 func resumeAllowed(err error) bool {
@@ -83,7 +84,7 @@ func (c *voiceConnection) recoveryValidLocked(f *voiceRecoveryFlow) bool {
 
 // One supervisor owns the recovery budget. Transport generations may change
 // within it, but never grant additional time or reset the rejoin limit.
-func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, sendJoin, explicit bool) {
+func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, sendJoin, explicit, resetMembership bool) {
 	c.startTraceLocked(parent, "recovery")
 	c.cancelRecoveryLocked()
 	if c.deadline.IsZero() {
@@ -95,7 +96,7 @@ func (c *voiceConnection) startRecoveryLocked(parent context.Context, resume, se
 	c.observation.span.SetAttributes(attribute.Int64("asterinmusic.recovery_id", int64(c.recoverySerial)))
 	ctx, cancel := context.WithDeadline(parent, c.deadline)
 	ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(c.traceContextLocked()))
-	f := &voiceRecoveryFlow{id: c.recoverySerial, ctx: ctx, cancel: cancel, explicit: explicit}
+	f := &voiceRecoveryFlow{id: c.recoverySerial, ctx: ctx, cancel: cancel, explicit: explicit, resetMembership: resetMembership}
 	c.recovery = f
 	c.armLocked()
 	go c.runRecovery(f, resume, sendJoin)
@@ -251,6 +252,17 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			c.recoveryFailure(f, f.ctx.Err())
 		}
 	}()
+	if f.resetMembership {
+		joined, err := c.confirmRecoveryMembership(f)
+		if err != nil {
+			c.recoveryFailure(f, err)
+			return
+		}
+		if joined {
+			c.rejoinRecovery(f)
+			return
+		}
+	}
 	if resume {
 		for attempt := 1; attempt <= voiceResumeAttempts; attempt++ {
 			if !c.recoveryStage(f, "resume", attempt) {
