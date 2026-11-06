@@ -119,12 +119,15 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 	if s.channel != 0 && s.channel != channel {
 		return 0, "", errVoiceChanged
 	}
-	if s.connecting {
+	if len(tracks) == 0 && s.connecting {
 		return 0, "", errConnecting
 	}
-	if s.closing != nil || (s.stopped && s.running) {
+	if len(tracks) == 0 && (s.closing != nil || (s.stopped && s.running)) {
 		return 0, "", errStopping
 	}
+	// An addition accepted during an existing start/recovery belongs to that
+	// owner, even if it fails while queue persistence releases the lock.
+	startOwned := s.running || s.connecting || s.closing != nil
 	var n int
 	var entryID string
 	var saveErr error
@@ -159,7 +162,7 @@ func (s *session) acceptAt(user snowflake.ID, who music.Requester, tracks []musi
 			s.trackCancel()
 		}
 	}
-	if !s.running {
+	if !startOwned && !s.running && !s.connecting && s.closing == nil {
 		if err := s.startLocked(channel); err != nil {
 			return n, entryID, err
 		}
