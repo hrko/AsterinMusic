@@ -29,6 +29,8 @@ type voiceRecoveryFlow struct {
 	leaving    bool
 	left       bool
 	explicit   bool
+	// Retain the receipt of both notifications after launch consumes server.
+	handshakeStarted bool
 }
 
 func resumeAllowed(err error) bool {
@@ -120,6 +122,10 @@ func (c *voiceConnection) recoveryFailure(f *voiceRecoveryFlow, err error) {
 		return
 	}
 	c.failureStage, c.failureReason = f.stage, failureClass(err)
+	var detail *voiceStageError
+	if errors.As(err, &detail) {
+		c.failureStage = detail.stage
+	}
 	if errors.Is(err, errRejoinDenied) {
 		c.failureReason = "permission_unconfirmed"
 	}
@@ -143,15 +149,19 @@ func (c *voiceConnection) recoveryFailure(f *voiceRecoveryFlow, err error) {
 }
 
 func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Duration, leaving bool) (result error) {
+	until := "ready"
+	if leaving {
+		until = "leave_confirmation"
+	}
+	return c.waitRecoveryUntil(f, duration, until)
+}
+
+func (c *voiceConnection) waitRecoveryUntil(f *voiceRecoveryFlow, duration time.Duration, until string) (result error) {
 	ctx, cancel := context.WithTimeout(f.ctx, duration)
 	defer cancel()
 	c.mu.Lock()
 	stage := f.stage
 	c.mu.Unlock()
-	until := "ready"
-	if leaving {
-		until = "leave_confirmation"
-	}
 	ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.wait", trace.WithAttributes(attribute.String("asterinmusic.stage", stage), attribute.String("asterinmusic.wait_until", until)))
 	defer func() {
 		if errors.Is(result, context.DeadlineExceeded) {
@@ -165,7 +175,7 @@ func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Durat
 	}()
 	for {
 		c.mu.Lock()
-		if c.phase == voiceReady && !leaving {
+		if c.phase == voiceReady && until != "leave_confirmation" {
 			c.mu.Unlock()
 			return nil
 		}
@@ -173,7 +183,7 @@ func (c *voiceConnection) waitRecovery(f *voiceRecoveryFlow, duration time.Durat
 			c.mu.Unlock()
 			return context.Canceled
 		}
-		if leaving && f.left {
+		if (until == "leave_confirmation" && f.left) || (until == "notifications" && f.handshakeStarted) {
 			c.mu.Unlock()
 			return nil
 		}
@@ -341,6 +351,7 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 		c.lastToken = ""
 		c.statePending = true
 		f.attemptErr = nil
+		f.handshakeStarted = false
 		c.signalLocked(voiceWaiting)
 		c.mu.Unlock()
 		if err := c.recoveryUpdate(f, false); err != nil {
@@ -351,24 +362,19 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 	if !c.recoveryStage(f, "voice_notifications", 1) {
 		return
 	}
-	if err := c.waitRecovery(f, voiceStageTimeout, false); err == nil {
-		return
-	}
-	c.mu.Lock()
-	if !c.recoveryValidLocked(f) {
-		c.mu.Unlock()
-		return
-	}
-	// Once both notifications arrive, allow the handshake the remaining budget.
-	connecting := c.phase == voiceConnecting
-	c.mu.Unlock()
-	if connecting {
+	err := c.waitRecoveryUntil(f, voiceStageTimeout, "notifications")
+	if err == nil {
 		if !c.recoveryStage(f, "establish", 1) {
 			return
 		}
-		if err := c.waitRecovery(f, voiceRecoveryTimeout, false); err == nil {
-			return
+		if err := c.waitRecovery(f, voiceRecoveryTimeout, false); err != nil {
+			c.recoveryFailure(f, err)
 		}
+		return
+	}
+	if !errors.Is(err, context.DeadlineExceeded) || f.ctx.Err() != nil {
+		c.recoveryFailure(f, err)
+		return
 	}
 	c.rejoinRecovery(f)
 }
@@ -433,6 +439,17 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 		c.mu.Unlock()
 		return
 	}
+	// Notifications may arrive during the permission check. Once a handshake
+	// has started, its outcome is terminal for this recovery, even on failure.
+	if f.handshakeStarted {
+		c.mu.Unlock()
+		if c.recoveryStage(f, "establish", 1) {
+			if err := c.waitRecovery(f, voiceRecoveryTimeout, false); err != nil {
+				c.recoveryFailure(f, err)
+			}
+		}
+		return
+	}
 	recent := c.rejoinTimes[:0]
 	for _, at := range c.rejoinTimes {
 		if c.now().Sub(at) < voiceRejoinWindow {
@@ -478,6 +495,7 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 	}
 	f.leaving = false
 	f.stage = "rejoin_request"
+	f.handshakeStarted = false
 	c.state = nil
 	c.server = nil
 	c.lastToken = ""
@@ -489,6 +507,13 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 		return
 	}
 	if !c.recoveryStage(f, "rejoin_notifications", 1) {
+		return
+	}
+	if err := c.waitRecoveryUntil(f, voiceStageTimeout, "notifications"); err != nil {
+		c.recoveryFailure(f, err)
+		return
+	}
+	if !c.recoveryStage(f, "establish", 1) {
 		return
 	}
 	if err := c.waitRecovery(f, voiceRecoveryTimeout, false); err != nil {

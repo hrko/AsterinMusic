@@ -234,6 +234,9 @@ func (c *voiceConnection) launchLocked() {
 		return
 	}
 	c.endNotificationTraceLocked(nil)
+	if c.recovery != nil {
+		c.recovery.handshakeStarted = true
+	}
 	c.lastToken = state.Token
 	c.server = nil
 	c.statePending = false

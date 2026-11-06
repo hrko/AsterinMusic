@@ -86,6 +86,60 @@ func recoveryFixture(t *testing.T, c *voiceConnection) *voiceRecoveryFlow {
 	return f
 }
 
+func TestHandshakeFailureDoesNotRejoinAfterBothNotifications(t *testing.T) {
+	c := testVoiceController(t)
+	var joins, leaves atomic.Int32
+	c.canRejoin = func(context.Context, snowflake.ID) bool { return true }
+	c.factory = func(context.Context, voice.State, func(error, bool)) (voiceTransport, error) {
+		return nil, &voiceStageError{stage: "dave", err: errors.New("fixture failure")}
+	}
+	c.update = func(_ context.Context, _ snowflake.ID, id *snowflake.ID, _, _ bool) error {
+		if id == nil {
+			leaves.Add(1)
+		} else {
+			joins.Add(1)
+			c.HandleVoiceStateUpdate(stateEvent(*id))
+			c.HandleVoiceServerUpdate(serverEvent("fresh"))
+		}
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := c.Open(ctx, 3, false, true); err == nil {
+		t.Fatal("handshake failure was ignored")
+	}
+	if joins.Load() != 1 || leaves.Load() != 0 {
+		t.Fatalf("unexpected retry: joins=%d leaves=%d", joins.Load(), leaves.Load())
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.failureStage != "dave" {
+		t.Fatalf("failure stage=%q", c.failureStage)
+	}
+}
+
+func TestNotificationWaitEndsBeforeHandshakeCompletes(t *testing.T) {
+	c := testVoiceController(t)
+	f := recoveryFixture(t, c)
+	entered := make(chan struct{})
+	c.factory = func(ctx context.Context, _ voice.State, _ func(error, bool)) (voiceTransport, error) {
+		close(entered)
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	c.HandleVoiceStateUpdate(stateEvent(3))
+	c.HandleVoiceServerUpdate(serverEvent("fresh"))
+	<-entered
+	if err := c.waitRecoveryUntil(f, 50*time.Millisecond, "notifications"); err != nil {
+		t.Fatalf("received notifications still waiting: %v", err)
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.phase != voiceConnecting || c.server != nil || !f.handshakeStarted {
+		t.Fatal("consumed notification was not retained as a fact")
+	}
+}
+
 func TestRejoinPermissionRaceStopAndMove(t *testing.T) {
 	for _, stop := range []bool{false, true} {
 		t.Run(map[bool]string{false: "move", true: "stop"}[stop], func(t *testing.T) {
