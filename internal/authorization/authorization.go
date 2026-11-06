@@ -35,6 +35,8 @@ const (
 	PlaybackStop     Action = "playback.stop"
 	PlaybackSkip     Action = "playback.skip"
 	QueueClear       Action = "queue.clear"
+	QueueRemove      Action = "queue.remove"
+	QueueReorder     Action = "queue.reorder"
 	QueueView        Action = "queue.view"
 	PlaybackView     Action = "playback.view"
 	VolumeView       Action = "volume.view"
@@ -47,7 +49,7 @@ const (
 )
 
 func Actions() []Action {
-	return []Action{HelpView, QueueAdd, QueueAddNext, PlaybackResume, PlaybackStop, PlaybackSkip, QueueClear, QueueView, PlaybackView, VolumeView, VolumeSet, AutoplayView, AutoplaySet, HistoryView, HistoryReadd, HistoryReaddNext}
+	return []Action{HelpView, QueueAdd, QueueAddNext, PlaybackResume, PlaybackStop, PlaybackSkip, QueueClear, QueueRemove, QueueReorder, QueueView, PlaybackView, VolumeView, VolumeSet, AutoplayView, AutoplaySet, HistoryView, HistoryReadd, HistoryReaddNext}
 }
 
 // Facts must come from trusted Discord/application state, never interaction parameters.
@@ -65,6 +67,7 @@ type Principal struct {
 }
 type Resource struct {
 	GuildID, BotID, SessionID, VoiceID, RequesterID string
+	EntryID                                         string
 	Automatic                                       bool
 }
 type Facts struct{ Complete, CanView, SameVoice, InVoice, ScopeUnknown bool }

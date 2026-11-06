@@ -42,6 +42,7 @@ type authorizationTarget struct {
 	unknown            bool
 	guild, voice       snowflake.ID
 	session, requester string
+	entry              string
 	automatic          bool
 }
 
@@ -171,7 +172,7 @@ func (a *App) authorizeTarget(ctx context.Context, user snowflake.ID, action aut
 		voice = target.voice.String()
 	}
 	request := authorization.Request{Action: action, Principal: principal,
-		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester, Automatic: target.automatic},
+		Resource: authorization.Resource{GuildID: target.guild.String(), BotID: a.config.ApplicationID.String(), SessionID: target.session, VoiceID: voice, RequesterID: target.requester, EntryID: target.entry, Automatic: target.automatic},
 		Facts:    authorization.Facts{Complete: true, CanView: target.voice == 0 || permissions.Has(discord.PermissionViewChannel), InVoice: currentVoice != 0, SameVoice: currentVoice != 0 && (target.voice == 0 || currentVoice == target.voice)}}
 	request.Facts.ScopeUnknown = target.unknown
 	if action == authorization.HistoryView || action == authorization.HistoryReadd || action == authorization.HistoryReaddNext {

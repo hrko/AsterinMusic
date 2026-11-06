@@ -47,7 +47,7 @@ func NewCedar(c Config) (Service, error) {
 		return nil, errors.New("DJ preset requires at least one role")
 	}
 	var schemaText strings.Builder
-	schemaText.WriteString(`entity Role; entity User in [Role] { administrator: Bool, owner: Bool }; entity Session { requester: String };`)
+	schemaText.WriteString(`entity Role; entity User in [Role] { administrator: Bool, owner: Bool }; entity Session { requester: String, entry: String };`)
 	for _, action := range Actions() {
 		fmt.Fprintf(&schemaText, `action %q appliesTo {principal: User, resource: Session, context: {sameVoice: Bool, inVoice: Bool, dj: Bool, ownTrack: Bool}};`, action)
 	}
@@ -74,6 +74,11 @@ func NewCedar(c Config) (Service, error) {
 		condition += ` && (context.dj || principal.administrator || principal.owner)`
 	}
 	base = append(base, Policy{"builtin.control", `permit(principal, action in [Action::"playback.resume", Action::"playback.stop", Action::"playback.skip", Action::"queue.clear", Action::"volume.set", Action::"autoplay.set"], resource) when {` + condition + `};`})
+	editCondition := condition
+	if c.Preset == PresetDJControl || c.Preset == PresetDJControlSelfSkip {
+		editCondition = `context.inVoice && context.sameVoice && (context.ownTrack || context.dj || principal.administrator || principal.owner)`
+	}
+	base = append(base, Policy{"builtin.queue_edit", `permit(principal, action in [Action::"queue.remove", Action::"queue.reorder"], resource) when {` + editCondition + `};`})
 	if c.Preset == PresetDJControlSelfSkip {
 		base = append(base, Policy{"builtin.self_skip", `permit(principal, action == Action::"playback.skip", resource) when {context.inVoice && context.sameVoice && context.ownTrack};`})
 	}
@@ -128,7 +133,7 @@ func (s *cedarService) Authorize(ctx context.Context, r Request) (Decision, erro
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
-	if !r.Facts.Complete || !r.Facts.CanView || !validID(r.Principal.UserID) || !validID(r.Principal.GuildID) || r.Principal.GuildID != r.Resource.GuildID || !validID(r.Resource.BotID) || len(r.Resource.SessionID) > 128 || !slices.Contains(Actions(), r.Action) || len(r.Principal.RoleIDs) > MaxRoles {
+	if !r.Facts.Complete || !r.Facts.CanView || !validID(r.Principal.UserID) || !validID(r.Principal.GuildID) || r.Principal.GuildID != r.Resource.GuildID || !validID(r.Resource.BotID) || len(r.Resource.SessionID) > 128 || len(r.Resource.EntryID) > 128 || !slices.Contains(Actions(), r.Action) || len(r.Principal.RoleIDs) > MaxRoles {
 		return result, nil
 	}
 	if r.Resource.VoiceID != "" && !validID(r.Resource.VoiceID) {
@@ -153,7 +158,7 @@ func (s *cedarService) Authorize(ctx context.Context, r Request) (Decision, erro
 		dj = dj || slices.Contains(s.djRoles, id)
 	}
 	entities[user] = cedar.Entity{UID: user, Parents: cedar.NewEntityUIDSet(parents...), Attributes: cedar.NewRecord(cedar.RecordMap{"administrator": cedar.Boolean(r.Principal.Administrator), "owner": cedar.Boolean(r.Principal.Owner)})}
-	entities[target] = cedar.Entity{UID: target, Attributes: cedar.NewRecord(cedar.RecordMap{"requester": cedar.String(r.Resource.RequesterID)})}
+	entities[target] = cedar.Entity{UID: target, Attributes: cedar.NewRecord(cedar.RecordMap{"requester": cedar.String(r.Resource.RequesterID), "entry": cedar.String(r.Resource.EntryID)})}
 	req := cedar.Request{Principal: user, Action: cedar.NewEntityUID("Action", cedar.String(r.Action)), Resource: target, Context: cedar.NewRecord(cedar.RecordMap{"sameVoice": cedar.Boolean(r.Facts.SameVoice), "inVoice": cedar.Boolean(r.Facts.InVoice), "dj": cedar.Boolean(dj), "ownTrack": cedar.Boolean(!r.Resource.Automatic && r.Resource.RequesterID != "" && r.Resource.RequesterID == r.Principal.UserID)})}
 	if s.validator.Request(req) != nil || s.validator.Entities(entities) != nil {
 		return result, errors.New("authorization facts failed schema validation")
