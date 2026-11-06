@@ -34,6 +34,7 @@ type discordVoiceTransport struct {
 	traceCause   trace.SpanContext
 	mu           sync.Mutex
 	invalid      atomic.Bool
+	daveReady    atomic.Bool
 	conn         voice.Conn
 	dave         godave.Session
 	speaking     bool
@@ -51,7 +52,7 @@ func (t *discordVoiceTransport) Invalidate() {
 	}
 }
 func (t *discordVoiceTransport) Ready() bool {
-	return !t.invalid.Load() && t.conn.Gateway().Status() == voice.StatusReady && t.dave.Ready()
+	return !t.invalid.Load() && t.conn.Gateway().Status() == voice.StatusReady && t.daveReady.Load()
 }
 func (t *discordVoiceTransport) Resume(ctx context.Context) error {
 	if t.invalid.Load() {
@@ -284,15 +285,32 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	t.cleanup = a.takeDaveCleanup(t.conn)
 	go func() {
 		defer close(t.eventsDone)
+		ticker := time.NewTicker(10 * time.Millisecond)
+		defer ticker.Stop()
+		described := false
 		for {
 			select {
 			case <-eventCtx.Done():
 				return
+			case <-ticker.C:
+				if described {
+					t.daveReady.Store(t.dave.Ready())
+				}
 			case e := <-events:
 				if eventCtx.Err() != nil {
 					return
 				}
+				changesDave := e.op == voice.OpcodeSessionDescription || int(e.op) >= 21
+				if changesDave {
+					t.daveReady.Store(false)
+				}
 				handle(e.gateway, e.op, e.seq, e.data)
+				if e.op == voice.OpcodeSessionDescription {
+					described = true
+				}
+				if changesDave && described {
+					t.daveReady.Store(t.dave.Ready())
+				}
 			}
 		}
 	}()
@@ -310,7 +328,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			return nil, failure(err)
 		}
 	}
-	for !t.dave.Ready() {
+	for !t.daveReady.Load() {
 		select {
 		case <-ctx.Done():
 			return nil, failure(ctx.Err())

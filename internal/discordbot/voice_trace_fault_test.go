@@ -29,6 +29,16 @@ type pendingDaveSession struct {
 	once    sync.Once
 }
 
+type blockedReadinessDave struct {
+	godave.Session
+	release <-chan struct{}
+}
+
+func (s *blockedReadinessDave) Ready() bool {
+	<-s.release
+	return false
+}
+
 func (s *pendingDaveSession) Ready() bool {
 	if s.checked != nil {
 		s.once.Do(func() { close(s.checked) })
@@ -45,11 +55,11 @@ func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, i
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed"} {
+	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "dave", "dave_closed", "dave_blocked"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
 			checked := make(chan struct{})
-			if fault == "dave_closed" {
+			if fault == "dave_closed" || fault == "dave_blocked" {
 				stage = "dave"
 			}
 			if fault == "gateway" {
@@ -115,6 +125,19 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 				t.Fatal(logErr)
 			}
 			a := &App{tracer: provider.Tracer("test"), logger: logger}
+			release := make(chan struct{})
+			var resources voiceResources
+			lease := resources.acquire()
+			defer func() {
+				close(release)
+				if fault == "dave_blocked" {
+					select {
+					case <-lease.done:
+					case <-time.After(time.Second):
+						t.Error("DAVE cleanup did not finish after readiness released")
+					}
+				}
+			}()
 			opts := []voice.ConnConfigOpt{
 				voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn {
 					if fault == "udp_discovery" {
@@ -126,6 +149,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					var session godave.Session = godave.NewNoopSession(logger, user, cb)
 					if stage == "dave" {
 						session = &pendingDaveSession{Session: session, checked: checked}
+					}
+					if fault == "dave_blocked" {
+						session = &blockedReadinessDave{Session: session, release: release}
 					}
 					a.daveClosers.Store(cb, session)
 					return session
@@ -139,6 +165,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			controller := newVoiceConnection(1, 2)
 			controller.logger = logging.Component(logger, "voice")
 			ctx = controller.diagnosticContext(ctx)
+			if fault == "dave_blocked" {
+				ctx = context.WithValue(ctx, voiceResourceKey{}, lease)
+			}
 			channel := snowflake.ID(3)
 			_, err := a.openVoiceTransportWithDialer(ctx, voice.State{GuildID: 1, UserID: 2, ChannelID: &channel, SessionID: "synthetic-secret", Token: "synthetic-secret", Endpoint: strings.TrimPrefix(srv.URL, "https://")}, func(error, bool) {}, opts, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}) // local fixture only
 			attempt.end(err)
