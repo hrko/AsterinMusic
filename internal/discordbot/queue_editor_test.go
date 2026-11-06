@@ -91,8 +91,8 @@ func TestQueueEditorOwnersAndLifetime(t *testing.T) {
 		t.Fatal("owners truncated")
 	}
 	b, _ := json.Marshal(c)
-	if !strings.Contains(string(b), "ID: 26") {
-		t.Fatal("duplicate display names indistinguishable")
+	if strings.Contains(string(b), "ID:") || !strings.Contains(string(b), "待機26曲") {
+		t.Fatal("owner descriptions must show counts without numeric IDs")
 	}
 	if !v.valid(2, 1, 4, 5, 0, time.Now()) || v.valid(3, 1, 4, 5, 0, time.Now()) || v.valid(2, 1, 9, 5, 0, time.Now()) || v.valid(2, 1, 4, 6, 0, time.Now()) || v.valid(2, 1, 4, 5, 1, time.Now()) || v.valid(2, 1, 4, 5, 0, v.expires) {
 		t.Fatal("view boundaries")

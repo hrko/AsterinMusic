@@ -184,7 +184,7 @@ func (v *queueEditor) renderOwners() (discord.Embed, []discord.LayoutComponent) 
 		if name == "" {
 			name = "ユーザー"
 		}
-		options = append(options, discord.NewStringSelectMenuOption(truncate(name, 80), o.requester.ID).WithDescription(fmt.Sprintf("待機%d曲 · ID: %s", o.count, o.requester.ID)))
+		options = append(options, discord.NewStringSelectMenuOption(truncate(name, 80), o.requester.ID).WithDescription(fmt.Sprintf("待機%d曲", o.count)))
 	}
 	empty := len(options) == 0
 	if empty {

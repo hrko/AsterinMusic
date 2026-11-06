@@ -24,6 +24,9 @@ func TestQueueEditorInteractionFlow(t *testing.T) {
 	s.queue.Add(music.Requester{ID: "3", Name: "other"}, tracks[:1], "", "")
 	updates := 0
 	a.client.Rest = rest.New(rest.NewClient("test", rest.WithHTTPClient(&http.Client{Transport: historyTransport(func(r *http.Request) (*http.Response, error) {
+		if r.Method == "GET" && strings.HasPrefix(r.URL.Path, "/api/v10/guilds/1/members/") {
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"user":{"id":"2","username":"account"},"nick":"サーバーの名前"}`)), Request: r}, nil
+		}
 		if r.Method != "PATCH" {
 			t.Fatalf("unexpected notification: %s %s", r.Method, r.URL.Path)
 		}

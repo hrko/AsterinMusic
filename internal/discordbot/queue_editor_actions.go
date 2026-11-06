@@ -14,6 +14,7 @@ import (
 	"asterinmusic/internal/music"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -125,12 +126,39 @@ func (a *App) loadQueueEditor(v *queueEditor, follow bool) error {
 }
 
 func (a *App) showQueueEditor(response responseRef, v *queueEditor) {
+	if v.choosingOwner {
+		a.queueEditorOwnerNames(v)
+	}
 	v.revision++
 	e, c := v.render()
 	empty := ""
 	embeds := []discord.Embed{e}
 	_, err := a.client.Rest.UpdateInteractionResponse(a.config.ApplicationID, response.token, discord.MessageUpdate{Content: &empty, Embeds: &embeds, Components: &c, AllowedMentions: &discord.AllowedMentions{}})
 	a.logInteractionFailure(response.operation, "queue_editor.update", err)
+}
+
+// Resolve only the visible page. Display lookup failures do not block editing
+// and never change the stable requester ID used for authorization or selection.
+func (a *App) queueEditorOwnerNames(v *queueEditor) {
+	ctx, cancel := context.WithTimeout(a.ctx, 2*time.Second)
+	defer cancel()
+	for i := (v.ownerPage - 1) * 10; i < min(v.ownerPage*10, len(v.owners)); i++ {
+		o := &v.owners[i]
+		id, err := snowflake.Parse(o.requester.ID)
+		if err != nil {
+			continue
+		}
+		member, ok := a.client.Caches.Member(v.guild, id)
+		if ok {
+			o.requester.Name = member.EffectiveName()
+			continue
+		}
+		if a.client.Rest != nil && ctx.Err() == nil {
+			if member, err := a.client.Rest.GetMember(v.guild, id, rest.WithCtx(ctx)); err == nil && member != nil {
+				o.requester.Name = member.EffectiveName()
+			}
+		}
+	}
 }
 
 func (a *App) openQueueEditor(e *events.ComponentInteractionCreate) {

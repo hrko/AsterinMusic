@@ -89,6 +89,24 @@ func queueEditorApp(t *testing.T) (*App, *session, *queueEditor) {
 	return a, s, v
 }
 
+func TestQueueEditorOwnerDisplayNames(t *testing.T) {
+	a, _, v := queueEditorApp(t)
+	a.client.Caches = cache.New(cache.WithCaches(cache.FlagMembers))
+	nick, global := "サーバーの名前", "表示名"
+	a.client.Caches.AddMember(discord.Member{GuildID: 1, Nick: &nick, User: discord.User{ID: 2, Username: "account", GlobalName: &global}})
+	a.client.Caches.AddMember(discord.Member{GuildID: 1, User: discord.User{ID: 3, Username: "account", GlobalName: &global}})
+	a.client.Caches.AddMember(discord.Member{GuildID: 1, User: discord.User{ID: 4, Username: "username"}})
+	for _, id := range []string{"2", "3", "4", "5"} {
+		v.owners = append(v.owners, queueEditOwner{requester: music.Requester{ID: id, Name: "保存済み"}, count: 1})
+	}
+	a.queueEditorOwnerNames(v)
+	for i, want := range []string{nick, global, "username", "保存済み"} {
+		if v.owners[i].requester.Name != want || v.owners[i].requester.ID != fmt.Sprint(i+2) {
+			t.Fatalf("owner %d: %+v", i, v.owners[i])
+		}
+	}
+}
+
 func TestQueueEditorLoadsPerItemPermissionsWithOneLookup(t *testing.T) {
 	a, s, v := queueEditorApp(t)
 	s.queue.Add(music.Requester{ID: "2"}, []music.Track{{URL: "one"}, {URL: "two"}}, "", "")
