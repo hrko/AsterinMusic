@@ -50,6 +50,9 @@ func imageSamples(variant string) []embed {
 }
 
 func sample(variant string) embed {
+	if strings.HasPrefix(variant, "queue-edit-") {
+		return queueEditSample(variant)
+	}
 	if strings.HasPrefix(variant, "help-") {
 		return helpSample(variant)
 	}
@@ -192,6 +195,9 @@ func run() error {
 		variants = []string{"a", "b", "c"}
 	}
 	for _, v := range variants {
+		if v == "queue-edit-selected" || v == "queue-edit-11" || v == "queue-edit-91" || v == "queue-edit-owners" {
+			continue
+		}
 		if v == "help-ref-play" || v == "help-ref-playnext" || v == "help-ref-mix" {
 			continue
 		}
