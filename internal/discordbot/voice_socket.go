@@ -364,9 +364,8 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 		}
 		// The transport serializes DAVE/UDP events with teardown and audio.
 		if r.ctx.Err() == nil {
-			traceVoiceEvent(r.observation, int(message.Op), true)
+			traceVoiceReceived(r.observation, int(message.Op))
 			g.event(g, message.Op, message.Seq, message.D)
-			traceVoiceEvent(r.observation, int(message.Op), false)
 		}
 	}
 }

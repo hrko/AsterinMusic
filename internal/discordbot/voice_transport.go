@@ -182,6 +182,8 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			if t.invalid.Load() {
 				return
 			}
+			traceVoiceEvent(ctx, int(op), true)
+			defer traceVoiceEvent(ctx, int(op), false)
 			if op == voice.OpcodeSessionDescription || int(op) >= 21 {
 				defer func() {
 					attrs := []any{"event", "voice.dave.event", "opcode", int(op), "sequence", seq}

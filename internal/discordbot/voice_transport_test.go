@@ -74,6 +74,10 @@ func TestVoiceTransportHeartbeatDuringDiscovery(t *testing.T) {
 	defer server.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	tracer := tracerOrNoop(nil)
+	ctx, span := tracer.Start(ctx, "voice.connect")
+	attempt := &voiceTraceAttempt{ctx: ctx, span: span, tracer: tracer}
+	ctx = context.WithValue(ctx, voiceTraceKey{}, attempt)
 	result := make(chan error, 1)
 	a := &App{}
 	channel := snowflake.ID(3)
@@ -111,6 +115,12 @@ func TestVoiceTransportHeartbeatDuringDiscovery(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal(ctx.Err())
 		}
+	}
+	attempt.mu.Lock()
+	active, opcode, stage := attempt.handling, attempt.handlingOpcode, attempt.name
+	attempt.mu.Unlock()
+	if !active || opcode != int(voice.OpcodeReady) || stage != "udp_discovery" {
+		t.Fatalf("blocked worker hidden by heartbeat/enqueue activity: active=%v opcode=%d stage=%s", active, opcode, stage)
 	}
 }
 
