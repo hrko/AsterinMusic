@@ -42,7 +42,12 @@ type discordVoiceTransport struct {
 	eventsDone   chan struct{}
 }
 
-func (t *discordVoiceTransport) Invalidate() { t.invalid.Store(true) }
+func (t *discordVoiceTransport) Invalidate() {
+	t.invalid.Store(true)
+	if t.cancelEvents != nil {
+		t.cancelEvents()
+	}
+}
 func (t *discordVoiceTransport) Ready() bool {
 	return !t.invalid.Load() && t.conn.Gateway().Status() == voice.StatusReady && t.dave.Ready()
 }
@@ -69,11 +74,11 @@ func (t *discordVoiceTransport) Resume(ctx context.Context) error {
 func (t *discordVoiceTransport) Close() {
 	t.Invalidate()
 	t.closed.Do(func() {
-		t.cancelEvents()
-		t.mu.Lock()
+		// Interrupt network I/O before waiting for the sender/event worker.
 		t.conn.Close(context.Background())
-		t.mu.Unlock()
 		<-t.eventsDone
+		t.mu.Lock()
+		defer t.mu.Unlock()
 		t.cleanup()
 	})
 }
@@ -147,20 +152,23 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		default:
 		}
 	}
-	options := append([]voice.ConnConfigOpt(nil), opts...)
+	options := []voice.ConnConfigOpt{voice.WithUDPConnCreateFunc(func(dave godave.Session, _ voice.SsrcLookupFunc, _ ...voice.UDPConnConfigOpt) voice.UDPConn {
+		return &voiceUDP{dave: dave}
+	})}
+	options = append(options, opts...)
 	options = append(options, voice.WithConnGatewayCreateFunc(func(dave godave.Session, event voice.EventHandlerFunc, _ voice.CloseHandlerFunc, opts ...voice.GatewayConfigOpt) voice.Gateway {
 		t.dave = dave
 		dave.SetChannelID(godave.ChannelID(*state.ChannelID))
 		handle = func(g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
-			t.mu.Lock()
-			defer t.mu.Unlock()
 			if t.invalid.Load() {
 				return
 			}
 			if d, ok := data.(voice.GatewayMessageDataReady); ok {
 				traceVoiceStage(ctx, "udp_discovery")
 				discoveryCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+				stop := context.AfterFunc(eventCtx, cancel)
 				address, port, err := t.conn.UDP().Open(discoveryCtx, d.IP, d.Port, d.SSRC)
+				stop()
 				cancel()
 				if err != nil {
 					failHandshake("udp_discovery", err)
