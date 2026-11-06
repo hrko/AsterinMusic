@@ -61,7 +61,7 @@ func (*failedDiscoveryUDP) Open(context.Context, string, int, uint32) (string, i
 // These cases run the real gateway/handshake code. The fixture withholds the
 // selected response instead of directly calling the tracing helper.
 func TestVoiceTransportTraceFaultStages(t *testing.T) {
-	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "transport_key", "dave", "dave_closed", "dave_blocked"} {
+	for _, fault := range []string{"gateway", "hello", "ready", "udp_protocol_transport_key", "udp_discovery", "select_protocol", "transport_key", "dave", "dave_closed", "dave_blocked"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
 			checked := make(chan struct{})
@@ -107,7 +107,11 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 						if fault == "ready" {
 							continue
 						}
-						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
+						modes := []string{"aead_aes256_gcm_rtpsize"}
+						if fault == "select_protocol" {
+							modes = []string{"unsupported-fixture-mode"}
+						}
+						_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": modes}})
 					case 1:
 						if stage == "dave" || fault == "transport_key" {
 							_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
@@ -196,7 +200,7 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 					t.Fatalf("DAVE wait lost terminal cause: %v", err)
 				}
 			}
-			if fault == "udp_discovery" || fault == "transport_key" {
+			if fault == "udp_discovery" || fault == "transport_key" || fault == "select_protocol" {
 				var stageErr *voiceStageError
 				if !errors.As(err, &stageErr) || stageErr.stage != stage || errors.Is(err, context.DeadlineExceeded) {
 					t.Fatalf("%s failure was replaced by another stage or timeout: %v", fault, err)
