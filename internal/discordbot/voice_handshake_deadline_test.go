@@ -26,6 +26,42 @@ func TestVoiceStageDeadlineBoundaries(t *testing.T) {
 	}
 }
 
+func TestVoiceStageDeadlineUsesDiagnosticProgressRecord(t *testing.T) {
+	tracer := tracerOrNoop(nil)
+	ctx, span := tracer.Start(context.Background(), "voice.connect")
+	r := &voiceTraceAttempt{ctx: ctx, span: span, tracer: tracer}
+	defer r.end(nil)
+	d := &voiceHandshakeDeadline{record: r, overall: time.Now().Add(20 * time.Second), fail: func(string, error) {}}
+	defer d.stop()
+	if !d.advance("identify") || r.current() != "identify" {
+		t.Fatal("deadline and diagnostic stage differ")
+	}
+	r.mu.Lock()
+	started, deadline, scope := r.stageStarted, r.stageDeadline, r.deadlineScope
+	r.mu.Unlock()
+	if !deadline.Equal(d.deadline) || scope != "stage" {
+		t.Fatal("diagnostic does not describe the enforced deadline")
+	}
+	d.advance("identify")
+	r.mu.Lock()
+	unchanged := r.stageStarted.Equal(started) && r.stageDeadline.Equal(deadline)
+	r.mu.Unlock()
+	if !unchanged {
+		t.Fatal("duplicate progress reset diagnostic timing")
+	}
+	d.advance("ready")
+	r.mu.Lock()
+	clipped := r.stageDeadline.Equal(d.overall) && r.deadlineScope == "recovery" && r.lastCompleted == "identify"
+	r.mu.Unlock()
+	if !clipped {
+		t.Fatal("response wait lost recovery deadline or prior completion")
+	}
+	d.expire("ready", d.deadline)
+	if d.advance("dave") || r.current() != "ready" {
+		t.Fatal("late progress changed the timed-out diagnostic")
+	}
+}
+
 func TestVoiceStageDeadlineIgnoresRetiredTimers(t *testing.T) {
 	failed := make(chan string, 2)
 	d := &voiceHandshakeDeadline{overall: time.Now().Add(time.Minute), fail: func(stage string, err error) {

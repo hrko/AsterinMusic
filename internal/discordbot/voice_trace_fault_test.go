@@ -187,6 +187,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			if err == nil {
 				t.Fatal("fault did not fail")
 			}
+			if !strings.Contains(logs.String(), `"handshake_stage":"`+stage+`"`) || !strings.Contains(logs.String(), `"stage_deadline":`) || !strings.Contains(logs.String(), `"deadline_scope":`) {
+				t.Fatal("failure log lost the enforced stage or deadline")
+			}
 			if fault == "dave_closed" {
 				var remote *websocket.CloseError
 				if !errors.As(err, &remote) || remote.Code != 4006 {
@@ -206,6 +209,9 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 				t.Fatal("unfinished span")
 			}
 			for _, observed := range recorder.Ended() {
+				if observed.Name() == "voice.connect" && (spanString(observed, "asterinmusic.deadline_scope") != "recovery" || spanString(observed, "asterinmusic.stage_deadline") == "") {
+					t.Error("trace lost the enforced recovery deadline")
+				}
 				if observed.Name() == "voice.connect" || observed.Name() == "voice."+stage {
 					if observed.Status().Code != codes.Error {
 						t.Errorf("%s lost failure", observed.Name())

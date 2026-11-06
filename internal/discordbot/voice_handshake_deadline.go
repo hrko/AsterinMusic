@@ -18,8 +18,8 @@ func voiceStageBudget(stage string) time.Duration {
 }
 
 type voiceHandshakeDeadline struct {
-	mu       sync.Mutex
-	stage    string
+	init     sync.Once
+	record   *voiceTraceAttempt
 	deadline time.Time
 	overall  time.Time
 	timer    *time.Timer
@@ -27,22 +27,37 @@ type voiceHandshakeDeadline struct {
 	fail     func(string, error)
 }
 
+func (d *voiceHandshakeDeadline) progressRecord() *voiceTraceAttempt {
+	d.init.Do(func() {
+		if d.record == nil {
+			d.record = &voiceTraceAttempt{ctx: context.Background(), tracer: tracerOrNoop(nil)}
+		}
+	})
+	return d.record
+}
+
 func (d *voiceHandshakeDeadline) advance(stage string) bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.stopped {
+	r := d.progressRecord()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if d.stopped || r.ended {
 		return false
 	}
-	if d.stage == stage {
+	if r.name == stage && !d.deadline.IsZero() {
 		return true
 	}
 	if d.timer != nil {
 		d.timer.Stop()
 	}
-	d.stage = stage
+	r.progressLocked(stage)
 	d.deadline = time.Now().Add(voiceStageBudget(stage))
 	if d.overall.Before(d.deadline) {
 		d.deadline = d.overall
+	}
+	r.stageDeadline = d.deadline
+	r.deadlineScope = "stage"
+	if d.deadline.Equal(d.overall) {
+		r.deadlineScope = "recovery"
 	}
 	deadline := d.deadline
 	d.timer = time.AfterFunc(time.Until(deadline), func() { d.expire(stage, deadline) })
@@ -50,25 +65,25 @@ func (d *voiceHandshakeDeadline) advance(stage string) bool {
 }
 
 func (d *voiceHandshakeDeadline) current() string {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.stage
+	return d.progressRecord().current()
 }
 
 func (d *voiceHandshakeDeadline) expire(stage string, deadline time.Time) {
-	d.mu.Lock()
-	if d.stopped || d.stage != stage || !d.deadline.Equal(deadline) {
-		d.mu.Unlock()
+	r := d.progressRecord()
+	r.mu.Lock()
+	if d.stopped || r.ended || r.name != stage || !d.deadline.Equal(deadline) {
+		r.mu.Unlock()
 		return
 	}
 	d.stopped = true
-	d.mu.Unlock()
+	r.mu.Unlock()
 	d.fail(stage, context.DeadlineExceeded)
 }
 
 func (d *voiceHandshakeDeadline) stop() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	r := d.progressRecord()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	d.stopped = true
 	if d.timer != nil {
 		d.timer.Stop()
@@ -78,9 +93,10 @@ func (d *voiceHandshakeDeadline) stop() {
 // Finish and the timer compete under the same lock, so a successful transport
 // cannot be returned while a late timer is still allowed to cancel it.
 func (d *voiceHandshakeDeadline) finish() bool {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	if d.stopped || !time.Now().Before(d.deadline) {
+	r := d.progressRecord()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if d.stopped || r.ended || !time.Now().Before(d.deadline) {
 		return false
 	}
 	d.stopped = true

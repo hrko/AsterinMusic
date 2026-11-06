@@ -200,18 +200,25 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	var established atomic.Bool
 	var failOnce sync.Once
 	var daveDiagnostic atomic.Value
+	var deadlines *voiceHandshakeDeadline
 	failHandshake := func(stage string, err error) {
-		failOnce.Do(func() { failed <- &voiceStageError{stage, err} })
+		failOnce.Do(func() {
+			deadlines.stop()
+			failed <- &voiceStageError{stage, err}
+		})
 	}
 	overall, _ := ctx.Deadline()
-	deadlines := &voiceHandshakeDeadline{overall: overall, fail: func(name string, err error) {
+	progressRecord, _ := ctx.Value(voiceTraceKey{}).(*voiceTraceAttempt)
+	deadlines = &voiceHandshakeDeadline{record: progressRecord, overall: overall, fail: func(name string, err error) {
 		failHandshake(name, err)
 		cancelHandshake()
 	}}
 	defer deadlines.stop()
 	progress := func(observation context.Context, name string) {
-		if established.Load() || deadlines.advance(name) {
+		if established.Load() {
 			traceVoiceStage(observation, name)
+		} else {
+			deadlines.advance(name)
 		}
 	}
 	failure := func(err error) error {
@@ -222,9 +229,11 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		}
 		var detail *voiceStageError
 		if !errors.As(err, &detail) {
-			err = &voiceStageError{deadlines.current(), err}
+			detail = &voiceStageError{deadlines.current(), err}
+			err = detail
 		}
-		attrs := []any{"event", "voice.handshake.failed", "stage", deadlines.current(), "reason", failureClass(err)}
+		attrs := []any{"event", "voice.handshake.failed", "stage", detail.stage, "reason", failureClass(err)}
+		attrs = append(attrs, deadlines.progressRecord().diagnostic()...)
 		if snapshot := daveDiagnostic.Load(); snapshot != nil {
 			attrs = append(attrs, snapshot.([]any)...)
 		}

@@ -132,6 +132,8 @@ type voiceTraceAttempt struct {
 	stageStarted   time.Time
 	lastCompleted  string
 	endedAt        time.Time
+	stageDeadline  time.Time
+	deadlineScope  string
 }
 type voiceTraceKey struct{}
 
@@ -159,6 +161,9 @@ func (a *voiceTraceAttempt) diagnostic() []any {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	attrs := []any{"handshake_stage", a.name, "event_handler_active", a.handling}
+	if !a.stageDeadline.IsZero() {
+		attrs = append(attrs, "stage_deadline", a.stageDeadline, "deadline_scope", a.deadlineScope)
+	}
 	now := time.Now()
 	if !a.endedAt.IsZero() {
 		now = a.endedAt
@@ -181,6 +186,10 @@ func (a *voiceTraceAttempt) diagnostic() []any {
 func (a *voiceTraceAttempt) progress(name string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.progressLocked(name)
+}
+
+func (a *voiceTraceAttempt) progressLocked(name string) {
 	if a.ended {
 		return
 	}
@@ -209,6 +218,9 @@ func (a *voiceTraceAttempt) end(err error) {
 	a.ended = true
 	a.endedAt = time.Now()
 	a.span.SetAttributes(attribute.String("asterinmusic.stage", a.name))
+	if !a.stageDeadline.IsZero() {
+		a.span.SetAttributes(attribute.String("asterinmusic.deadline_scope", a.deadlineScope), attribute.String("asterinmusic.stage_deadline", a.stageDeadline.UTC().Format(time.RFC3339Nano)))
+	}
 	if a.stage != nil {
 		finishTrace(a.stage, err)
 		a.stage = nil
