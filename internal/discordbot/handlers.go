@@ -128,7 +128,7 @@ func (a *App) onCommand(e *events.ApplicationCommandInteractionCreate) {
 		if front {
 			title = "自分の次の番に追加しました"
 		}
-		embed := resultEmbed(title, body, n, len(result.Tracks), err != nil || result.Partial || result.Skipped > 0, addErr)
+		embed := s.additionResultEmbed(title, body, n, len(result.Tracks), err != nil || result.Partial || result.Skipped > 0, addErr)
 		if !result.Input.Playlist {
 			embed.Thumbnail = trackThumbnail(result.Tracks[0])
 		}
@@ -311,7 +311,7 @@ func (a *App) onComponent(e *events.ComponentInteractionCreate) {
 	}
 	used := n > 0 || (inspectErr == nil && len(result.Tracks) > 0 && len(tracks) == 0)
 	a.offers.finish(id, used)
-	embed := resultEmbed(fmt.Sprintf("プレイリストから%d曲を追加しました", n), listLink(o.URL, result.PlaylistTitle)+"\n\n"+originBody("最初に追加した曲", o.Track, e.User().ID.String()), n, len(tracks), inspectErr != nil || result.Partial, addErr)
+	embed := s.additionResultEmbed(fmt.Sprintf("プレイリストから%d曲を追加しました", n), listLink(o.URL, result.PlaylistTitle)+"\n\n"+originBody("最初に追加した曲", o.Track, e.User().ID.String()), n, len(tracks), inspectErr != nil || result.Partial, addErr)
 	embed.Thumbnail = trackThumbnail(o.Track)
 	if result.LimitReached {
 		embed.Description += "\n\n先頭100件までを読み込みました。"

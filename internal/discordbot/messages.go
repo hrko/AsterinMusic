@@ -36,6 +36,45 @@ func (a *App) editFailure(response responseRef, text string) {
 	a.editEmbed(response, discord.Embed{Title: "操作を完了できませんでした", Description: text, Color: colorError}, nil)
 }
 func singleLink(t music.Track) string { return trackLink(t, 160) }
+
+// Addition success and connection progress are independent. Snapshot only;
+// rendering a response must never start or wait for another connection.
+func (s *session) additionConnectionNotice() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if c, ok := s.conn.(*voiceConnection); ok {
+		c.mu.Lock()
+		phase, recovering := c.phase, c.recovery != nil && !c.recovery.explicit
+		c.mu.Unlock()
+		if phase == voiceFailed {
+			return "音声接続は停止しています。再開するには /play を実行してください。"
+		}
+		if phase == voiceRecovering || recovering {
+			return "音声接続の復旧を待っています。"
+		}
+		if phase == voiceWaiting || phase == voiceConnecting {
+			return "音声接続を準備しています。"
+		}
+	}
+	if s.connecting {
+		return "音声接続を準備しています。"
+	}
+	if s.stopped || s.closing != nil {
+		return "再生は停止しています。再開するには /play を実行してください。"
+	}
+	return ""
+}
+
+func (s *session) additionResultEmbed(title, body string, n, wanted int, partial bool, err error) discord.Embed {
+	e := resultEmbed(title, body, n, wanted, partial, err)
+	if n > 0 && err == nil {
+		if notice := s.additionConnectionNotice(); notice != "" {
+			e.Description += "\n\n" + notice
+		}
+	}
+	return e
+}
+
 func resultEmbed(title, body string, n, wanted int, partial bool, err error) discord.Embed {
 	e := discord.Embed{Title: title, Description: body, Color: colorInfo}
 	notes := []string{}

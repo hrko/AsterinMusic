@@ -43,7 +43,7 @@ func (a *App) mixCommand(e *events.ApplicationCommandInteractionCreate, s *sessi
 	if a.rejectDeferredAuthorization(responseFor(e), addErr, false) {
 		return
 	}
-	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", seed.Tracks[0], e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed := s.additionResultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", seed.Tracks[0], e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
 	embed.Thumbnail = trackThumbnail(seed.Tracks[0])
 	a.editEmbed(responseFor(e), embed, nil)
 }
@@ -66,7 +66,7 @@ func (a *App) mixComponent(e *events.ComponentInteractionCreate, s *session, o o
 	}
 	used := n > 0 || (fetchErr == nil && len(result.Tracks) > 0 && len(selection.Tracks) == 0)
 	a.offers.finish(o.ID, used)
-	embed := resultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", o.Track, e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
+	embed := s.additionResultEmbed(fmt.Sprintf("Mixから%d曲を追加しました", n), originBody("起点", o.Track, e.User().ID.String()), n, len(selection.Tracks), fetchErr != nil || result.Partial, addErr)
 	embed.Thumbnail = trackThumbnail(o.Track)
 	var components []discord.LayoutComponent
 	if !used {

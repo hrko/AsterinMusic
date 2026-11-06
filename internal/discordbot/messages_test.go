@@ -16,6 +16,49 @@ func commandData(t *testing.T, raw string) discord.SlashCommandInteractionData {
 	}
 	return d
 }
+
+func TestAdditionResultSeparatesQueueSuccessFromConnectionProgress(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		phase      voicePhase
+		connecting bool
+		stopped    bool
+		recovery   *voiceRecoveryFlow
+		want       string
+	}{
+		{name: "initial", connecting: true, want: "音声接続を準備しています。"},
+		{name: "handshake", phase: voiceConnecting, want: "音声接続を準備しています。"},
+		{name: "explicit_retry", phase: voiceWaiting, recovery: &voiceRecoveryFlow{explicit: true}, want: "音声接続を準備しています。"},
+		{name: "automatic_retry", phase: voiceWaiting, recovery: &voiceRecoveryFlow{}, want: "音声接続の復旧を待っています。"},
+		{name: "failed", phase: voiceFailed, want: "音声接続は停止しています。再開するには /play を実行してください。"},
+		{name: "stopped", stopped: true, want: "再生は停止しています。再開するには /play を実行してください。"},
+		{name: "ready", phase: voiceReady},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &session{connecting: tc.connecting, stopped: tc.stopped}
+			if tc.phase != "" {
+				s.conn = &voiceConnection{phase: tc.phase, recovery: tc.recovery}
+			}
+			got := s.additionResultEmbed("追加しました", "曲名", 1, 1, false, nil)
+			want := "曲名"
+			if tc.want != "" {
+				want += "\n\n" + tc.want
+			}
+			if got.Title != "追加しました" || got.Description != want || got.Color != colorInfo {
+				t.Fatalf("addition result: %#v", got)
+			}
+			// Failed additions already have their own error. Do not append a
+			// misleading connection-progress message or duplicate the failure.
+			for _, n := range []int{0, 1} {
+				got := s.additionResultEmbed("追加しました", "曲名", n, 1, false, errQueueSave)
+				base := resultEmbed("追加しました", "曲名", n, 1, false, errQueueSave)
+				if got.Description != base.Description || got.Color != base.Color {
+					t.Fatal("connection notice changed an error response")
+				}
+			}
+		})
+	}
+}
 func TestQueryVisibility(t *testing.T) {
 	for _, tc := range []struct {
 		raw     string

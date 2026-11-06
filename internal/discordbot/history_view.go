@@ -444,6 +444,8 @@ func (a *App) readdHistory(e *events.ComponentInteractionCreate, v *historyView,
 		}
 		if addErr != nil {
 			text += "\n" + userError(addErr)
+		} else if notice := s.additionConnectionNotice(); notice != "" {
+			text += "\n" + notice
 		}
 	} else if addErr != nil {
 		text = userError(addErr)
