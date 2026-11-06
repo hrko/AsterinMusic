@@ -285,6 +285,7 @@ func (c *voiceConnection) runRecovery(f *voiceRecoveryFlow, resume, sendJoin boo
 			}
 			ctx, cancel := context.WithTimeout(f.ctx, voiceStageTimeout)
 			ctx, observed := tracerOrNoop(c.tracer).Start(ctx, "voice.resume", trace.WithAttributes(attribute.Int("asterinmusic.attempt", attempt)))
+			ctx = c.diagnosticContext(ctx)
 			err := resumable.Resume(ctx)
 			if errors.Is(err, context.DeadlineExceeded) {
 				scope := "attempt"

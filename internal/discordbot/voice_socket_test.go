@@ -107,8 +107,14 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	defer server.Close()
 	closed := make(chan error, 4)
 	acks := make(chan struct{}, 8)
+	type observationKey struct{}
+	observations := make(chan string, 2)
 	dave := godave.NewNoopSession(slog.Default(), "2", nil)
-	g := newVoiceSocket(dave, func(_ voice.Gateway, op voice.Opcode, _ int, _ voice.GatewayMessageData) {
+	g := newVoiceSocket(dave, func(observation context.Context, _ voice.Gateway, op voice.Opcode, _ int, _ voice.GatewayMessageData) {
+		if op == voice.OpcodeReady || op == voice.OpcodeResumed {
+			value, _ := observation.Value(observationKey{}).(string)
+			observations <- value
+		}
 		if op == voice.OpcodeHeartbeatACK {
 			select {
 			case acks <- struct{}{}:
@@ -121,7 +127,7 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	state := voice.State{GuildID: 1, UserID: 2, ChannelID: &channel, SessionID: "test", Token: "test", Endpoint: strings.TrimPrefix(server.URL, "https://")}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	if err := g.Open(ctx, state); err != nil {
+	if err := g.Open(context.WithValue(ctx, observationKey{}, "initial"), state); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -133,11 +139,21 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal(ctx.Err())
 	}
-	if err := g.Resume(ctx, state); err != nil {
+	if err := g.Resume(context.WithValue(ctx, observationKey{}, "resume"), state); err != nil {
 		t.Fatal(err)
 	}
 	if first, second := <-ops, <-ops; first != 0 || second != 7 {
 		t.Fatalf("identify/resume: %d, %d", first, second)
+	}
+	for _, want := range []string{"initial", "resume"} {
+		select {
+		case got := <-observations:
+			if got != want {
+				t.Fatalf("event observation = %q, want %q", got, want)
+			}
+		case <-ctx.Done():
+			t.Fatal("establishment observation missing")
+		}
 	}
 	if g.SSRC() != 42 {
 		t.Fatal("Resume lost SSRC")
@@ -244,7 +260,7 @@ func TestVoiceSocketRejectsContradictoryEstablishment(t *testing.T) {
 				_, _, _ = ws.ReadMessage()
 			}))
 			defer server.Close()
-			g := newVoiceSocket(godave.NewNoopSession(slog.Default(), "2", nil), func(voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) {}, nil, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+			g := newVoiceSocket(godave.NewNoopSession(slog.Default(), "2", nil), func(context.Context, voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) {}, nil, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
 			defer g.Close()
 			g.established = tc.resume
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -283,7 +299,7 @@ func TestVoiceSocketHeartbeatTimeoutDoesNotReconnect(t *testing.T) {
 	}))
 	defer server.Close()
 	closed := make(chan error, 2)
-	g := newVoiceSocket(godave.NewNoopSession(slog.Default(), "2", nil), func(voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) {}, func(_ voice.Gateway, e error, _ bool) { closed <- e }, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+	g := newVoiceSocket(godave.NewNoopSession(slog.Default(), "2", nil), func(context.Context, voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) {}, func(_ voice.Gateway, e error, _ bool) { closed <- e }, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
 	defer g.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

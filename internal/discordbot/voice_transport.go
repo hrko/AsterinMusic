@@ -141,13 +141,14 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	// This worker survives successful establishment and Resume. In particular,
 	// SessionDescription and subsequent DAVE events share one ordered queue.
 	type transportEvent struct {
-		gateway voice.Gateway
-		op      voice.Opcode
-		seq     int
-		data    voice.GatewayMessageData
+		observation context.Context
+		gateway     voice.Gateway
+		op          voice.Opcode
+		seq         int
+		data        voice.GatewayMessageData
 	}
 	events := make(chan transportEvent, voiceEventCapacity)
-	var handle voice.EventHandlerFunc
+	var handle voiceSocketEventHandler
 	described := make(chan error, 1)
 	failed := make(chan error, 1)
 	var established atomic.Bool
@@ -192,12 +193,12 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	options = append(options, voice.WithConnGatewayCreateFunc(func(dave godave.Session, event voice.EventHandlerFunc, _ voice.CloseHandlerFunc, opts ...voice.GatewayConfigOpt) voice.Gateway {
 		t.dave = dave
 		dave.SetChannelID(godave.ChannelID(*state.ChannelID))
-		handle = func(g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
+		handle = func(observation context.Context, g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 			if t.invalid.Load() {
 				return
 			}
-			traceVoiceEvent(ctx, int(op), true)
-			defer traceVoiceEvent(ctx, int(op), false)
+			traceVoiceEvent(observation, int(op), true)
+			defer traceVoiceEvent(observation, int(op), false)
 			if op == voice.OpcodeSessionDescription || int(op) >= 21 {
 				defer func() {
 					attrs := []any{"event", "voice.dave.event", "opcode", int(op), "sequence", seq}
@@ -206,11 +207,11 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 						daveDiagnostic.Store(snapshot)
 						attrs = append(attrs, snapshot...)
 					}
-					recordVoiceDiagnostic(ctx, logger, slog.LevelDebug, "voice DAVE event processed", attrs...)
+					recordVoiceDiagnostic(observation, logger, slog.LevelDebug, "voice DAVE event processed", attrs...)
 				}()
 			}
 			if d, ok := data.(voice.GatewayMessageDataReady); ok {
-				progress(ctx, "udp_discovery")
+				progress(observation, "udp_discovery")
 				discoveryCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				stop := context.AfterFunc(eventCtx, cancel)
 				address, port, err := t.conn.UDP().Open(discoveryCtx, d.IP, d.Port, d.SSRC)
@@ -220,7 +221,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					failHandshake("udp_discovery", err)
 					return
 				}
-				progress(ctx, "select_protocol")
+				progress(observation, "select_protocol")
 				mode, err := voice.ChooseEncryptionMode(d.Modes)
 				if err == nil {
 					err = g.Send(ctx, voice.OpcodeSelectProtocol, voice.GatewayMessageDataSelectProtocol{
@@ -232,12 +233,12 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					failHandshake("select_protocol", err)
 					return
 				}
-				progress(ctx, "session_description")
+				progress(observation, "session_description")
 				return
 			}
 			// We own readiness, so do not use Conn.Open's completion channel.
 			if d, ok := data.(voice.GatewayMessageDataSessionDescription); ok {
-				progress(ctx, "transport_key")
+				progress(observation, "transport_key")
 				err := t.conn.UDP().SetSecretKey(d.Mode, d.SecretKey)
 				if err != nil {
 					failHandshake("transport_key", err)
@@ -246,7 +247,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 					}
 					return
 				}
-				progress(ctx, "dave")
+				progress(observation, "dave")
 				handleVoiceDaveEvent(dave, op, data)
 				select {
 				case described <- nil:
@@ -257,12 +258,12 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 				event(g, op, seq, data)
 			}
 		}
-		socket := newVoiceSocket(dave, func(g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
+		socket := newVoiceSocket(dave, func(observation context.Context, g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 			if t.invalid.Load() {
 				return
 			}
 			select {
-			case events <- transportEvent{g, op, seq, data}:
+			case events <- transportEvent{observation, g, op, seq, data}:
 			case <-eventCtx.Done():
 			default:
 				err := errors.New("voice event queue overflow")
@@ -321,7 +322,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 				if changesDave {
 					t.daveReady.Store(false)
 				}
-				handle(e.gateway, e.op, e.seq, e.data)
+				handle(e.observation, e.gateway, e.op, e.seq, e.data)
 				if e.op == voice.OpcodeSessionDescription {
 					described = true
 				}

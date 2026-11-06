@@ -17,6 +17,8 @@ import (
 // voiceSocket implements only the wire protocol. It never rejoins a VC or
 // reconnects itself: the connection controller owns those decisions. Every
 // reader and heartbeat belongs to a particular run, including across Resume.
+type voiceSocketEventHandler func(context.Context, voice.Gateway, voice.Opcode, int, voice.GatewayMessageData)
+
 type voiceSocket struct {
 	mu          sync.Mutex
 	run         *voiceSocketRun
@@ -27,7 +29,7 @@ type voiceSocket struct {
 	state       voice.State
 	established bool
 	dave        godave.Session
-	event       voice.EventHandlerFunc
+	event       voiceSocketEventHandler
 	closed      voice.CloseHandlerFunc
 	dialer      *websocket.Dialer
 	progress    func(context.Context, string)
@@ -54,7 +56,7 @@ type voiceSocketRun struct {
 
 func (r *voiceSocketRun) complete(err error) { r.readyOnce.Do(func() { r.ready <- err }) }
 
-func newVoiceSocket(dave godave.Session, event voice.EventHandlerFunc, closed voice.CloseHandlerFunc, dialer *websocket.Dialer) *voiceSocket {
+func newVoiceSocket(dave godave.Session, event voiceSocketEventHandler, closed voice.CloseHandlerFunc, dialer *websocket.Dialer) *voiceSocket {
 	return &voiceSocket{dave: dave, event: event, closed: closed, dialer: dialer, seq: -1}
 }
 
@@ -411,7 +413,7 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 		// The transport serializes DAVE/UDP events with teardown and audio.
 		if r.ctx.Err() == nil {
 			traceVoiceReceived(r.observation, int(message.Op))
-			g.event(g, message.Op, message.Seq, message.D)
+			g.event(r.observation, g, message.Op, message.Seq, message.D)
 		}
 	}
 }
