@@ -537,10 +537,20 @@ func (c *voiceConnection) waitReady(ctx context.Context) error {
 		c.mu.Lock()
 		c.expireLocked()
 		phase, removed, ch := c.phase, c.removed, c.changed
-		if phase == voiceRecovering && !c.resuming && c.active != nil && c.active.Ready() {
+		transport, generation, resuming := c.active, c.generation, c.resuming
+		c.mu.Unlock()
+		// DAVE readiness can contend with a protocol callback. Never let that
+		// wait hold the controller lock needed by stop, moves, or deadlines.
+		if phase == voiceRecovering && !resuming && transport != nil && transport.Ready() {
+			c.mu.Lock()
+			c.expireLocked()
+			current := c.active == transport && c.generation == generation && c.phase == voiceRecovering && !c.resuming && !c.removed
+			c.mu.Unlock()
+			if !current {
+				continue
+			}
 			phase = voiceReady
 		}
-		c.mu.Unlock()
 		if removed {
 			return errVoiceRemoved
 		}
