@@ -177,6 +177,9 @@ func (s *session) startLocked(channel snowflake.ID) error {
 	if s.closing != nil {
 		return errStopping
 	}
+	if err := s.waitPreviousPlaybackLocked(); err != nil {
+		return err
+	}
 	_, pending := s.queue.Snapshot()
 	if len(pending) == 0 && !s.recoveryHeld && s.resumeAuto == nil && (!s.auto.enabled || s.auto.seed == nil) {
 		return errQueueEmpty
@@ -265,7 +268,10 @@ func (s *session) startLocked(channel snowflake.ID) error {
 
 func (s *session) loop(done chan struct{}) {
 	defer close(done)
-	defer func() { s.mu.Lock(); r := s.restore; s.mu.Unlock(); r.finish("stopped_before_audio", context.Canceled) }()
+	s.mu.Lock()
+	restore := s.restore
+	s.mu.Unlock()
+	defer restore.finish("stopped_before_audio", context.Canceled)
 	failures := 0
 	for {
 		entry, automatic, ok := s.nextEntry()
@@ -320,11 +326,11 @@ func (s *session) loop(done chan struct{}) {
 			return nil
 		})
 		playLog.join()
-		if s.restore != nil {
+		if restore != nil {
 			if err != nil {
-				s.restore.finish("preparation_failed", err)
+				restore.finish("preparation_failed", err)
 			} else {
-				s.restore.finish("no_audio", errors.New("restored playback produced no audio"))
+				restore.finish("no_audio", errors.New("restored playback produced no audio"))
 			}
 		}
 		cancel()
