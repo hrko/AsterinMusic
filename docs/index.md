@@ -43,6 +43,7 @@
 | 記録 | 内容 |
 | --- | --- |
 | [初期・機能検証](verification.md) | サイト取得、Discord、音声処理などの確認履歴 |
+| [ソース側ラウドネス検証](source-loudness-probe.md) | 両サイト6曲のソース値と全曲実測、共通音量への補正方針 |
 | [トレース計装の検証](tracing-verification.md) | OTLP・障害注入・実機の確認結果と未完了項目 |
 | [Pure Go Opus比較](opus-comparison.md) | 初期の候補比較 |
 | [gopus SIMD比較](opus-simd-comparison.md) | 通常版とSIMD版の性能・互換性 |

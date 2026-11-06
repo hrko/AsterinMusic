@@ -78,6 +78,10 @@ run = "go run ./experiments/titleplugin"
 description = "Compare localized public video titles using .env.youtube API key"
 run = "go run ./experiments/youtubedata"
 
+[tasks.loudness-probe]
+description = "Compare source loudness metadata with full-track measurements, without Discord"
+run = "go run ./experiments/loudness"
+
 [tasks.ui-preview]
 description = "Send layout samples to the explicitly configured Discord test webhook"
 run = "go run ./experiments/uipreview"
