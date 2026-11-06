@@ -2,6 +2,7 @@ package discordbot
 
 import (
 	"asterinmusic/internal/logging"
+	"bytes"
 	"context"
 	"errors"
 	"log/slog"
@@ -248,6 +249,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 	options = append(options, voice.WithConnGatewayCreateFunc(func(dave godave.Session, event voice.EventHandlerFunc, _ voice.CloseHandlerFunc, opts ...voice.GatewayConfigOpt) voice.Gateway {
 		t.dave = dave
 		dave.SetChannelID(godave.ChannelID(*state.ChannelID))
+		var description *voice.GatewayMessageDataSessionDescription // Ordered worker only.
 		handle = func(observation context.Context, g voice.Gateway, op voice.Opcode, seq int, data voice.GatewayMessageData) {
 			if t.invalid.Load() {
 				return
@@ -293,6 +295,23 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 			}
 			// We own readiness, so do not use Conn.Open's completion channel.
 			if d, ok := data.(voice.GatewayMessageDataSessionDescription); ok {
+				if description != nil {
+					if d.Mode == description.Mode && d.DaveProtocolVersion == description.DaveProtocolVersion && bytes.Equal(d.SecretKey, description.SecretKey) {
+						recordVoiceDiagnostic(observation, logger, slog.LevelDebug, "duplicate voice description ignored", "event", "voice.protocol.duplicate", "opcode", int(op))
+						return
+					}
+					err := &voiceStageError{"session_description", errors.New("conflicting voice session description")}
+					failHandshake("session_description", err)
+					cancelHandshake()
+					t.Invalidate()
+					if established.Load() {
+						closed(err, false)
+					}
+					return
+				}
+				copy := d
+				copy.SecretKey = bytes.Clone(d.SecretKey)
+				description = &copy
 				progress(observation, "transport_key")
 				err := t.conn.UDP().SetSecretKey(d.Mode, d.SecretKey)
 				if err != nil {

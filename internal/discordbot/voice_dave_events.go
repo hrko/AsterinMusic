@@ -5,8 +5,9 @@ import (
 	"github.com/disgoorg/godave"
 )
 
-// Called under the transport lock, so protocol changes cannot overlap teardown
-// or audio encryption. Protocol payload types are supplied by disgo.
+// Called by the ordered transport worker. guardedDaveSession serializes DAVE
+// events with encryption; transport cleanup waits for this worker to finish.
+// Protocol payload types are supplied by disgo.
 func handleVoiceDaveEvent(s godave.Session, op voice.Opcode, data voice.GatewayMessageData) {
 	switch op {
 	case voice.OpcodeSessionDescription:
