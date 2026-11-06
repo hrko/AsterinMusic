@@ -162,6 +162,8 @@ func (c *voiceConnection) signalLocked(phase voicePhase) {
 }
 func (c *voiceConnection) discardLocked() {
 	if c.traceAttempt != nil {
+		attrs := append([]any{"event", "voice.handshake.retired", "generation", c.generation}, c.traceAttempt.diagnostic()...)
+		c.recordDiagnosticLocked(slog.LevelDebug, "voice handshake retired", attrs...)
 		err := error(context.Canceled)
 		if !c.deadline.IsZero() && !c.now().Before(c.deadline) {
 			err = context.DeadlineExceeded

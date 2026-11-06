@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 	"sync"
+	"time"
 )
 
 func tracerOrNoop(t trace.Tracer) trace.Tracer {
@@ -116,15 +117,36 @@ func (c *voiceConnection) endTraceLocked(phase voicePhase) {
 
 // Each attempt owns progress independently of the current controller generation.
 type voiceTraceAttempt struct {
-	mu     sync.Mutex
-	ctx    context.Context
-	span   trace.Span
-	tracer trace.Tracer
-	stage  trace.Span
-	name   string
-	ended  bool
+	mu         sync.Mutex
+	ctx        context.Context
+	span       trace.Span
+	tracer     trace.Tracer
+	stage      trace.Span
+	name       string
+	ended      bool
+	lastOpcode int
+	lastEvent  time.Time
+	handling   bool
 }
 type voiceTraceKey struct{}
+
+func traceVoiceEvent(ctx context.Context, opcode int, handling bool) {
+	if a, ok := ctx.Value(voiceTraceKey{}).(*voiceTraceAttempt); ok {
+		a.mu.Lock()
+		a.lastOpcode, a.lastEvent, a.handling = opcode, time.Now(), handling
+		a.mu.Unlock()
+	}
+}
+
+func (a *voiceTraceAttempt) diagnostic() []any {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	attrs := []any{"handshake_stage", a.name, "event_handler_active", a.handling}
+	if !a.lastEvent.IsZero() {
+		attrs = append(attrs, "last_opcode", a.lastOpcode, "last_event_age_ms", time.Since(a.lastEvent).Milliseconds())
+	}
+	return attrs
+}
 
 func (a *voiceTraceAttempt) progress(name string) {
 	a.mu.Lock()

@@ -127,7 +127,11 @@ func (c *voiceConnection) recoveryFailure(f *voiceRecoveryFlow, err error) {
 		c.failureReason = "retry_limit"
 	}
 	if errors.Is(err, context.DeadlineExceeded) && (f.stage == "voice_notifications" || f.stage == "rejoin_notifications") {
-		if c.state == nil {
+		if c.traceAttempt != nil {
+			c.failureStage = c.traceAttempt.current()
+		} else if c.phase == voiceConnecting {
+			c.failureStage = "establish"
+		} else if c.state == nil {
 			c.failureStage = "membership_notification"
 		} else if c.server == nil {
 			c.failureStage = "server_notification"

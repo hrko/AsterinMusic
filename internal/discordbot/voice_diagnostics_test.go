@@ -2,12 +2,25 @@ package discordbot
 
 import (
 	"asterinmusic/internal/logging"
+	"context"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestRecoveryTimeoutPreservesHandshakeStage(t *testing.T) {
+	c := testVoiceController(t)
+	c.phase = voiceConnecting
+	c.traceAttempt = &voiceTraceAttempt{name: "dave", ended: true}
+	f := &voiceRecoveryFlow{stage: "rejoin_notifications", cancel: func() {}}
+	c.recovery = f
+	c.recoveryFailure(f, context.DeadlineExceeded)
+	if c.failureStage != "dave" {
+		t.Fatalf("handshake misclassified as %s", c.failureStage)
+	}
+}
 
 func TestTerminalVoiceFailureRetainsSafeCause(t *testing.T) {
 	var out logBuffer

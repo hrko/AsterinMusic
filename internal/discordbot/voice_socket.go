@@ -33,6 +33,7 @@ type voiceSocket struct {
 }
 
 type voiceSocketRun struct {
+	observation      context.Context
 	ctx              context.Context
 	cancel           context.CancelFunc
 	ws               *websocket.Conn
@@ -79,6 +80,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	}
 	rctx, cancel := context.WithCancel(context.Background())
 	r := &voiceSocketRun{ctx: rctx, cancel: cancel, ready: make(chan error, 1), resume: resume}
+	r.observation = ctx
 	g.run, g.state, g.status = r, state, voice.StatusConnecting
 	g.mu.Unlock()
 	// Cancellation of either Open or Close must also cancel an in-flight dial.
@@ -314,7 +316,9 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 		}
 		// The transport serializes DAVE/UDP events with teardown and audio.
 		if r.ctx.Err() == nil {
+			traceVoiceEvent(r.observation, int(message.Op), true)
 			g.event(g, message.Op, message.Seq, message.D)
+			traceVoiceEvent(r.observation, int(message.Op), false)
 		}
 	}
 }
