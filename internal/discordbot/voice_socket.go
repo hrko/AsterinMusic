@@ -86,6 +86,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	// Cancellation of either Open or Close must also cancel an in-flight dial.
 	dialCtx, dialCancel := context.WithCancel(ctx)
 	stop := context.AfterFunc(rctx, dialCancel)
+	traceVoiceStage(ctx, "websocket_connect")
 	ws, response, err := g.dialer.DialContext(dialCtx, fmt.Sprintf("wss://%s?v=%d", state.Endpoint, voice.GatewayVersion), nil)
 	stop()
 	dialCancel()
@@ -107,6 +108,7 @@ func (g *voiceSocket) open(ctx context.Context, state voice.State, resume bool) 
 	r.ws = ws
 	g.status = voice.StatusWaitingForHello
 	g.mu.Unlock()
+	traceVoiceStage(ctx, "hello")
 	go g.read(r)
 	select {
 	case err := <-r.ready:
@@ -284,8 +286,10 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			g.mu.Unlock()
 			go g.heartbeat(r, interval)
 			if resume {
+				traceVoiceStage(r.observation, "resume")
 				err = g.send(r.ctx, r, voice.OpcodeResume, voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token, SeqAck: seq})
 			} else {
+				traceVoiceStage(r.observation, "identify_ready")
 				err = g.send(r.ctx, r, voice.OpcodeIdentify, voice.GatewayMessageDataIdentify{GuildID: state.GuildID, UserID: state.UserID, SessionID: state.SessionID, Token: state.Token, MaxDaveProtocolVersion: g.dave.MaxSupportedProtocolVersion()})
 			}
 			if err != nil {
@@ -297,6 +301,17 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			if g.run != r {
 				g.mu.Unlock()
 				return
+			}
+			if !r.heartbeatStarted || (message.Op == voice.OpcodeResumed) != r.resume {
+				g.mu.Unlock()
+				g.finish(r, errors.New("unexpected voice establishment event"), true)
+				return
+			}
+			// Repeated establishment events must not repeat UDP discovery or
+			// reset encryption state on an already established socket.
+			if g.status == voice.StatusReady {
+				g.mu.Unlock()
+				continue
 			}
 			if d, ok := message.D.(voice.GatewayMessageDataReady); ok {
 				g.ssrc = d.SSRC

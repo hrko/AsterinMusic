@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -21,10 +22,100 @@ import (
 type protocolTestUDP struct {
 	voice.UDPConn
 	written atomic.Int32
+	opened  atomic.Int32
 	closed  atomic.Bool
 }
 
+type blockedProtocolUDP struct {
+	protocolTestUDP
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (u *blockedProtocolUDP) Open(context.Context, string, int, uint32) (string, int, error) {
+	close(u.entered)
+	<-u.release
+	return "127.0.0.1", 9000, nil
+}
+
+func TestVoiceTransportHeartbeatDuringDiscovery(t *testing.T) {
+	u := &blockedProtocolUDP{entered: make(chan struct{}), release: make(chan struct{})}
+	heartbeats := make(chan struct{}, 16)
+	closed := make(chan error, 1)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer ws.Close()
+		_ = ws.WriteJSON(map[string]any{"op": 8, "d": map[string]int{"heartbeat_interval": 50}})
+		for {
+			var m struct {
+				Op int             `json:"op"`
+				D  json.RawMessage `json:"d"`
+			}
+			if ws.ReadJSON(&m) != nil {
+				return
+			}
+			switch m.Op {
+			case 0:
+				_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
+			case 3:
+				_ = ws.WriteJSON(map[string]any{"op": 6, "d": m.D})
+				select {
+				case heartbeats <- struct{}{}:
+				default:
+				}
+			case 1:
+				_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
+			}
+		}
+	}))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	result := make(chan error, 1)
+	a := &App{}
+	channel := snowflake.ID(3)
+	go func() {
+		tr, err := a.openVoiceTransportWithDialer(ctx, voice.State{ChannelID: &channel, Endpoint: strings.TrimPrefix(server.URL, "https://")}, func(err error, _ bool) {
+			select {
+			case closed <- err:
+			default:
+			}
+		}, []voice.ConnConfigOpt{
+			voice.WithUDPConnCreateFunc(func(godave.Session, voice.SsrcLookupFunc, ...voice.UDPConnConfigOpt) voice.UDPConn { return u }),
+		}, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+		if err == nil {
+			tr.Close()
+		}
+		result <- err
+	}()
+	// Release discovery even on failure, so the test never leaks its worker.
+	defer func() {
+		close(u.release)
+		if err := <-result; err != nil && !errors.Is(err, context.Canceled) {
+			t.Error(err)
+		}
+	}()
+	select {
+	case <-u.entered:
+	case <-ctx.Done():
+		t.Fatal(ctx.Err())
+	}
+	for range 4 {
+		select {
+		case <-heartbeats:
+		case err := <-closed:
+			t.Fatalf("discovery blocked heartbeat ACK: %v", err)
+		case <-ctx.Done():
+			t.Fatal(ctx.Err())
+		}
+	}
+}
+
 func (u *protocolTestUDP) Open(context.Context, string, int, uint32) (string, int, error) {
+	u.opened.Add(1)
 	return "127.0.0.1", 9000, nil
 }
 func (u *protocolTestUDP) SetSecretKey(voice.EncryptionMode, []byte) error { return nil }
@@ -55,6 +146,7 @@ func TestVoiceTransportHandshakeAndFreshResources(t *testing.T) {
 			case 7:
 				_ = ws.WriteJSON(map[string]any{"op": 9, "d": nil})
 			case 0:
+				_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 				_ = ws.WriteJSON(map[string]any{"op": 2, "d": map[string]any{"ssrc": 42, "ip": "127.0.0.1", "port": 9000, "modes": []string{"aead_aes256_gcm_rtpsize"}}})
 			case 1:
 				_ = ws.WriteJSON(map[string]any{"op": 4, "d": map[string]any{"mode": "aead_aes256_gcm_rtpsize", "secret_key": make([]int, 32), "dave_protocol_version": 0}})
@@ -119,7 +211,7 @@ func TestVoiceTransportHandshakeAndFreshResources(t *testing.T) {
 		t.Fatal("reused per-channel resources")
 	}
 	for _, u := range udp {
-		if !u.closed.Load() || u.written.Load() != 2 {
+		if !u.closed.Load() || u.written.Load() != 2 || u.opened.Load() != 1 {
 			t.Fatal("teardown or send failed")
 		}
 	}

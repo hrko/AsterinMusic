@@ -175,6 +175,49 @@ func TestVoiceSequencePresenceAndWrap(t *testing.T) {
 	}
 }
 
+func TestVoiceSocketRejectsContradictoryEstablishment(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		resume, hello bool
+		op            int
+	}{
+		{"resumed during identify", false, true, 9},
+		{"ready during resume", true, true, 2},
+		{"ready before hello", false, false, 2},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+				if err != nil {
+					return
+				}
+				defer ws.Close()
+				if tc.hello {
+					_ = ws.WriteJSON(map[string]any{"op": 8, "d": map[string]int{"heartbeat_interval": 60000}})
+					if _, _, err := ws.ReadMessage(); err != nil {
+						return
+					}
+				}
+				_ = ws.WriteJSON(map[string]any{"op": tc.op, "d": map[string]int{"ssrc": 42}})
+				_, _, _ = ws.ReadMessage()
+			}))
+			defer server.Close()
+			g := newVoiceSocket(godave.NewNoopSession(slog.Default(), "2", nil), func(voice.Gateway, voice.Opcode, int, voice.GatewayMessageData) {}, nil, &websocket.Dialer{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}})
+			defer g.Close()
+			g.established = tc.resume
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			err := g.open(ctx, voice.State{Endpoint: strings.TrimPrefix(server.URL, "https://")}, tc.resume)
+			if err == nil || !strings.Contains(err.Error(), "unexpected voice establishment") {
+				t.Fatalf("got %v", err)
+			}
+			if g.Status() != voice.StatusDisconnected {
+				t.Fatal("invalid session became ready")
+			}
+		})
+	}
+}
+
 func TestVoiceSocketHeartbeatTimeoutDoesNotReconnect(t *testing.T) {
 	var connections atomic.Int32
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

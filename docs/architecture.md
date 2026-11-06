@@ -62,6 +62,8 @@ session.muは現在曲・接続先・自動再生・操作世代を保護する�
 
 通信層の新規接続とResumeは別のメソッドで指定する。シーケンス未受信は-1で表し、番号0や折り返しと区別する。Resume成功後はSpeakingを次の送信前に再通知し、DAVEの準備も確認する。新規接続では前のSSRC・シーケンス・接続成立状態を初期化する。
 
+UDP探索とDAVE処理はTransportに属する単一ワーカーへ渡し、WebSocket受信とHeartbeat ACK処理を待たせない。SessionDescriptionを含むイベントの受信順を維持する。キューは64件で、超過時は接続失敗を通知する。ワーカーは接続確立後とResume後も継続し、Transport破棄時に終了を待つ。ReadyのUDP探索・SelectProtocol送信はTransportが直接実行し、失敗を接続試行へ返す。新規接続へのResumed、ResumeへのReady、Hello前の成立通知を拒否し、同一ソケットでのReady重複による再探索を防ぐ。UDPの実I/O中断・終了待ち上限は[改善計画](voice-handshake-plan.md)に従って引き続き変更する。
+
 `voice_reconnect.go`は接続管理ごとに一つの復旧処理を所有する。通常の通信断・1006・4015では既存通信を保持してResumeを最大2回試し、失敗時は新規参加要求へ進む。各Resume・参加通知待ち・退出確認は最大5秒、全体は30秒。参加通知だけが届く場合は、対象VCと参加権限を確認し、退出通知を確認してから一度だけ再参加する。自動再参加は直近5分で最大2回、明示的なOpenは別の試行として扱う。権限を確認できない場合は安全側に停止する。参加・退出要求の送信失敗は最大3回のバックオフ付き試行で打ち切り、通知待ちとは区別する。
 
 停止・外部退出・再接続禁止の応答は復旧をキャンセルする。移動通知は古い復旧処理を無効化し、新しい所属と接続先情報を優先する。復旧中の再移動でも全体期限を延ばさない。自動退出の確認中は再生側に一時的な未所属を伝えず、現在曲と再生設定を保持する。新規接続ではDAVEを含む通信資源を作り直し、Resumeでは保持する。最終失敗時は現在曲を保持して停止し、URLなしの`/play`で曲頭から再試行する。
@@ -124,7 +126,7 @@ flowchart LR
 
 トレース基盤は`internal/telemetry`が担当し、CLIでProviderを生成してAppへ注入する。SDK・OTLP/HTTP exporterはv1.47.0。既定は無効で、ログのContextに有効なSpanContextがある場合のみ`trace_id`・`span_id`・`trace_sampled`をルート属性へ追加する。対象と完了条件は[計装方針](tracing-plan.md)を参照する。
 
-接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。`voice.notifications`は通知収集開始から必要な通知が揃うまでを表し、通信確立の開始前に終了する。既存の`voice.wait`は監督処理がreadyまたは退出確認まで待つ区間で、`wait_until`に待機対象を記録する。`stage=voice_notifications`でも通知だけの時間を表すものではない。Resume、参加・退出要求、再入室権限確認も子spanとして記録する。通信確立はGateway、UDP検出・プロトコル選択・通信鍵待ちの複合区間、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。
+接続管理は有限の復旧単位に`voice.recovery`、通信確立試行に`voice.connect`を作る。`voice.notifications`は通知収集開始から必要な通知が揃うまでを表し、通信確立の開始前に終了する。既存の`voice.wait`は監督処理がreadyまたは退出確認まで待つ区間で、`wait_until`に待機対象を記録する。`stage=voice_notifications`でも通知だけの時間を表すものではない。Resume、参加・退出要求、再入室権限確認も子spanとして記録する。通信確立はWebSocket接続、Hello、Identify/Ready、UDP探索、プロトコル選択、SessionDescription、通信鍵設定、DAVE準備に分ける。期限切れ時には試行の最後の観測段階を保持し、遅延完了が終了済みspanや新世代を変更しない。
 
 復旧の開始契機、監督処理の復旧ID、接続試行の番号・世代を属性に持たせる。復旧段階の変更は残り時間付きのeventとし、SDKの件数上限を適用する。接続試行は復旧全体の期限を共有し、監督処理の段階待ちは段階期限と復旧期限のどちらで切れたかを区別する。通知ログも観測時のContextを使用して同じトレースへ関連付ける。
 

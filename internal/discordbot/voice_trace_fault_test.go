@@ -37,14 +37,17 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 	for _, fault := range []string{"gateway", "udp_protocol_transport_key", "udp_discovery", "dave"} {
 		t.Run(fault, func(t *testing.T) {
 			stage := fault
-			if fault == "udp_discovery" {
-				stage = "udp_protocol_transport_key"
+			if fault == "gateway" {
+				stage = "websocket_connect"
+			}
+			if fault == "udp_protocol_transport_key" {
+				stage = "session_description"
 			}
 			recorder := tracetest.NewSpanRecorder()
 			provider := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
 			defer provider.Shutdown(context.Background())
 			srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if stage == "gateway" {
+				if fault == "gateway" {
 					http.Error(w, "synthetic-secret", http.StatusForbidden)
 					return
 				}
@@ -99,6 +102,12 @@ func TestVoiceTransportTraceFaultStages(t *testing.T) {
 			attempt.end(err)
 			if err == nil {
 				t.Fatal("fault did not fail")
+			}
+			if fault == "udp_discovery" {
+				var stageErr *voiceStageError
+				if !errors.As(err, &stageErr) || stageErr.stage != "udp_discovery" || errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("discovery failure was replaced by timeout/key error: %v", err)
+				}
 			}
 			if attempt.current() != stage {
 				t.Fatalf("wrong stage: %s", attempt.current())
