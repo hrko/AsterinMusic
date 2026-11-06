@@ -446,6 +446,10 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 		c.recoveryFailure(f, errRejoinDenied)
 		return
 	}
+	if _, err := c.confirmRecoveryMembership(f); err != nil {
+		c.recoveryFailure(f, err)
+		return
+	}
 	c.mu.Lock()
 	if !c.recoveryValidLocked(f) || c.channel != channel {
 		c.mu.Unlock()
@@ -480,7 +484,8 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 	}
 	c.discardLocked()
 	c.endNotificationTraceLocked(context.Canceled)
-	f.leaving = true
+	joined := c.confirmedChannel != 0
+	f.leaving = joined
 	f.left = false
 	f.attemptErr = nil
 	f.stage = "leave_request"
@@ -489,16 +494,18 @@ func (c *voiceConnection) rejoinRecovery(f *voiceRecoveryFlow) {
 	c.statePending = false
 	c.signalLocked(voiceRecovering)
 	c.mu.Unlock()
-	if err := c.recoveryUpdate(f, true); err != nil {
-		c.recoveryFailure(f, err)
-		return
-	}
-	if !c.recoveryStage(f, "leave_confirmation", 1) {
-		return
-	}
-	if err := c.waitRecovery(f, voiceStageTimeout, true); err != nil {
-		c.recoveryFailure(f, err)
-		return
+	if joined {
+		if err := c.recoveryUpdate(f, true); err != nil {
+			c.recoveryFailure(f, err)
+			return
+		}
+		if !c.recoveryStage(f, "leave_confirmation", 1) {
+			return
+		}
+		if err := c.waitRecovery(f, voiceStageTimeout, true); err != nil {
+			c.recoveryFailure(f, err)
+			return
+		}
 	}
 	c.mu.Lock()
 	if !c.recoveryValidLocked(f) {

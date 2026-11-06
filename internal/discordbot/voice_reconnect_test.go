@@ -78,6 +78,7 @@ func recoveryFixture(t *testing.T, c *voiceConnection) *voiceRecoveryFlow {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.channel = 3
+	c.membershipKnown, c.confirmedChannel = true, 3
 	c.beginLocked(true, voiceWaiting)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	t.Cleanup(cancel)
@@ -411,6 +412,7 @@ func TestRecoveryDoesNotRejoinWithoutLeaveConfirmation(t *testing.T) {
 	c.update = func(context.Context, snowflake.ID, *snowflake.ID, bool, bool) error { joins.Add(1); return nil }
 	c.mu.Lock()
 	c.channel = 3
+	c.membershipKnown, c.confirmedChannel = true, 3
 	c.beginLocked(true, voiceWaiting)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()

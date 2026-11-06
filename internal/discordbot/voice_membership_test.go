@@ -70,6 +70,7 @@ func TestFailedExplicitOpenUsesConfirmedMembership(t *testing.T) {
 func TestUnknownRecoveryMembershipDoesNotGuessFromTarget(t *testing.T) {
 	c := testVoiceController(t)
 	f := recoveryFixture(t, c)
+	c.membershipKnown = false
 	f.resetMembership = true
 	c.lookupMembership = func() (snowflake.ID, bool) { return 0, false }
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
@@ -85,6 +86,38 @@ func TestUnknownRecoveryMembershipDoesNotGuessFromTarget(t *testing.T) {
 	defer c.mu.Unlock()
 	if c.failureStage != "membership_confirmation" || c.membershipKnown {
 		t.Fatal("unknown membership was treated as joined or left")
+	}
+}
+
+func TestAutomaticRejoinChecksMembershipBeforeLeave(t *testing.T) {
+	for _, known := range []bool{false, true} {
+		t.Run(map[bool]string{false: "unknown", true: "absent"}[known], func(t *testing.T) {
+			c := testVoiceController(t)
+			f := recoveryFixture(t, c)
+			c.membershipKnown, c.confirmedChannel = known, 0
+			c.canRejoin = func(context.Context, snowflake.ID) bool { return true }
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+			f.ctx, f.cancel = ctx, cancel
+			joins, leaves := 0, 0
+			c.update = func(_ context.Context, _ snowflake.ID, id *snowflake.ID, _, _ bool) error {
+				if id == nil {
+					leaves++
+				} else {
+					joins++
+					c.HandleVoiceStateUpdate(stateEvent(*id))
+					c.HandleVoiceServerUpdate(serverEvent("fresh"))
+				}
+				return nil
+			}
+			c.rejoinRecovery(f)
+			if leaves != 0 || joins != map[bool]int{false: 0, true: 1}[known] {
+				t.Fatalf("joins=%d leaves=%d", joins, leaves)
+			}
+			if !known && !c.Failed() {
+				t.Fatal("unconfirmed membership did not fail")
+			}
+		})
 	}
 }
 
