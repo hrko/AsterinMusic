@@ -27,6 +27,10 @@ type session struct {
 	historySessionID                   string
 	playbackHistory                    *history.Record
 	failureNotice                      failureNotice
+	failureQueue                       chan failureNotification
+	failureWorkerDone                  chan struct{}
+	failureWorkerCancel                context.CancelFunc
+	failureNotificationsDropped        int
 	playbackSequence                   uint64
 	queueViewMu                        sync.Mutex
 	checkpointMu                       sync.Mutex
@@ -350,7 +354,7 @@ func (s *session) loop(done chan struct{}) {
 			s.running = false
 			s.mu.Unlock()
 			playLog.finish(s.app.ctx, slog.LevelError, "voice_connection_failed", "hold_playback", position)
-			s.notifyFailure(text, &entry.Track, "音声接続を復旧できなかったため、再生を停止しました。曲とキューは保持しています。/playで再開できます。", true)
+			s.enqueueFailure(text, &entry.Track, "音声接続を復旧できなかったため、再生を停止しました。曲とキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		if automatic && !s.started && !s.skipping && !s.stopped && !s.shuttingDown && s.app.ctx.Err() == nil &&
@@ -391,7 +395,7 @@ func (s *session) loop(done chan struct{}) {
 				s.auto.off()
 				s.mu.Unlock()
 				playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "disable_autoplay", position, err)
-				s.notifyFailure(text, &entry.Track, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。", true)
+				s.enqueueFailure(text, &entry.Track, "自動追加曲が3曲続けて失敗したため、自動再生をOFFにしました。", true)
 				continue
 			}
 		}
@@ -403,7 +407,7 @@ func (s *session) loop(done chan struct{}) {
 			s.running = false
 			s.mu.Unlock()
 			playLog.finish(s.app.ctx, slog.LevelError, failureClass(err), "stop_retain_queue", position, err)
-			s.notifyFailure(text, &entry.Track, "3曲続けて再生に失敗したため、再生を停止しました。\n残りのキューは保持しています。/playで再開できます。", true)
+			s.enqueueFailure(text, &entry.Track, "3曲続けて再生に失敗したため、再生を停止しました。\n残りのキューは保持しています。/playで再開できます。", true)
 			return
 		}
 		s.mu.Unlock()
@@ -415,7 +419,7 @@ func (s *session) loop(done chan struct{}) {
 			playLog.finish(s.app.ctx, slog.LevelInfo, "completed", "advance", position)
 		}
 		if err != nil && !skipped {
-			s.notifyFailure(text, &entry.Track, source.AuthMessage(err, "曲の取得または再生に失敗しました。")+"\n次の曲へ進みます。", false)
+			s.enqueueFailure(text, &entry.Track, source.AuthMessage(err, "曲の取得または再生に失敗しました。")+"\n次の曲へ進みます。", false)
 		}
 	}
 }

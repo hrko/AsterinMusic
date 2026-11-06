@@ -36,11 +36,15 @@ func (n *failureNotice) publish(sequence uint64, channel snowflake.ID, embed dis
 	return nil
 }
 func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text string, terminal bool) {
+	s.publishFailure(s.app.ctx, channel, track, text, terminal, nil)
+}
+
+func (s *session) publishFailure(parent context.Context, channel snowflake.ID, track *music.Track, text string, terminal bool, expected *uint64) {
 	if channel == 0 {
 		return
 	}
 	s.mu.Lock()
-	if channel != s.text {
+	if channel != s.text || (expected != nil && *expected != s.playbackSequence) {
 		s.mu.Unlock()
 		return
 	}
@@ -59,7 +63,7 @@ func (s *session) notifyFailure(channel snowflake.ID, track *music.Track, text s
 	}
 	operation := "create"
 	err := s.failureNotice.publish(sequence, channel, embed, func(id snowflake.ID, e discord.Embed) (snowflake.ID, error) {
-		ctx, cancel := context.WithTimeout(s.app.ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(parent, 10*time.Second)
 		defer cancel()
 		if id != 0 {
 			operation = "update"

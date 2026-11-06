@@ -265,7 +265,7 @@ func (s *session) nextEntry() (music.Entry, bool, bool) {
 			s.idleSince = time.Now()
 			text := s.text
 			s.mu.Unlock()
-			s.notifyFailure(text, nil, "自動再生の候補を取得できなかったためOFFにしました。", true)
+			s.enqueueFailure(text, nil, "自動再生の候補を取得できなかったためOFFにしました。", true)
 			return music.Entry{}, false, false
 		}
 		s.fetchCandidatesLocked()

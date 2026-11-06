@@ -161,6 +161,9 @@ func (a *App) Close() {
 	for _, s := range sessions {
 		s.mu.Lock()
 		s.shuttingDown = true
+		if s.failureWorkerCancel != nil {
+			s.failureWorkerCancel()
+		}
 		s.stopLocked()
 		s.mu.Unlock()
 	}
@@ -168,9 +171,9 @@ func (a *App) Close() {
 	defer cancel()
 	for _, s := range sessions {
 		s.mu.Lock()
-		done, closing := s.done, s.closing
+		done, closing, notifications := s.done, s.closing, s.failureWorkerDone
 		s.mu.Unlock()
-		for _, wait := range []chan struct{}{done, closing} {
+		for _, wait := range []chan struct{}{done, closing, notifications} {
 			if wait == nil {
 				continue
 			}
