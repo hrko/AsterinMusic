@@ -2,21 +2,26 @@ package discordbot
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
 )
 
 func TestFailedExplicitOpenUsesConfirmedMembership(t *testing.T) {
-	for _, mode := range []string{"joined", "left", "cached"} {
+	for _, mode := range []string{"joined", "left", "cached", "rest_absent"} {
 		t.Run(mode, func(t *testing.T) {
 			c := testVoiceController(t)
 			c.canRejoin = func(context.Context, snowflake.ID) bool { return true }
 			c.phase, c.channel = voiceFailed, 3
 			if mode == "cached" {
 				c.lookupMembership = func() (snowflake.ID, bool) { return 3, true }
+			} else if mode == "rest_absent" {
+				c.resolveMembership = func(context.Context) (snowflake.ID, bool) { return 0, true }
 			} else {
 				e := stateEvent(3)
 				if mode == "left" {
@@ -51,7 +56,7 @@ func TestFailedExplicitOpenUsesConfirmedMembership(t *testing.T) {
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			if mode == "left" {
+			if mode == "left" || mode == "rest_absent" {
 				if len(requests) != 1 || requests[0] != "join" {
 					t.Fatalf("unnecessary leave: %v", requests)
 				}
@@ -139,5 +144,45 @@ func TestTargetAndConfirmedMembershipRemainSeparate(t *testing.T) {
 	defer c.mu.Unlock()
 	if !c.membershipKnown || c.confirmedChannel != 0 {
 		t.Fatal("leave was not confirmed")
+	}
+}
+
+func TestResolvedVoiceMembership(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		err   error
+		known bool
+	}{
+		{"absent", &rest.Error{Code: rest.JSONErrorCodeUnknownVoiceState}, true},
+		{"guild_unknown", &rest.Error{Code: rest.JSONErrorCodeUnknownGuild}, false},
+		{"denied", &rest.Error{Code: rest.JSONErrorCodeMissingAccess}, false},
+		{"network", errors.New("fixture"), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			id, known := resolvedVoiceMembership(nil, tc.err)
+			if id != 0 || known != tc.known {
+				t.Fatalf("membership=%v,%v", id, known)
+			}
+		})
+	}
+	id := snowflake.ID(3)
+	if got, known := resolvedVoiceMembership(&discord.VoiceState{ChannelID: &id}, nil); got != id || !known {
+		t.Fatal("joined state lost")
+	}
+}
+
+func TestMembershipEventWinsOverSlowResolution(t *testing.T) {
+	c := testVoiceController(t)
+	f := recoveryFixture(t, c)
+	c.membershipKnown = false
+	c.resolveMembership = func(context.Context) (snowflake.ID, bool) {
+		c.mu.Lock()
+		c.membershipKnown, c.confirmedChannel = true, 3
+		c.mu.Unlock()
+		return 0, true
+	}
+	joined, err := c.confirmRecoveryMembership(f)
+	if err != nil || !joined {
+		t.Fatalf("new membership overwritten: %v %v", joined, err)
 	}
 }

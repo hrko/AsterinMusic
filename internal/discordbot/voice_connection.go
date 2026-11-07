@@ -11,6 +11,7 @@ import (
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/voice"
 	"github.com/disgoorg/snowflake/v2"
 	"github.com/gorilla/websocket"
@@ -61,6 +62,7 @@ type voiceConnection struct {
 	confirmedChannel      snowflake.ID
 	membershipKnown       bool
 	lookupMembership      func() (snowflake.ID, bool)
+	resolveMembership     func(context.Context) (snowflake.ID, bool)
 	phase                 voicePhase
 	generation            uint64
 	deadline              time.Time
@@ -115,6 +117,10 @@ func (a *App) voiceConnectionOptions() bot.ConfigOpt {
 				return 0, true
 			}
 			return *state.ChannelID, true
+		}
+		c.resolveMembership = func(ctx context.Context) (snowflake.ID, bool) {
+			state, err := a.client.Rest.GetCurrentUserVoiceState(guild, rest.WithCtx(ctx))
+			return resolvedVoiceMembership(state, err)
 		}
 		c.canRejoin = func(ctx context.Context, channel snowflake.ID) bool {
 			if ctx.Err() != nil {
