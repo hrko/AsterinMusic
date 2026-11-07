@@ -77,6 +77,8 @@ type voiceConnection struct {
 	state                 *gateway.EventVoiceStateUpdate
 	server                *gateway.EventVoiceServerUpdate
 	lastToken             string
+	lastEndpoint          string
+	serverRefresh         bool
 	statePending          bool
 	removed               bool
 	resuming              bool
@@ -263,7 +265,7 @@ func (c *voiceConnection) expireLocked() {
 	}
 }
 func (c *voiceConnection) launchLocked() {
-	if c.phase == voiceClosed || c.phase == voiceFailed || c.removed || !c.statePending || c.state == nil || c.server == nil || c.server.Endpoint == nil {
+	if c.phase == voiceClosed || c.phase == voiceFailed || c.removed || (!c.statePending && !c.serverRefresh) || c.state == nil || c.server == nil || c.server.Endpoint == nil {
 		return
 	}
 	state := voice.State{GuildID: c.guild, UserID: c.user, ChannelID: c.state.ChannelID, SessionID: c.state.SessionID, Token: c.server.Token, Endpoint: *c.server.Endpoint}
@@ -275,7 +277,13 @@ func (c *voiceConnection) launchLocked() {
 		c.recovery.handshakeStarted = true
 	}
 	c.lastToken = state.Token
-	c.server = nil
+	c.lastEndpoint = state.Endpoint
+	// An unpaired server refresh can be the first half of a VC move. Keep it
+	// until membership arrives, even if the speculative transport is ready.
+	if c.statePending {
+		c.server = nil
+	}
+	c.serverRefresh = false
 	c.statePending = false
 	c.discardLocked()
 	generation := c.generation
@@ -451,6 +459,7 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 		c.cancelRecoveryLocked()
 		disposition = "endpoint_unavailable"
 		c.server = nil
+		c.lastEndpoint = ""
 		c.beginLocked(false, voiceRecovering)
 		return
 	}
@@ -458,7 +467,7 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 		disposition = "duplicate_pending_notification"
 		return
 	}
-	if !c.statePending && c.phase == voiceConnecting && e.Token == c.lastToken {
+	if !c.statePending && c.phase == voiceConnecting && e.Token == c.lastToken && *e.Endpoint == c.lastEndpoint {
 		disposition = "duplicate_connecting_notification"
 		return
 	}
@@ -468,10 +477,11 @@ func (c *voiceConnection) HandleVoiceServerUpdate(e gateway.EventVoiceServerUpda
 	// A fresh server notification may carry the same token across VC moves.
 	// If it precedes membership, retain it without disturbing the ready socket.
 	// Never reuse the consumed notification merely because membership changed.
-	if !c.statePending && e.Token == c.lastToken {
+	if !c.statePending && e.Token == c.lastToken && endpoint == c.lastEndpoint {
 		disposition = "awaiting_membership"
 		return
 	}
+	c.serverRefresh = !c.statePending
 	if c.phase == voiceReady || c.phase == voiceConnecting {
 		c.beginLocked(false, voiceWaiting)
 	}
@@ -550,6 +560,8 @@ func (c *voiceConnection) Open(ctx context.Context, channel snowflake.ID, mute, 
 	c.state = nil // explicit join must pair with its new membership notification
 	c.server = nil
 	c.lastToken = ""
+	c.lastEndpoint = ""
+	c.serverRefresh = false
 	c.endTraceLocked(voiceClosed)
 	c.startTraceLocked(ctx, "explicit_join")
 	c.beginLocked(true, voiceWaiting)
