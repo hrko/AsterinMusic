@@ -129,6 +129,9 @@ func TestVoiceSessionDescriptionDuplicateDoesNotResetKeys(t *testing.T) {
 				}
 			}
 			if early {
+				if ctx.Err() != nil {
+					t.Fatal("premature description only failed after parent deadline")
+				}
 				if u.keys.Load() != 0 || d.acks.Load() != 0 {
 					t.Fatal("premature description installed keys or initialized DAVE")
 				}

@@ -65,6 +65,7 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	var connections atomic.Int32
 	ops := make(chan int, 4)
 	binary := make(chan []byte, 1)
+	resumePayload := make(chan json.RawMessage, 1)
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ws, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
 		if err != nil {
@@ -93,6 +94,7 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 				if m.Op == 0 {
 					_ = ws.WriteJSON(map[string]any{"op": 2, "s": 0, "d": map[string]any{"ssrc": 42}})
 				} else {
+					resumePayload <- m.D
 					_ = ws.WriteJSON(map[string]any{"op": 9, "s": 2, "d": nil})
 				}
 			case 3:
@@ -144,6 +146,13 @@ func TestVoiceSocketHeartbeatResumeAndBinary(t *testing.T) {
 	}
 	if first, second := <-ops, <-ops; first != 0 || second != 7 {
 		t.Fatalf("identify/resume: %d, %d", first, second)
+	}
+	var resumed map[string]json.RawMessage
+	if err := json.Unmarshal(<-resumePayload, &resumed); err != nil {
+		t.Fatal(err)
+	}
+	if string(resumed["seq_ack"]) != "0" || resumed["seq"] != nil || string(resumed["server_id"]) != `"1"` || string(resumed["session_id"]) != `"test"` || string(resumed["token"]) != `"test"` {
+		t.Fatalf("invalid v8 Resume payload: %s", resumed)
 	}
 	for _, want := range []string{"initial", "resume"} {
 		select {

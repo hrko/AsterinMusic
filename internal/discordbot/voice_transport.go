@@ -206,6 +206,7 @@ func (a *App) openVoiceTransportWithDialer(ctx context.Context, state voice.Stat
 		failOnce.Do(func() {
 			deadlines.stop()
 			failed <- &voiceStageError{stage, err}
+			cancelHandshake()
 		})
 	}
 	overall, _ := ctx.Deadline()

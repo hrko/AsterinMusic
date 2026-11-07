@@ -19,6 +19,20 @@ import (
 // reader and heartbeat belongs to a particular run, including across Resume.
 type voiceSocketEventHandler func(context.Context, voice.Gateway, voice.Opcode, int, voice.GatewayMessageData)
 
+// disgo v0.19.6 tags SeqAck as "seq"; Voice Gateway v8 requires "seq_ack".
+// Embed its data type to preserve the library's sealed message interface.
+type voiceResumeData struct {
+	voice.GatewayMessageDataResume
+	SeqAck int
+}
+
+func (d voiceResumeData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{
+		"server_id": d.GuildID, "session_id": d.SessionID,
+		"token": d.Token, "seq_ack": d.SeqAck,
+	})
+}
+
 type voiceSocket struct {
 	mu          sync.Mutex
 	run         *voiceSocketRun
@@ -365,7 +379,7 @@ func (g *voiceSocket) read(r *voiceSocketRun) {
 			go func() { defer g.workers.Done(); g.heartbeat(r, interval) }()
 			if resume {
 				g.stage(r.observation, "resume")
-				err = g.send(r.ctx, r, voice.OpcodeResume, voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token, SeqAck: seq})
+				err = g.send(r.ctx, r, voice.OpcodeResume, voiceResumeData{GatewayMessageDataResume: voice.GatewayMessageDataResume{GuildID: state.GuildID, SessionID: state.SessionID, Token: state.Token}, SeqAck: seq})
 			} else {
 				g.stage(r.observation, "identify")
 				err = g.send(r.ctx, r, voice.OpcodeIdentify, voice.GatewayMessageDataIdentify{GuildID: state.GuildID, UserID: state.UserID, SessionID: state.SessionID, Token: state.Token, MaxDaveProtocolVersion: g.dave.MaxSupportedProtocolVersion()})
