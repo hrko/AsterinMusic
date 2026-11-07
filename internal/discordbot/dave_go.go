@@ -54,7 +54,14 @@ func (s *guardedDave) VoiceDiagnostic() []any {
 func (s *guardedDave) Ready() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return !s.closed && !s.Session.ShouldHoldFrames()
+	return s.readyLocked()
+}
+
+func (s *guardedDave) readyLocked() bool {
+	state := s.Session.State()
+	// Ready distinguishes negotiated transport-only from a pending downgrade.
+	// A retained old ratchet does not make a degraded MLS session healthy.
+	return !s.closed && s.Session.Ready() && (state.DegradedSince.IsZero() || (!state.Ready && state.ProtocolVersion == 0))
 }
 func (s *guardedDave) MaxSupportedProtocolVersion() int {
 	s.mu.Lock()
@@ -91,14 +98,14 @@ func (s *guardedDave) Decrypt(id godave.UserID, p, out []byte) (int, error) {
 func (s *guardedDave) Encrypt(ssrc uint32, p, out []byte) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.closed || s.ShouldHoldFrames() {
+	if !s.readyLocked() {
 		return 0, errDaveNotReady
 	}
-	encrypted := s.State().ProtocolVersion != 0
+	encrypted := s.State().Ready
 	n, err := s.Session.Encrypt(ssrc, p, out)
 	// Upstream recovery watchdogs also mutate epochs internally. Reject their
 	// passthrough result even if a reset races with the readiness check above.
-	if err == nil && encrypted && bytes.Equal(p, out[:n]) {
+	if err == nil && (!s.readyLocked() || (encrypted && bytes.Equal(p, out[:n]))) {
 		return 0, errDaveNotReady
 	}
 	return n, err

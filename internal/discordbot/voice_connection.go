@@ -250,6 +250,9 @@ func (c *voiceConnection) armLocked() {
 func (c *voiceConnection) expireLocked() {
 	if c.phase != voiceReady && c.phase != voiceClosed && c.phase != voiceFailed && !c.deadline.IsZero() && !c.now().Before(c.deadline) {
 		c.failureStage = "recovery"
+		if c.phase == voiceRecovering && c.active != nil && c.recovery == nil {
+			c.failureStage = "dave_ready"
+		}
 		if c.recovery != nil {
 			c.failureStage = c.recovery.stage
 		}
@@ -364,6 +367,9 @@ func (c *voiceConnection) launchLocked() {
 			return
 		}
 		c.active = t
+		monitorCtx, stopMonitor := context.WithCancel(context.Background())
+		c.cancel = func() { cancel(); stopMonitor() }
+		go c.monitorReadiness(monitorCtx, generation, t)
 		if c.traceAttempt == observed {
 			c.traceAttempt = nil
 		}

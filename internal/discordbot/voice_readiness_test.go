@@ -1,49 +1,52 @@
 package discordbot
 
 import (
-	"context"
-	"errors"
 	"testing"
 	"time"
 )
 
-type blockedReadyTransport struct {
-	*fakeVoiceTransport
-	entered chan struct{}
-	release chan struct{}
-}
-
-func (t *blockedReadyTransport) Ready() bool {
-	close(t.entered)
-	<-t.release
-	return true // Deliberately stale success after the controller was closed.
-}
-
-func TestVoiceSlowReadyDoesNotBlockStopOrResurrect(t *testing.T) {
+func TestDaveRecoveryWithoutAudioWrites(t *testing.T) {
 	c := testVoiceController(t)
-	transport := &blockedReadyTransport{fakeVoiceTransport: newFakeVoiceTransport(), entered: make(chan struct{}), release: make(chan struct{})}
-	c.active = transport
-	c.resourceLease = c.resources.acquire()
-	c.ownedResources = append(c.ownedResources, c.resourceLease)
-	c.phase = voiceRecovering
-	waited := make(chan error, 1)
-	go func() { waited <- c.waitReady(context.Background()) }()
-	<-transport.entered
-	stopped := make(chan struct{})
-	go func() { c.Close(context.Background()); close(stopped) }()
-	select {
-	case <-stopped:
-	case <-time.After(time.Second):
-		close(transport.release)
-		t.Fatal("readiness check held the connection state lock")
-	}
-	close(transport.release)
-	select {
-	case err := <-waited:
-		if !errors.Is(err, context.Canceled) {
-			t.Fatalf("stale readiness resurrected closed connection: %v", err)
+	c.HandleVoiceStateUpdate(stateEvent(3))
+	c.HandleVoiceServerUpdate(serverEvent("fixture"))
+	waitVoice(t, c)
+	c.mu.Lock()
+	transport, generation := c.active.(*fakeVoiceTransport), c.generation
+	c.mu.Unlock()
+	transport.ready.Store(false)
+	until := time.Now().Add(time.Second)
+	for {
+		c.mu.Lock()
+		phase := c.phase
+		c.mu.Unlock()
+		if phase == voiceRecovering {
+			break
 		}
-	case <-time.After(time.Second):
-		t.Fatal("readiness waiter did not finish")
+		if time.Now().After(until) {
+			t.Fatal("no-write key loss was not observed")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	transport.ready.Store(true)
+	for {
+		c.mu.Lock()
+		restored := c.phase == voiceReady && c.deadline.IsZero()
+		c.mu.Unlock()
+		if restored {
+			break
+		}
+		if time.Now().After(until) {
+			t.Fatal("no-write key recovery left deadline armed")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	if transport.writes.Load() != 0 {
+		t.Fatal("test unexpectedly sent audio")
+	}
+	c.observeReadiness(generation-1, transport, false)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.phase != voiceReady {
+		t.Fatal("stale readiness damaged current generation")
 	}
 }

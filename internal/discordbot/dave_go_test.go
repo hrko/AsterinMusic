@@ -83,6 +83,12 @@ func TestDaveHandshakeNeverSendsPlaintext(t *testing.T) {
 	}
 	// Explicitly negotiated protocol 0 permits transport encryption only.
 	s.OnDavePrepareTransition(1, 0)
+	if s.Ready() {
+		t.Fatal("pending downgrade admitted frames")
+	}
+	if _, err := s.Encrypt(7, p, out); !errors.Is(err, errDaveNotReady) {
+		t.Fatal("pending downgrade emitted plaintext")
+	}
 	s.OnDaveExecuteTransition(1)
 	if !s.Ready() {
 		t.Fatal("negotiated protocol zero must allow transport encryption")
